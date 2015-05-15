@@ -30,7 +30,7 @@ class DbTarget extends \yii\log\DbTarget
         $ip = null;
         /** @var \yii\web\Request $request */
         $request = Yii::$app->getRequest();
-        if (($request = Yii::$app->getRequest()) instanceof Request) {
+        if (($request = Yii::$app->getRequest()) instanceof \yii\web\Request) {
             $ip = ip2long($request->getUserIP());
             if ($ip > 0x7FFFFFFF) {
                 $ip -= (0xFFFFFFFF + 1);
