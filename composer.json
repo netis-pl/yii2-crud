@@ -1,0 +1,22 @@
+{
+    "name": "netis/yii2-utils",
+    "description": "Various helper classes for projects based on the Yii 2 PHP framework.",
+    "type": "yii2-extension",
+    "license": "BSD-3-Clause",
+    "support": {
+        "issues": "http://gitlab.netis.pl/web-tools/yii2-utils/issues",
+        "source": "http://gitlab.netis.pl/web-tools/yii2-utils/tree/master",
+    },
+    "authors": [
+        {
+            "name": "Jan Waś",
+            "email": "jwas@netis.pl"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": ">=2.0.4"
+    },
+    "autoload": {
+        "psr-4": { "netis\\utils\\": "" }
+    }
+}
