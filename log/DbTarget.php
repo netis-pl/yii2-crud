@@ -6,6 +6,8 @@
 
 namespace netis\utils\log;
 
+use Yii;
+
 /**
  * DbTarget stores log messages in a database table.
  *
