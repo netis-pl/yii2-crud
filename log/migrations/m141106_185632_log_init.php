@@ -73,8 +73,13 @@ class m141106_185632_log_init extends Migration
                 'message' => Schema::TYPE_TEXT,
             ], $tableOptions);
 
-            $this->createIndex('idx_log_level', $target->logTable, 'level');
-            $this->createIndex('idx_log_category', $target->logTable, 'category');
+            $prefix = substr($target->logTable, 1, -1);
+            $this->createIndex($prefix.'_level_idx', $target->logTable, 'level');
+            $this->createIndex($prefix.'_category_idx', $target->logTable, 'category');
+            $this->createIndex($prefix.'_log_time_idx', $target->logTable, 'log_time');
+            $this->createIndex($prefix.'_ip_idx', $target->logTable, 'ip');
+            $this->createIndex($prefix.'_user_id_idx', $target->logTable, 'user_id');
+            $this->createIndex($prefix.'_session_id_idx', $target->logTable, 'session_id');
         }
     }
 
