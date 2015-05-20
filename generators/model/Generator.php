@@ -40,7 +40,7 @@ DESC;
     public function rules()
     {
         $rules = parent::rules();
-        foreach($rules as $key => $rule) {
+        foreach ($rules as $key => $rule) {
             $attributes = array_shift($rule);
             $validator = array_shift($rule);
             if ((in_array('ns', $attributes) || in_array('queryNs', $attributes))
