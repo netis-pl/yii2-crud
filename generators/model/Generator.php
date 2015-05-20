@@ -102,6 +102,44 @@ DESC;
     }
 
     /**
+     * @return array the table names that match the pattern specified by [[tableName]].
+     */
+    protected function getTableNames()
+    {
+        if ($this->tableNames !== null) {
+            return $this->tableNames;
+        }
+        $db = $this->getDbConnection();
+        if ($db === null) {
+            return [];
+        }
+        $tableNames = [];
+        if (strpos($this->tableName, '*') !== false) {
+            if (($pos = strrpos($this->tableName, '.')) !== false) {
+                $schema = substr($this->tableName, 0, $pos);
+                if ($schema === $db->schema->defaultSchema) {
+                    $schema = '';
+                }
+                $pattern = '/^' . str_replace('*', '\w+', substr($this->tableName, $pos + 1)) . '$/';
+            } else {
+                $schema = '';
+                $pattern = '/^' . str_replace('*', '\w+', $this->tableName) . '$/';
+            }
+
+            foreach ($db->schema->getTableNames($schema) as $table) {
+                if (preg_match($pattern, $table)) {
+                    $tableNames[] = $schema === '' ? $table : ($schema . '.' . $table);
+                }
+            }
+        } elseif (($table = $db->getTableSchema($this->tableName, true)) !== null) {
+            $tableNames[] = $this->tableName;
+            $this->classNames[$this->tableName] = $this->modelClass;
+        }
+
+        return $this->tableNames = $tableNames;
+    }
+
+    /**
      * Generates a class name from the specified table name.
      * @param string $tableName the table name (which may contain schema prefix)
      * @param boolean $useSchemaName should schema name be included in the class name, if present
