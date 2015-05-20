@@ -39,7 +39,23 @@ DESC;
      */
     public function rules()
     {
-        return array_merge(parent::rules(), [
+        $rules = parent::rules();
+        foreach($rules as $key => $rule) {
+            $attributes = array_shift($rule);
+            $validator = array_shift($rule);
+            if ((in_array('ns', $attributes) || in_array('queryNs', $attributes))
+                && $validator === 'match' && isset($rule['pattern']) && $rule['pattern'] === '/^[\w\\\\]+$/'
+            ) {
+                $rules[$key][0] = array_diff($attributes, ['ns', 'queryNs']);
+                $rules[] = [
+                    ['ns', 'queryNs'],
+                    'match',
+                    'pattern' => '/^[\w\\\\\\-]+$/',
+                    'message' => $rule['message'],
+                ];
+            }
+        }
+        return array_merge($rules, [
             [['singularModelClass'], 'boolean'],
         ]);
     }
