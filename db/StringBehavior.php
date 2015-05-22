@@ -4,11 +4,9 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\utils\db;
 
 use yii\base\Behavior;
-use yii\base\Model;
-use yii\db\ActiveRecord;
 
 /**
  * StringBehavior allows to configure how a model is cast to string.
@@ -30,10 +28,10 @@ class StringBehavior extends Behavior
         if ($this->attributes !== null) {
             return;
         }
-        if (!($this->owner instanceof ActiveRecord)) {
+        if (!($this->owner instanceof \yii\db\ActiveRecord)) {
             return;
         }
-        /** @var ActiveRecord $model */
+        /** @var \yii\db\ActiveRecord $model */
         $model = $this->owner;
         foreach ($model->getTableSchema()->columns as $name => $column) {
             if ($column->type == 'string' || $column->type == 'text') {

@@ -15,12 +15,13 @@ class ActiveRecord extends \yii\db\ActiveRecord
     public function behaviors()
     {
         return [
-            'string' => array(
+            'string' => [
                 'class' => 'netis\utils\db\StringBehavior',
-            ),
-            'trackable' => array(
+            ],
+            'trackable' => [
                 'class' => 'nineinchnick\audit\behaviors\TrackableBehavior',
-            ),
+                'auditTableName' => 'audits.'.$this->getTableSchema()->name,
+            ],
         ];
     }
 
@@ -28,8 +29,13 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         /** @var \netis\utils\db\StringBehavior */
         if (($string = $this->getBehavior('string')) !== null) {
-            return implode($string->separator, $this->getAttributes($crud->attributes));
+            return implode($string->separator, $this->getAttributes($string->attributes));
         }
         return implode('/', $this->getPrimaryKey(true));
+    }
+
+    public static function relations()
+    {
+        return [];
     }
 }
