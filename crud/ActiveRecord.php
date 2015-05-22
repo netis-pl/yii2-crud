@@ -8,10 +8,27 @@ namespace netis\utils\crud;
 
 class ActiveRecord extends \yii\db\ActiveRecord
 {
+
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            'string' => array(
+                'class' => 'netis\utils\db\StringBehavior',
+            ),
+            'trackable' => array(
+                'class' => 'nineinchnick\audit\behaviors\TrackableBehavior',
+            ),
+        ];
+    }
+
     public function __toString()
     {
-        if (($crud = $this->getBehavior('crud')) !== null) {
-            return implode($crud['pkSeparator'], $this->getAttributes((array)$this->$crud['representingColumn']));
+        /** @var \netis\utils\db\StringBehavior */
+        if (($string = $this->getBehavior('string')) !== null) {
+            return implode($string->separator, $this->getAttributes($crud->attributes));
         }
         return implode('/', $this->getPrimaryKey(true));
     }

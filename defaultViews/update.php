@@ -8,18 +8,23 @@ use yii\helpers\Html;
 
 $searchModel = $this->context->getSearchModel();
 $this->title = $searchModel->getCrudLabel($model->isNewRecord ? 'create' : 'update');
-if ($model->isNewRecord) {
+if (!$model->isNewRecord) {
     $this->title .= ': ' . $model->__toString();
 }
-$this->params['breadcrumbs'][] = ['label' => $searchModel->getCrudLabel('index'), 'url' => ['index']];
-if (!$model->isNewRecord) {
-    $this->params['breadcrumbs'][] = ['label' => $model->__toString(), 'url' => ['view', 'id' => $model->primaryKey]];
-}
-$this->params['breadcrumbs'][] = $model->isNewRecord ? $this->title : Yii::t('app', 'Update');
+$this->params['breadcrumbs'] = $this->context->getBreadcrumbs($this->context->action, $model, $searchModel);
 ?>
 <div class="ar-<?= $model->isNewRecord ? 'create' : 'update'; ?>">
 
     <h1><?= Html::encode($this->title) ?></h1>
+
+    <p>
+        <?= \yii\widgets\Menu::widget([
+            'items' => $this->context->getMenu($this->context->action, $searchModel),
+            'itemOptions' => [
+                'class' => 'btn btn-default',
+            ],
+        ]) ?>
+    </p>
 
     <?= $this->render('_form', [
         'searchModel' => $searchModel,

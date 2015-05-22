@@ -7,7 +7,10 @@
 namespace netis\utils\db;
 
 use yii\data\ActiveDataProvider;
+use yii\data\Pagination;
+use yii\data\Sort;
 use yii\db\ActiveQuery;
+use yii\db\Query;
 
 trait ActiveSearchTrait
 {
@@ -47,30 +50,48 @@ trait ActiveSearchTrait
      *
      * @param array $params
      *
+     * @param Query $query
+     * @param array $columns
+     * @param Sort|array $sort
+     * @param Pagination|array $pagination
      * @return ActiveDataProvider
      */
-    public function search($params)
+    public function search($params, Query $query = null, array $columns = null, $sort = null, $pagination = null)
     {
-        /** @var ActiveQuery $query */
-        $query = self::find();
+        if ($query === null) {
+            /** @var ActiveQuery $query */
+            $query = self::find();
+        }
+        if ($query instanceof ActiveQuery) {
+            $query->defaultOrder();
+        }
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => $sort,
+            'pagination' => $pagination,
         ]);
+
+        if ($columns === null && (($string = $this->getBehavior('string')) !== null)) {
+            $columns = $string->attributes;
+        }
+
+        $this->getRelationsSearchFilters($params, $query);
+
+        $this->getSearchFilters($params, $query, $columns);
 
         $this->load($params);
 
         if (!$this->validate()) {
             $query->where('0=1');
-            return $dataProvider;
+        } else {
+            $query->andFilterWhere($this->getAttributes());
+            /*foreach ($this->attributes() as $attribute) {
+                $query->orFilterWhere($this->$attribute);
+                $query->andFilterWhere(['like', 'symbol', $this->symbol])
+                    ->andFilterWhere(['like', 'name', $this->name]);
+            }*/
         }
-
-        $query->andFilterWhere($this->getAttributes());
-        /*foreach ($this->attributes() as $attribute) {
-            $query->orFilterWhere($this->$attribute);
-            $query->andFilterWhere(['like', 'symbol', $this->symbol])
-                ->andFilterWhere(['like', 'name', $this->name]);
-        }*/
 
         return $dataProvider;
     }

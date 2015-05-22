@@ -9,7 +9,7 @@ use yii\grid\GridView;
 
 $searchModel = $this->context->getSearchModel();
 $this->title = $searchModel->getCrudLabel();
-$this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'] = $this->context->getBreadcrumbs($this->context->action, null, $searchModel);
 ?>
 <div class="ar-index">
 
@@ -17,12 +17,17 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <p>
-        <?= Html::a($searchModel->getCrudLabel('create'), ['update'], ['class' => 'btn btn-success']) ?>
+        <?= \yii\widgets\Menu::widget([
+            'items' => $this->context->getMenu($this->context->action, $searchModel),
+            'itemOptions' => [
+                'class' => 'btn btn-default',
+            ],
+        ]) ?>
     </p>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        'filterModel' => $searchModel,
+        //'filterModel' => $searchModel,
         'columns' => $searchModel->getColumns(),
     ]); ?>
 

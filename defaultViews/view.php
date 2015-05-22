@@ -9,22 +9,17 @@ use yii\widgets\DetailView;
 
 $searchModel = $this->context->getSearchModel();
 $this->title = $model->__toString();
-$this->params['breadcrumbs'][] = ['label' => $searchModel->getCrudLabel('index'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'] = $this->context->getBreadcrumbs($this->context->action, $model, $searchModel);
 ?>
 <div class="ar-view">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a($searchModel->getCrudLabel('update'), ['update', 'id' => $model->primaryKey], [
-            'class' => 'btn btn-primary',
-        ]) ?>
-        <?= Html::a($searchModel->getCrudLabel('delete'), ['delete', 'id' => $model->primaryKey], [
-            'class' => 'btn btn-danger',
-            'data' => [
-                'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),
-                'method' => 'post',
+        <?= \yii\widgets\Menu::widget([
+            'items' => $this->context->getMenu($this->context->action, $searchModel),
+            'itemOptions' => [
+                'class' => 'btn btn-default',
             ],
         ]) ?>
     </p>
