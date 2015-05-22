@@ -7,16 +7,17 @@ use yii\grid\GridView;
 /* @var $searchModel netis\utils\db\ActiveSearchTrait */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
+$searchModel = $this->context->getSearchModel();
 $this->title = $searchModel->getCrudLabel();
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="product-index">
+<div class="ar-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <p>
-        <?= Html::a($searchModel->getCrudLabel('create'), ['create'], ['class' => 'btn btn-success']) ?>
+        <?= Html::a($searchModel->getCrudLabel('create'), ['update'], ['class' => 'btn btn-success']) ?>
     </p>
 
     <?= GridView::widget([

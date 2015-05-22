@@ -4,16 +4,20 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\web;
+namespace netis\utils\crud;
 
 use netis\utils\db\ActiveSearchTrait;
 use Yii;
 use yii\db\ActiveRecord;
+use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
-class CrudController extends Controller
+/**
+ * Class Controller
+ * @package netis\utils\crud
+ */
+class Controller extends \yii\web\Controller
 {
     /**
      * @var string name of the ActiveRecord class for which this controller provides a CRUD interface.
@@ -38,6 +42,15 @@ class CrudController extends Controller
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
@@ -58,7 +71,6 @@ class CrudController extends Controller
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }
@@ -71,49 +83,31 @@ class CrudController extends Controller
     public function actionView($id)
     {
         return $this->render('view', [
-            'searchModel' => new $this->searchModelClass(),
             'model' => $this->findModel($id),
         ]);
     }
 
     /**
-     * Creates a new AR model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return mixed
-     */
-    public function actionCreate()
-    {
-        /** @var ActiveRecord $model */
-        $model = new $this->modelClass();
-
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->primaryKey]);
-        } else {
-            return $this->render('create', [
-                'searchModel' => new $this->searchModelClass(),
-                'model' => $model,
-            ]);
-        }
-    }
-
-    /**
-     * Updates an existing AR model.
-     * If update is successful, the browser will be redirected to the 'view' page.
+     * Updates an existing AR model or creates a new one.
+     * If update or creation is successful, the browser will be redirected to the 'view' page.
      * @param integer $id
      * @return mixed
      */
-    public function actionUpdate($id)
+    public function actionUpdate($id = null)
     {
-        $model = $this->findModel($id);
+        if ($id === null) {
+            /** @var ActiveRecord $model */
+            $model = new $this->modelClass();
+        } else {
+            $model = $this->findModel($id);
+        }
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->primaryKey]);
-        } else {
-            return $this->render('update', [
-                'searchModel' => new $this->searchModelClass(),
-                'model' => $model,
-            ]);
         }
+        return $this->render('update', [
+            'model' => $model,
+        ]);
     }
 
     /**

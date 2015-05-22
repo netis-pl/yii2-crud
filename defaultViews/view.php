@@ -7,6 +7,7 @@ use yii\widgets\DetailView;
 /* @var $searchModel netis\utils\db\ActiveSearchTrait */
 /* @var $model yii\db\ActiveRecord */
 
+$searchModel = $this->context->getSearchModel();
 $this->title = $model->__toString();
 $this->params['breadcrumbs'][] = ['label' => $searchModel->getCrudLabel('index'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
@@ -16,7 +17,9 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a($searchModel->getCrudLabel('update'), ['update', 'id' => $model->primaryKey], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a($searchModel->getCrudLabel('update'), ['update', 'id' => $model->primaryKey], [
+            'class' => 'btn btn-primary',
+        ]) ?>
         <?= Html::a($searchModel->getCrudLabel('delete'), ['delete', 'id' => $model->primaryKey], [
             'class' => 'btn btn-danger',
             'data' => [

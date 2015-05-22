@@ -6,12 +6,18 @@ use yii\helpers\Html;
 /* @var $searchModel netis\utils\db\ActiveSearchTrait */
 /* @var $model yii\db\ActiveRecord */
 
-$this->title = $searchModel->getCrudLabel('update') . ': ' . $model->__toString();
+$searchModel = $this->context->getSearchModel();
+$this->title = $searchModel->getCrudLabel($model->isNewRecord ? 'create' : 'update');
+if ($model->isNewRecord) {
+    $this->title .= ': ' . $model->__toString();
+}
 $this->params['breadcrumbs'][] = ['label' => $searchModel->getCrudLabel('index'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = ['label' => $model->__toString(), 'url' => ['view', 'id' => $model->primaryKey]];
-$this->params['breadcrumbs'][] = Yii::t('app', 'Update');
+if (!$model->isNewRecord) {
+    $this->params['breadcrumbs'][] = ['label' => $model->__toString(), 'url' => ['view', 'id' => $model->primaryKey]];
+}
+$this->params['breadcrumbs'][] = $model->isNewRecord ? $this->title : Yii::t('app', 'Update');
 ?>
-<div class="ar-update">
+<div class="ar-<?= $model->isNewRecord ? 'create' : 'update'; ?>">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
