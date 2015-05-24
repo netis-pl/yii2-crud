@@ -6,10 +6,12 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $searchModel netis\utils\db\ActiveSearchTrait */
 /* @var $dataProvider yii\data\ActiveDataProvider */
+/* @var $controller netis\utils\crud\ActiveController */
 
-$searchModel = $this->context->getSearchModel();
+$controller = $this->context;
+$searchModel = $controller->getSearchModel();
 $this->title = $searchModel->getCrudLabel();
-$this->params['breadcrumbs'] = $this->context->getBreadcrumbs($this->context->action, null, $searchModel);
+$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, null, $searchModel);
 ?>
 <div class="ar-index">
 
@@ -18,7 +20,7 @@ $this->params['breadcrumbs'] = $this->context->getBreadcrumbs($this->context->ac
 
     <p>
         <?= \yii\widgets\Menu::widget([
-            'items' => $this->context->getMenu($this->context->action, $searchModel),
+            'items' => $controller->getMenu($controller->action, $searchModel),
             'itemOptions' => [
                 'class' => 'btn btn-default',
             ],
