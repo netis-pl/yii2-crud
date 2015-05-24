@@ -170,8 +170,8 @@ DESC;
                 $params = [
                     'className' => $searchClassName,
                     'modelClassName' => $modelClassName,
-                    'labels' => $this->generateSearchLabels($tableSchema),
-                    'rules' => $this->generateSearchRules($tableSchema),
+                    'labels' => $this->generateLabels($tableSchema),
+                    'rules' => $this->generateRules($tableSchema, true),
                 ];
                 $files[] = new CodeFile(
                     Yii::getAlias('@' . str_replace('\\', '/', $this->searchNs)) . '/' . $searchClassName . '.php',
@@ -215,69 +215,266 @@ DESC;
                 ]";
             }
         }
+
+        return $rules;
+    }
+
+    /**
+     * @param array $rules
+     * @param \yii\db\ColumnSchema $column
+     * @param string|bool $behavesAs
+     * @return array
+     */
+    protected function getColumnRules($rules, $column, $behavesAs = false)
+    {
+        $isRequired = !$column->allowNull && $column->defaultValue === null;
+
+        if ($behavesAs === 'blameableNote') {
+            $rules['updateTrim']['attributes'][] = $column->name;
+            $rules['updateDefault']['attributes'][] = $column->name;
+            if ($isRequired) {
+                $rules['updateRequired']['attributes'][] = $column->name;
+            }
+        } elseif (is_string($behavesAs)) {
+            return $rules;
+        } else {
+            $rules['trim']['attributes'][] = $column->name;
+            $rules['default']['attributes'][] = $column->name;
+            if ($isRequired) {
+                $rules['required']['attributes'][] = $column->name;
+            }
+        }
+
+        switch ($column->type) {
+            case Schema::TYPE_PK:
+            case Schema::TYPE_BIGPK:
+            case Schema::TYPE_SMALLINT:
+            case Schema::TYPE_INTEGER:
+            case Schema::TYPE_BIGINT:
+                if (!strcasecmp($column->name, 'price')) {
+                    if (!isset($rules['filterDecimal__2_100'])) {
+                        $rules['filterDecimal__2_100']['validator'] = 'filter';
+                        $rules['filterDecimal__2_100']['filter'] = "function foo(\$value) {
+                                return Yii::\$app->formatter->filterDecimal(\$value, null, 2, 100);
+                            }";
+                    }
+                    $rules['filterDecimal__2_100']['attributes'][] = $column->name;
+                }
+                $isUnsigned = strpos($column->dbType, 'unsigned') !== false;
+                $type = '';
+                $range = [];
+                switch ($column->type) {
+                    case Schema::TYPE_SMALLINT:
+                        $type = '2';
+                        $range['min'] = $isUnsigned ? 0 : -0x8000;
+                        $range['max'] = $isUnsigned ? 0xFFFF : 0x7FFF;
+                        break;
+                    case Schema::TYPE_PK:
+                    case Schema::TYPE_INTEGER:
+                        $type = '4';
+                        $range['min'] = $isUnsigned ? 0 : -0x80000000;
+                        $range['max'] = $isUnsigned ? 0xFFFFFFFF : 0x7FFFFFFF;
+                        break;
+                    case Schema::TYPE_BIGPK:
+                    case Schema::TYPE_BIGINT:
+                        $type = '8';
+                        break;
+                }
+                $name = 'int_'.($isUnsigned ? 'u' : '').$type;
+                if (!isset($rules[$name])) {
+                    $rules[$name] = array_merge($range, [
+                        'validator' => 'integer',
+                        'skipOnEmpty' => $column->allowNull,
+                    ]);
+                }
+                $rules[$name]['attributes'][] = $column->name;
+                break;
+            case Schema::TYPE_FLOAT:
+            case Schema::TYPE_DOUBLE:
+            case Schema::TYPE_DECIMAL:
+                $rules['number']['attributes'][] = $column->name;
+                break;
+            case Schema::TYPE_DATETIME:
+            case Schema::TYPE_TIMESTAMP:
+                $rules['filterDatetime']['attributes'][] = $column->name;
+                $rules['formatDatetime']['attributes'][] = $column->name;
+                break;
+            case Schema::TYPE_TIME:
+                $rules['filterTime']['attributes'][] = $column->name;
+                $rules['formatTime']['attributes'][] = $column->name;
+                break;
+            case Schema::TYPE_DATE:
+                $rules['filterDate']['attributes'][] = $column->name;
+                $rules['formatDate']['attributes'][] = $column->name;
+                break;
+            // Schema::TYPE_BINARY is treated as string, handled in the default case
+            case Schema::TYPE_BOOLEAN:
+                $rules['filterBoolean']['attributes'][] = $column->name;
+                $rules['boolean']['attributes'][] = $column->name;
+                break;
+            case Schema::TYPE_MONEY:
+                $rules['number']['attributes'][] = $column->name;
+                break;
+            default: // strings
+                if ($column->dbType === 'interval') {
+                    $rules['filterInterval']['attributes'][] = $column->name;
+                    $rules['interval']['attributes'][] = $column->name;
+                    break;
+                }
+                if ($column->size > 0) {
+                    $rules['lengths' . $column->size]['validator'] = 'string';
+                    $rules['lengths' . $column->size]['max'] = $column->size;
+                    $rules['lengths' . $column->size]['attributes'][] = $column->name;
+                } elseif (!strcasecmp($column->name, 'email')) {
+                    $rules['email']['attributes'][] = $column->name;
+                } else {
+                    $rules['safe']['attributes'][] = $column->name;
+                }
+                break;
+        }
         return $rules;
     }
 
     /**
      * Generates validation rules for the specified table.
      * @param \yii\db\TableSchema $table the table schema
+     * @param bool $isSearchScenario if false, special columns will be unsafe (no rules)
      * @return array the generated validation rules
      */
-    public function generateRules($table)
+    public function generateRules($table, $isSearchScenario = false)
     {
-        $types = [];
-        $lengths = [];
+        $behaviors = $this->generateBehaviors($table);
+
+        /** @var array $rules predefine only rules with names different than the validator */
+        $rules = [
+            'safe' => [
+                'attributes' => [],
+            ],
+            'updateTrim' => [
+                'validator' => 'trim',
+                'on' => 'update',
+            ],
+            'updateDefault' => [
+                'validator' => 'default',
+                'on' => 'update',
+            ],
+            'updateRequired' => [
+                'validator' => 'required',
+                'on' => 'update',
+            ],
+            'filterDatetime' => [
+                'validator' => 'filter',
+                'filter' => "[Yii::\$app->formatter, 'filterDatetime']",
+            ],
+            'filterDate' => [
+                'validator' => 'filter',
+                'filter' => "[Yii::\$app->formatter, 'filterDate']",
+            ],
+            'filterTime' => [
+                'validator' => 'filter',
+                'filter' => "[Yii::\$app->formatter, 'filterTime']",
+            ],
+            'formatDatetime' => [
+                'validator' => 'date',
+                'format' => "['yyyy-MM-dd', 'yyyy-MM-dd HH:mm', 'yyyy-MM-dd HH:mm:ss']",
+            ],
+            'formatTimestamp' => [
+                'validator' => 'date',
+                'format' => "['yyyy-MM-dd', 'yyyy-MM-dd HH:mm', 'yyyy-MM-dd HH:mm:ss']",
+            ],
+            'formatDate' => [
+                'validator' => 'date',
+                'format' => "'yyyy-MM-dd'",
+            ],
+            'formatTime' => [
+                'validator' => 'date',
+                'format' => "['HH:mm', 'HH:mm:ss']",
+            ],
+            'filterBoolean' => [
+                'validator' => 'filter',
+                'filter' => "[Yii::\$app->formatter, 'filterBoolean']",
+            ],
+            'filterInterval' => [
+                'validator' => 'filter',
+                'filter' => "[Yii::\$app->formatter, 'filterInterval']",
+            ],
+            'interval' => [
+                'validator' => 'netis\utils\validators\IntervalValidator',
+            ],
+        ];
+
         foreach ($table->columns as $column) {
             if ($column->autoIncrement) {
                 continue;
             }
-            if (!$column->allowNull && $column->defaultValue === null) {
-                $types['required'][] = $column->name;
-            }
-            switch ($column->type) {
-                case Schema::TYPE_SMALLINT:
-                case Schema::TYPE_INTEGER:
-                case Schema::TYPE_BIGINT:
-                    $types['integer'][] = $column->name;
-                    break;
-                case Schema::TYPE_BOOLEAN:
-                    $types['boolean'][] = $column->name;
-                    break;
-                case Schema::TYPE_FLOAT:
-                case 'double': // Schema::TYPE_DOUBLE, which is available since Yii 2.0.3
-                case Schema::TYPE_DECIMAL:
-                case Schema::TYPE_MONEY:
-                    $types['number'][] = $column->name;
-                    break;
-                case Schema::TYPE_DATE:
-                case Schema::TYPE_TIME:
-                case Schema::TYPE_DATETIME:
-                case Schema::TYPE_TIMESTAMP:
-                    $types['safe'][] = $column->name;
-                    break;
-                default: // strings
-                    if ($column->size > 0) {
-                        $lengths[$column->size][] = $column->name;
-                    } else {
-                        $types['string'][] = $column->name;
+
+            // assume special attributes will ALWAYS be filled automatically and are never required by user
+            $behavesAs = false;
+            foreach ($behaviors as $behaviorName => $behavior) {
+                foreach ($behavior['options'] as $option) {
+                    if ($option === $column->name) {
+                        if ($option === 'updateNotesAttribute') {
+                            $behavesAs = 'blameableNote';
+                        } else {
+                            $behavesAs = $behaviorName;
+                        }
+                        break 2;
                     }
+                }
+            }
+
+            $rules = $this->getColumnRules($rules, $column, $isSearchScenario ? true : $behavesAs);
+        }
+
+        // remove safe attributes that have any other rules without a specific scenario
+        $safeAttributes = [];
+        foreach ($rules as $rule) {
+            if (isset($rule['on']) || !isset($rule['attributes']) || empty($rule['attributes'])) {
+                continue;
+            }
+            $safeAttributes += $rule['attributes'];
+        }
+        $safeAttributes = array_flip($safeAttributes);
+        foreach ($rules['safe']['attributes'] as $key => $attribute) {
+            if (isset($safeAttributes[$attribute])) {
+                unset($rules['safe']['attributes'][$key]);
             }
         }
-        $rules = [];
-        foreach ($types as $type => $columns) {
-            $rules[] = "[['" . implode("', '", $columns) . "'], '$type']";
-        }
-        foreach ($lengths as $length => $columns) {
-            $rules[] = "[['" . implode("', '", $columns) . "'], 'string', 'max' => $length]";
+
+        $result = [];
+        foreach ($rules as $ruleName => $rule) {
+            if (!isset($rule['attributes']) || empty($rule['attributes'])) {
+                continue;
+            }
+            $attributes = $rule['attributes'];
+            unset($rule['attributes']);
+            $validator = $ruleName;
+            if (isset($rule['validator'])) {
+                $validator = $rule['validator'];
+                unset($rule['validator']);
+            }
+            $params = '';
+            if (!empty($rule)) {
+                $params = ', ' . implode(', ', array_map(function ($k, $v) {
+                    return "'$k' => '$v'";
+                }, array_keys($rule), array_values($rule)));
+            }
+            if ($ruleName === 'formatTimestamp') {
+                foreach ($attributes as $attribute) {
+                    $result[] = "[['$attribute'], '$validator'{$params}, 'timestampAttribute' => '$attribute']";
+                }
+            } else {
+                $result[] = "[['" . implode("', '", $attributes) . "'], '$validator'{$params}]";
+            }
         }
 
         try {
-            $rules += $this->generateUniqueRules($table);
+            $result += $this->generateUniqueRules($table);
         } catch (NotSupportedException $e) {
             // doesn't support unique indexes information...do nothing
         }
 
-        return $rules;
+        return $result;
     }
 
     /**
@@ -291,14 +488,20 @@ DESC;
             [
                 'name' => 'blameable',
                 'attributes' => ['author_id', 'created_by', 'created_id'],
-                'class' => 'yii\behaviors\BlameableBehavior',
+                'class' => 'netis\utils\db\BlameableBehavior',
                 'optionName' => 'createdByAttribute',
             ],
             [
                 'name' => 'blameable',
                 'attributes' => ['editor_id', 'edited_by', 'updated_by', 'updated_id', 'last_editor_id'],
-                'class' => 'yii\behaviors\BlameableBehavior',
+                'class' => 'netis\utils\db\BlameableBehavior',
                 'optionName' => 'updatedByAttribute',
+            ],
+            [
+                'name' => 'blameable',
+                'attributes' => ['update_reason'],
+                'class' => 'netis\utils\db\BlameableBehavior',
+                'optionName' => 'updateNotesAttribute',
             ],
             [
                 'name' => 'timestamp',
@@ -307,7 +510,7 @@ DESC;
                 'optionName' => 'createdAtAttribute',
             ],
             [
-                'name' => 'togglable',
+                'name' => 'toggable',
                 'attributes' => [
                     'is_disabled', 'disabled', 'is_deleted', 'deleted', 'is_removed', 'removed', 'is_hidden', 'hidden',
                 ],
@@ -315,7 +518,7 @@ DESC;
                 'optionName' => 'disabledAtAttribute',
             ],
             [
-                'name' => 'togglable',
+                'name' => 'toggable',
                 'attributes' => ['is_enabled', 'enabled', 'is_active', 'active', 'is_visible', 'visible'],
                 'class' => 'netis\utils\db\ToggableBehavior',
                 'optionName' => 'enabledAtAttribute',
@@ -331,7 +534,7 @@ DESC;
             'string' => [
                 'class' => 'netis\utils\db\StringBehavior',
                 'options' => [
-                    'attributes' => ["'" . $this->getLabelAttribute($table) . "'"],
+                    'attributes' => [$this->getLabelAttribute($table)],
                 ],
             ],
         ];
@@ -339,7 +542,7 @@ DESC;
             foreach ($available as $options) {
                 if (in_array($column->name, $options['attributes'])) {
                     $behaviors[$options['name']] = ['class' => $options['class']];
-                    $behaviors['blameable']['options'][$options['optionName']] = "'{$column->name}'";
+                    $behaviors[$options['name']]['options'][$options['optionName']] = $column->name;
                     break;
                 }
             }
@@ -366,7 +569,11 @@ DESC;
             2 => null,
             3 => null,
         ];
+        $primaryKeys = [];
         foreach ($table->columns as $column) {
+            if ($column->isPrimaryKey) {
+                $primaryKeys[] = $column->name;
+            }
             foreach ($possible as $weight => $possibleLabel) {
                 if (!strcasecmp($column->name, $possibleLabel)) {
                     $labels[$weight] = $column->name;
@@ -377,10 +584,9 @@ DESC;
             }
         }
 
-        /* @var $class \yii\db\ActiveRecord */
-        $class = $this->modelClass;
-        $pk = $class::primaryKey();
-        array_push($labels, $pk[0]);
+        if (($primaryKey = reset($primaryKeys)) !== false) {
+            array_push($labels, $primaryKey);
+        }
 
         foreach ($table->columns as $column) {
             array_push($labels, $column->name);
@@ -388,94 +594,13 @@ DESC;
 
         ksort($labels);
 
-        while (($label = reset($labels)) !== false) {
+        while (($label = array_shift($labels)) !== false) {
             if ($label !== null) {
                 return $label;
             }
         }
 
         return null;
-    }
-
-    /**
-     * Generates validation rules for the search model.
-     * @param \yii\db\TableSchema $table the table schema
-     * @return array the generated validation rules
-     */
-    public function generateSearchRules($table)
-    {
-        $types = [];
-        foreach ($table->columns as $column) {
-            switch ($column->type) {
-                case Schema::TYPE_SMALLINT:
-                case Schema::TYPE_INTEGER:
-                case Schema::TYPE_BIGINT:
-                    $types['integer'][] = $column->name;
-                    break;
-                case Schema::TYPE_BOOLEAN:
-                    $types['boolean'][] = $column->name;
-                    break;
-                case Schema::TYPE_FLOAT:
-                case Schema::TYPE_DOUBLE:
-                case Schema::TYPE_DECIMAL:
-                case Schema::TYPE_MONEY:
-                    $types['number'][] = $column->name;
-                    break;
-                case Schema::TYPE_DATE:
-                case Schema::TYPE_TIME:
-                case Schema::TYPE_DATETIME:
-                case Schema::TYPE_TIMESTAMP:
-                default:
-                    $types['safe'][] = $column->name;
-                    break;
-            }
-        }
-
-        $rules = [];
-        foreach ($types as $type => $columns) {
-            $rules[] = "[['" . implode("', '", $columns) . "'], '$type']";
-        }
-
-        return $rules;
-    }
-
-    /**
-     * @param \yii\db\TableSchema $table the table schema
-     * @return array searchable attributes
-     */
-    public function getSearchAttributes($table)
-    {
-        return $table->getColumnNames();
-    }
-
-    /**
-     * Generates the attribute labels for the search model.
-     * @param \yii\db\TableSchema $table the table schema
-     * @return array the generated attribute labels (name => label)
-     */
-    public function generateSearchLabels($table)
-    {
-        /* @var $model \yii\base\Model */
-        $model = new $this->modelClass();
-        $attributeLabels = $model->attributeLabels();
-        $labels = [];
-        foreach ($table->getColumnNames() as $name) {
-            if (isset($attributeLabels[$name])) {
-                $labels[$name] = $attributeLabels[$name];
-            } else {
-                if (!strcasecmp($name, 'id')) {
-                    $labels[$name] = 'ID';
-                } else {
-                    $label = Inflector::camel2words($name);
-                    if (!empty($label) && substr_compare($label, ' id', -3, 3, true) === 0) {
-                        $label = substr($label, 0, -3) . ' ID';
-                    }
-                    $labels[$name] = $label;
-                }
-            }
-        }
-
-        return $labels;
     }
 
     /**
@@ -584,4 +709,5 @@ DESC;
         return $searchClassName;
     }
 }
+
 

@@ -81,7 +81,9 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
             '<?= $name ?>' => [
                 'class' => '<?= $behavior['class'] ?>',
 <?php foreach ($behavior['options'] as $option => $optionValue): ?>
-                <?= "'$option' => " . (is_array($optionValue) ? '[' . implode(', ', $optionValue) . ']' : $optionValue) ?>,
+                <?= "'$option' => " . (is_array($optionValue)
+                    ? "['" . implode("', '", $optionValue) . "']"
+                    : "'{$optionValue}'") ?>,
 <?php endforeach; ?>
             ],
 <?php endforeach; ?>

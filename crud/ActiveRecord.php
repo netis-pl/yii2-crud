@@ -62,6 +62,8 @@ class ActiveRecord extends \yii\db\ActiveRecord
      * Note, in order to inherit formats defined in the parent class, a child class needs to
      * merge the parent formats with child formats using functions such as `array_merge()`.
      *
+     * Note, when defining enum formats, remember to add an `in` validator to the rules.
+     *
      * @return array attribute formats (name => format)
      */
     public function attributeFormats()
