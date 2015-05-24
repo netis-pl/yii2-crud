@@ -19,3 +19,5 @@ echo $form->field($generator, 'enableI18N')->checkbox();
 echo $form->field($generator, 'messageCategory');
 echo $form->field($generator, 'useSchemaName')->checkbox();
 echo $form->field($generator, 'singularModelClass')->checkbox();
+echo $form->field($generator, 'searchNs');
+echo $form->field($generator, 'searchModelClass');

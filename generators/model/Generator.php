@@ -235,7 +235,7 @@ DESC;
             if ($isRequired) {
                 $rules['updateRequired']['attributes'][] = $column->name;
             }
-        } elseif (is_string($behavesAs)) {
+        } elseif (is_string($behavesAs) && in_array($behavesAs, ['blameable', 'timestamp', 'toggable'])) {
             return $rules;
         } else {
             $rules['trim']['attributes'][] = $column->name;
@@ -266,14 +266,14 @@ DESC;
                 switch ($column->type) {
                     case Schema::TYPE_SMALLINT:
                         $type = '2';
-                        $range['min'] = $isUnsigned ? 0 : -0x8000;
-                        $range['max'] = $isUnsigned ? 0xFFFF : 0x7FFF;
+                        $range['min'] = $isUnsigned ? '0' : '-0x8000';
+                        $range['max'] = $isUnsigned ? '0xFFFF' : '0x7FFF';
                         break;
                     case Schema::TYPE_PK:
                     case Schema::TYPE_INTEGER:
                         $type = '4';
-                        $range['min'] = $isUnsigned ? 0 : -0x80000000;
-                        $range['max'] = $isUnsigned ? 0xFFFFFFFF : 0x7FFFFFFF;
+                        $range['min'] = $isUnsigned ? '0' : '-0x80000000';
+                        $range['max'] = $isUnsigned ? '0xFFFFFFFF' : '0x7FFFFFFF';
                         break;
                     case Schema::TYPE_BIGPK:
                     case Schema::TYPE_BIGINT:
@@ -284,7 +284,7 @@ DESC;
                 if (!isset($rules[$name])) {
                     $rules[$name] = array_merge($range, [
                         'validator' => 'integer',
-                        'skipOnEmpty' => $column->allowNull,
+                        'skipOnEmpty' => $column->allowNull ? 'true' : 'false',
                     ]);
                 }
                 $rules[$name]['attributes'][] = $column->name;
@@ -347,7 +347,13 @@ DESC;
 
         /** @var array $rules predefine only rules with names different than the validator */
         $rules = [
-            'safe' => [
+            'trim' => [
+                'attributes' => [],
+            ],
+            'default' => [
+                'attributes' => [],
+            ],
+            'required' => [
                 'attributes' => [],
             ],
             'updateTrim' => [
@@ -400,6 +406,9 @@ DESC;
             ],
             'interval' => [
                 'validator' => 'netis\utils\validators\IntervalValidator',
+            ],
+            'safe' => [
+                'attributes' => [],
             ],
         ];
 
@@ -456,7 +465,7 @@ DESC;
             $params = '';
             if (!empty($rule)) {
                 $params = ', ' . implode(', ', array_map(function ($k, $v) {
-                    return "'$k' => '$v'";
+                    return "'$k' => $v";
                 }, array_keys($rule), array_values($rule)));
             }
             if ($ruleName === 'formatTimestamp') {
@@ -510,18 +519,24 @@ DESC;
                 'optionName' => 'createdAtAttribute',
             ],
             [
+                'name' => 'timestamp',
+                'attributes' => ['updated_on', 'updated_at', 'update_at', 'updated_date', 'date_updated'],
+                'class' => 'yii\behaviors\TimestampBehavior',
+                'optionName' => 'updatedAtAttribute',
+            ],
+            [
                 'name' => 'toggable',
                 'attributes' => [
                     'is_disabled', 'disabled', 'is_deleted', 'deleted', 'is_removed', 'removed', 'is_hidden', 'hidden',
                 ],
                 'class' => 'netis\utils\db\ToggableBehavior',
-                'optionName' => 'disabledAtAttribute',
+                'optionName' => 'disabledAttribute',
             ],
             [
                 'name' => 'toggable',
                 'attributes' => ['is_enabled', 'enabled', 'is_active', 'active', 'is_visible', 'visible'],
                 'class' => 'netis\utils\db\ToggableBehavior',
-                'optionName' => 'enabledAtAttribute',
+                'optionName' => 'enabledAttribute',
             ],
             [
                 'name' => 'sortable',
@@ -541,7 +556,7 @@ DESC;
         foreach ($table->columns as $column) {
             foreach ($available as $options) {
                 if (in_array($column->name, $options['attributes'])) {
-                    $behaviors[$options['name']] = ['class' => $options['class']];
+                    $behaviors[$options['name']]['class'] = $options['class'];
                     $behaviors[$options['name']]['options'][$options['optionName']] = $column->name;
                     break;
                 }
