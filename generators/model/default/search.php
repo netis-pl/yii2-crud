@@ -13,7 +13,7 @@ use yii\helpers\Inflector;
 /* @var $rules string[] list of validation rules */
 
 $modelFullClassName = $modelClassName;
-if ($generator->ns !== $generator->queryNs) {
+if ($generator->ns !== $generator->searchNs) {
     $modelFullClassName = '\\' . $generator->ns . '\\' . $modelFullClassName;
 }
 if ($modelClassName === $className) {
