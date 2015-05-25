@@ -14,12 +14,17 @@
 /* @var $relations array list of relations (name => relation declaration) */
 /* @var $behaviors array list of behaviors (name => behavior declaration) */
 
+$queryClassFullName = ($generator->ns === $generator->queryNs) ? $queryClassName : '\\' . $generator->queryNs . '\\' . $queryClassName;
+
 echo "<?php\n";
 ?>
 
 namespace <?= $generator->ns ?>;
 
 use Yii;
+<?php if ($queryClassName && $generator->ns !== $generator->queryNs): ?>
+use <?= $generator->queryNs . '\\' . $queryClassName; ?>;
+<?php endif; ?>
 
 /**
  * This is the model class for table "<?= $generator->generateTableName($tableName) ?>".
@@ -93,7 +98,7 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
     /**
      * @inheritdoc
      */
-    public function relations()
+    public static function relations()
     {
         return [
 <?php foreach ($relations as $name => $relation): ?>
@@ -104,7 +109,7 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
 <?php foreach ($relations as $name => $relation): ?>
 
     /**
-     * @return \yii\db\ActiveQuery
+     * @return <?= ($queryClassName ? $queryClassName : '\yii\db\ActiveQuery')."\n" ?>
      */
     public function get<?= $name ?>()
     {
@@ -112,17 +117,14 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
     }
 <?php endforeach; ?>
 <?php if ($queryClassName): ?>
-<?php
-    $queryClassFullName = ($generator->ns === $generator->queryNs) ? $queryClassName : '\\' . $generator->queryNs . '\\' . $queryClassName;
-    echo "\n";
-?>
+
     /**
      * @inheritdoc
-     * @return <?= $queryClassFullName ?> the active query used by this AR class.
+     * @return <?= $queryClassName ?> the active query used by this AR class.
      */
     public static function find()
     {
-        return new <?= $queryClassFullName ?>(get_called_class());
+        return new <?= $queryClassName ?>(get_called_class());
     }
 <?php endif; ?>
 }

@@ -6,6 +6,7 @@
 
 namespace netis\utils\crud;
 
+use netis\utils\db\ActiveQuery;
 use netis\utils\db\ActiveSearchTrait;
 use Yii;
 use yii\data\ActiveDataProvider;
@@ -37,7 +38,26 @@ class IndexAction extends Action
             call_user_func($this->checkAccess, $this->id);
         }
 
-        return $this->prepareDataProvider();
+        return [
+            'dataProvider' => $this->prepareDataProvider(),
+            'columns' => $this->getGridColumns(),
+        ];
+    }
+
+    /**
+     * Retrieves grid columns configuration using the modelClass.
+     * @return array grid columns
+     */
+    protected function getGridColumns()
+    {
+        if ($this->controller instanceof ActiveController && $this->controller->searchModelClass !== null) {
+            /** @var ActiveSearchTrait $searchModel */
+            $searchModel = new $this->controller->searchModelClass();
+            return $searchModel->getColumns();
+        }
+        /** @var \yii\db\BaseActiveRecord $model */
+        $model = new $this->modelClass;
+        return $model->attributes();
     }
 
     /**
@@ -55,7 +75,7 @@ class IndexAction extends Action
             $searchModel = new $this->controller->searchModelClass();
             return $searchModel->search(Yii::$app->request->queryParams);
         }
-        /** @var $modelClass \yii\db\BaseActiveRecord */
+        /** @var \yii\db\BaseActiveRecord $modelClass */
         $modelClass = $this->modelClass;
         /** @var ActiveQuery $query */
         $query = $modelClass::find();

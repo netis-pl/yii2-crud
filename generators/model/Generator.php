@@ -44,23 +44,7 @@ DESC;
      */
     public function rules()
     {
-        $rules = parent::rules();
-        foreach ($rules as $key => $rule) {
-            $attributes = array_shift($rule);
-            $validator = array_shift($rule);
-            if ((in_array('ns', $attributes) || in_array('queryNs', $attributes))
-                && $validator === 'match' && isset($rule['pattern']) && $rule['pattern'] === '/^[\w\\\\]+$/'
-            ) {
-                $rules[$key][0] = array_diff($attributes, ['ns', 'queryNs']);
-                $rules[] = [
-                    ['ns', 'queryNs'],
-                    'match',
-                    'pattern' => '/^[\w\\\\\\-]+$/',
-                    'message' => $rule['message'],
-                ];
-            }
-        }
-        return array_merge($rules, [
+        return array_merge(parent::rules(), [
             [['searchModelClass', 'searchNs'], 'trim'],
             [['searchNs'], 'filter', 'filter' => function ($value) {
                 return trim($value, '\\');
@@ -82,7 +66,7 @@ DESC;
             [
                 ['searchNs'],
                 'match',
-                'pattern' => '/^[\w\\\\\\-]+$/',
+                'pattern' => '/^[\w\\\\]+$/',
                 'message' => 'Only word characters and backslashes are allowed.',
             ],
             [['searchModelClass'], 'validateNewClass'],
@@ -254,9 +238,9 @@ DESC;
                 if (!strcasecmp($column->name, 'price')) {
                     if (!isset($rules['filterDecimal__2_100'])) {
                         $rules['filterDecimal__2_100']['validator'] = 'filter';
-                        $rules['filterDecimal__2_100']['filter'] = "function foo(\$value) {
-                                return Yii::\$app->formatter->filterDecimal(\$value, null, 2, 100);
-                            }";
+                        $rules['filterDecimal__2_100']['filter'] = "function (\$value) {
+                return Yii::\$app->formatter->filterDecimal(\$value, null, 2, 100);
+            }";
                     }
                     $rules['filterDecimal__2_100']['attributes'][] = $column->name;
                 }
