@@ -4,6 +4,7 @@ use yii\helpers\Html;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
+/* @var $fields array */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
@@ -12,12 +13,15 @@ if (!$model->isNewRecord) {
     $this->title .= ': ' . $model->__toString();
 }
 $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
-$this->params['menuItems'] = $controller->getMenu($controller->action, $model);
+$this->params['menu'] = $controller->getMenu($controller->action, $model);
 ?>
 
 <h1><?= Html::encode($this->title) ?></h1>
 
+<?= netis\utils\web\Alerts::widget() ?>
+
 <?= $this->render('_form', [
     'model' => $model,
+    'fields' => $fields,
 ]) ?>
 

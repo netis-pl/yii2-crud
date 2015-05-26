@@ -1,25 +1,100 @@
 <?php
 
+use yii\base\Model;
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
+/* @var $fields array */
 /* @var $form yii\widgets\ActiveForm */
+/* @var $controller netis\utils\crud\ActiveController */
+/* @var $view \netis\utils\web\View */
+
+$controller = $this->context;
+$view = $this;
+$maxColumnWidth = Yii::$app->request->getIsAjax() ? 12 : 6;
+
+$renderControlGroup = function ($name, $data, $form) use ($controller, $model) {
+    /** @var \netis\utils\crud\ActiveController $controller */
+    /** @var Model $model */
+    /** @var ActiveForm $form */
+    if (isset($data['model'])) {
+        $model = $data['model'];
+    }
+    $field = $form->field($model, $data['attribute'], $data['options']);
+    if (isset($data['formMethod'])) {
+        if (is_string($data['formMethod'])) {
+            echo call_user_func([$field, $data['formMethod']]);
+        } else {
+            echo call_user_func($data['formMethod'], $field);
+        }
+        return;
+    }
+    if (isset($data['options']['label'])) {
+        $label = $data['options']['label'];
+        unset($data['options']['label']);
+    } else {
+        $label = $model->getAttributeLabel($name);
+    }
+    $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
+?>
+        <div class="form-group  <?= $errorClass ?>">
+            <?= $field->label(['class' => 'control-label', 'label' => $label]); ?>
+            <div>
+                <?= $data['widgetClass']::widget($data['options']); ?>
+                <?= $field->error(['class' => 'help-block']); ?>
+            </div>
+        </div>
+<?php
+    return;
+};
+$renderRow = function ($renderControlGroup, $columns, $form, $topColumnWidth = 12) use (&$renderRow) {
+    $oneColumn = count($columns) == 1;
+    echo $oneColumn ? '' : '<div class="row">';
+    $columnWidth = ($topColumnWidth / count($columns));
+    foreach ($columns as $name => $column) {
+        echo $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
+        if (is_string($column)) {
+            echo $column;
+        } elseif (!is_numeric($name) && isset($column['attribute'])) {
+            $renderControlGroup($name, $column);
+        } else {
+            foreach ($column as $name2 => $row) {
+                if (is_string($row)) {
+                    echo $row;
+                } elseif (!is_numeric($name2) && isset($row['attribute'])) {
+                    $renderControlGroup($name2, $row, $form);
+                } else {
+                    $renderRow($renderControlGroup, $row, $form);
+                }
+            }
+        }
+        echo $oneColumn ? '' : '</div>';
+    }
+    echo $oneColumn ? '' : '</div>';
+};
 ?>
 
 <div class="ar-form">
 
     <?php $form = ActiveForm::begin([
         'enableAjaxValidation' => true,
+        'validateOnSubmit' => true,
         'options' => [
             'enctype' => 'multipart/form-data',
         ],
     ]); ?>
 
-<?php foreach ($model->attributes() as $attribute): ?>
-    <?= $form->field($model, $attribute)->textInput() ?>
-<?php endforeach; ?>
+    <p class="note">
+        <?= Yii::t('app', 'Fields with {asterisk} are required.', [
+            '{asterisk}' => '<span class="required">*</span>'
+        ]); ?>
+    </p>
+
+    <?= $form->errorSummary($model); ?>
+
+    <?php $renderRow($renderControlGroup, $fields, $form, $maxColumnWidth); ?>
 
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), [

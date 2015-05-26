@@ -16,6 +16,8 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
 
 <h1><?= Html::encode($this->title) ?></h1>
 
+<?= netis\utils\web\Alerts::widget() ?>
+
 <?= DetailView::widget([
     'model' => $model,
     'attributes' => $attributes,

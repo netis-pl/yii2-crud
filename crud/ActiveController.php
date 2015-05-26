@@ -134,7 +134,9 @@ class ActiveController extends \yii\rest\ActiveController
     public function afterAction($action, $result)
     {
         $params = [];
-        if ($result instanceof Model) {
+        if ($result instanceof Response) {
+            return parent::afterAction($action, $result);
+        } elseif ($result instanceof Model) {
             $params['model'] = $result;
         } elseif ($result instanceof DataProviderInterface) {
             $params['dataProvider'] = $result;

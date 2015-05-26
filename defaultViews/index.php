@@ -18,6 +18,8 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 
 <h1><?= Html::encode($this->title) ?></h1>
 
+<?= netis\utils\web\Alerts::widget() ?>
+
 <?= GridView::widget([
     'dataProvider' => $dataProvider,
     //'filterModel' => $searchModel,
