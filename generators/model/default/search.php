@@ -55,22 +55,4 @@ class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelCla
         // bypass scenarios() implementation in the parent class
         return Model::scenarios();
     }
-
-    public function getCrudLabel($operation = null)
-    {
-        switch ($operation) {
-            default:
-                return Yii::t('app', '<?= $className ?>');
-            case 'index':
-                return Yii::t('app', 'Browse <?= Inflector::pluralize($className) ?>');
-            case 'create':
-                return Yii::t('app', 'Create <?= $className ?>');
-            case 'read':
-                return Yii::t('app', 'View <?= $className ?>');
-            case 'update':
-                return Yii::t('app', 'Update <?= $className ?>');
-            case 'delete':
-                return Yii::t('app', 'Delete <?= $className ?>');
-        }
-    }
 }

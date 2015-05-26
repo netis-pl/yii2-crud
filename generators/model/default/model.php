@@ -2,6 +2,7 @@
 /**
  * This is the template for generating the model class of a specified table.
  */
+use yii\helpers\Inflector;
 
 /* @var $this yii\web\View */
 /* @var $generator netis\utils\generators\model\Generator */
@@ -87,8 +88,24 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
                 'class' => '<?= $behavior['class'] ?>',
 <?php foreach ($behavior['options'] as $option => $optionValue): ?>
                 <?= "'$option' => " . (is_array($optionValue)
-                    ? "['" . implode("', '", $optionValue) . "']"
+                    ? "[" . array_map(
+                        function ($k, $v) {
+                            return is_numeric($k) ? "'$v'" : "'$k' => '$v'";
+                        },
+                        array_keys($optionValue),
+                        array_values($optionValue)
+                    ) . "]"
                     : "'{$optionValue}'") ?>,
+        <?php if ($name === 'labels'): ?>
+                'crudLabels' => [
+                    'default' => "Yii::t('app', '<?= $className ?>')",
+                    'index'   => "Yii::t('app', 'Browse <?= Inflector::pluralize($className) ?>')",
+                    'create'  => "Yii::t('app', 'Create <?= $className ?>')",
+                    'read'    => "Yii::t('app', 'View <?= $className ?>')",
+                    'update'  => "Yii::t('app', 'Update <?= $className ?>')",
+                    'delete'  => "Yii::t('app', 'Delete <?= $className ?>')",
+                ],
+        <?php endif; ?>
 <?php endforeach; ?>
             ],
 <?php endforeach; ?>

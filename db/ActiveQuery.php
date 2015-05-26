@@ -23,7 +23,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
         if (($sortable = $model->getBehavior('sortable')) !== null) {
             $order[$sortable->attribute] = SORT_ASC;
         }
-        /** @var StringBehavior $string */
+        /** @var LabelsBehavior $string */
         if (($string = $model->getBehavior('string')) !== null && $string->attributes !== null) {
             $order = array_merge($order, array_fill_keys($string->attributes, SORT_ASC));
         }

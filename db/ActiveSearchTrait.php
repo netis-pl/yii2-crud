@@ -7,11 +7,9 @@
 namespace netis\utils\db;
 
 use Yii;
-use yii\base\Exception;
 use yii\data\ActiveDataProvider;
 use yii\data\Pagination;
 use yii\data\Sort;
-use yii\db\ActiveQuery;
 use yii\db\Query;
 
 trait ActiveSearchTrait
@@ -22,25 +20,6 @@ trait ActiveSearchTrait
      * @return string
      */
     abstract public function getCrudLabel($operation = null);
-
-    /**
-     * Returns columns for default index view.
-     * @return array
-     */
-    public function getColumns()
-    {
-        $columns = [];
-
-        foreach ($this->attributes() as $attribute) {
-            $columns[] = $attribute;
-        }
-
-        return array_merge([
-            ['class' => 'yii\grid\SerialColumn'],
-        ], $columns, [
-            ['class' => 'yii\grid\ActionColumn'],
-        ]);
-    }
 
     public function getDetailAttributes()
     {
@@ -370,7 +349,7 @@ trait ActiveSearchTrait
     protected function getAdvancedSearchFilters(array $params, \yii\db\ActiveQuery $query, array $columns = null)
     {
         if (!isset($params['advfilter']) || !is_array($params['advfilter'])) {
-            return;
+            return $query;
         }
         /** @var \yii\db\Schema $schema */
         $schema = $this->getDb()->getSchema();

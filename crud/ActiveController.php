@@ -11,6 +11,7 @@ use Yii;
 use yii\base\Exception;
 use yii\base\Model;
 use yii\data\DataProviderInterface;
+use yii\filters\AccessControl;
 use yii\filters\ContentNegotiator;
 use yii\web\Response;
 
@@ -53,6 +54,15 @@ class ActiveController extends \yii\rest\ActiveController
             'contentNegotiator' => [
                 'class' => ContentNegotiator::className(),
                 'formats' => array_merge(RenderStream::formats(), ['text/html' => Response::FORMAT_HTML]),
+            ],
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
             ],
         ]);
     }

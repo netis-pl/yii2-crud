@@ -50,10 +50,36 @@ class IndexAction extends Action
      */
     protected function getGridColumns()
     {
-        if ($this->controller instanceof ActiveController && $this->controller->searchModelClass !== null) {
-            /** @var ActiveSearchTrait $searchModel */
-            $searchModel = new $this->controller->searchModelClass();
-            return $searchModel->getColumns();
+        if ($this->controller instanceof ActiveController) {
+            /** @var ActiveRecord $model */
+            $model = new $this->controller->modelClass();
+            $formats = $model->attributeFormats();
+            $columns = [];
+            /**
+             * @todo skip pks, fks, behavior attributes, author and editor relations
+             * @todo link representing columns
+             * @todo link relations with auth
+             */
+            foreach ($model->attributes() as $attribute) {
+                $columns[] = $attribute.':'.$formats[$attribute];
+            }
+            foreach ($model->relations() as $relation) {
+                if ($model->getRelation($relation)->multiple) {
+                    continue;
+                }
+
+                $columns[] = [
+                    'attribute' => $relation,
+                    'format' => 'crudLink',
+                    'visible' => true,
+                ];
+            }
+
+            return array_merge([
+                ['class' => 'yii\grid\SerialColumn'],
+            ], $columns, [
+                ['class' => 'yii\grid\ActionColumn'],
+            ]);
         }
         /** @var \yii\db\BaseActiveRecord $model */
         $model = new $this->modelClass;

@@ -6,6 +6,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $searchModel netis\utils\db\ActiveSearchTrait */
 /* @var $dataProvider yii\data\ActiveDataProvider */
+/* @var $columns array */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
@@ -30,7 +31,7 @@ $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         //'filterModel' => $searchModel,
-        'columns' => $searchModel->getColumns(),
+        'columns' => $columns,
     ]); ?>
 
 </div>

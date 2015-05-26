@@ -19,7 +19,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         return [
             'string' => [
-                'class' => 'netis\utils\db\StringBehavior',
+                'class' => 'netis\utils\db\LabelsBehavior',
             ],
             'trackable' => [
                 'class' => 'nineinchnick\audit\behaviors\TrackableBehavior',
@@ -30,7 +30,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
 
     public function __toString()
     {
-        /** @var \netis\utils\db\StringBehavior */
+        /** @var \netis\utils\db\LabelsBehavior */
         if (($string = $this->getBehavior('string')) !== null) {
             return implode($string->separator, $this->getAttributes($string->attributes));
         }

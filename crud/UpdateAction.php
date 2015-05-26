@@ -50,22 +50,23 @@ class UpdateAction extends Action
 
         $wasNew = $model->isNewRecord;
 
-        $model->load(Yii::$app->getRequest()->getBodyParams(), '');
-        if ($model->save()) {
-            $response = Yii::$app->getResponse();
-            $response->setStatusCode(201);
+        if ($model->load(Yii::$app->getRequest()->getBodyParams())) {
+            if ($model->save()) {
+                $response = Yii::$app->getResponse();
+                $response->setStatusCode(201);
 
-            if ($wasNew) {
-                $message = Yii::t('app', 'A new has been successfully created.');
-            } else {
-                $message = Yii::t('app', 'Record has been successfully updated.');
+                if ($wasNew) {
+                    $message = Yii::t('app', 'A new has been successfully created.');
+                } else {
+                    $message = Yii::t('app', 'Record has been successfully updated.');
+                }
+                $this->setFlash('success', $message);
+
+                $id = $this->exportKey($model->getPrimaryKey(true));
+                $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
+            } elseif (!$model->hasErrors()) {
+                throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
             }
-            $this->setFlash('success', $message);
-
-            $id = $this->exportKey($model->getPrimaryKey(true));
-            $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
-        } elseif (!$model->hasErrors()) {
-            throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
         }
 
         return $model;

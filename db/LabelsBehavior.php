@@ -9,10 +9,10 @@ namespace netis\utils\db;
 use yii\base\Behavior;
 
 /**
- * StringBehavior allows to configure how a model is cast to string.
+ * LabelsBehavior allows to configure how a model is cast to string and its other labels.
  * @package netis\utils\crud
  */
-class StringBehavior extends Behavior
+class LabelsBehavior extends Behavior
 {
     /**
      * @var array Attributes joined to form string representation.
@@ -22,12 +22,26 @@ class StringBehavior extends Behavior
      * @var string Separator used when joining attribute values.
      */
     public $separator = ' ';
+    /**
+     * @var array labels, required keys: default, index, create, read, update, delete
+     */
+    public $crudLabels = [];
 
     public function init()
     {
+        $this->crudLabels = array_merge([
+            'default' => null,
+            'index' => null,
+            'create' => null,
+            'read' => null,
+            'update' => null,
+            'delete' => null,
+        ], $this->crudLabels);
+
         if ($this->attributes !== null) {
             return;
         }
+        // try to resolve attributes if they're not set and owner is an AR model
         if (!($this->owner instanceof \yii\db\ActiveRecord)) {
             return;
         }
@@ -42,5 +56,10 @@ class StringBehavior extends Behavior
         if ($this->attributes === null) {
             $this->attributes = $model->primaryKey();
         }
+    }
+
+    public function getCrudLabel($operation = null)
+    {
+        return $this->crudLabels[$operation === null ? 'default' : $operation];
     }
 }

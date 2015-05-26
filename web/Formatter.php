@@ -6,9 +6,13 @@
 
 namespace netis\utils\web;
 
+use netis\utils\crud\ActiveRecord;
 use Yii;
 use yii\base\InvalidParamException;
+use yii\base\Model;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
+use yii\helpers\Url;
 
 class Formatter extends \yii\i18n\Formatter
 {
@@ -135,6 +139,23 @@ class Formatter extends \yii\i18n\Formatter
             return $this->nullDisplay;
         }
         return isset($this->enums[$enumName][$value]) ? $this->enums[$enumName][$value] : $value;
+    }
+
+    /**
+     * Formats the value as a link to a matching controller.
+     * @param mixed $value the value to be formatted.
+     * @param array $options the tag options in terms of name-value pairs. See [[Html::a()]].
+     * @return string the formatted result.
+     */
+    public function asCrudLink(Model $value, $options = [])
+    {
+        if ($value === null) {
+            return $this->nullDisplay;
+        }
+        $route = Yii::$app->crudModelsMap[$value::className()];
+        $value = Html::encode((string)$value);
+
+        return $route === null ? $value : Html::a($value, $route, $options);
     }
 
     /**

@@ -224,7 +224,7 @@ DESC;
         } else {
             $rules['trim']['attributes'][] = $column->name;
             $rules['default']['attributes'][] = $column->name;
-            if ($isRequired) {
+            if ($isRequired && $behavesAs !== true) {
                 $rules['required']['attributes'][] = $column->name;
             }
         }
@@ -473,6 +473,7 @@ DESC;
     /**
      * Generates behaviors for the specified table, detecting special columns.
      * @param \yii\db\TableSchema $table the table schema
+     * @param string $className
      * @return array the generated behaviors as name => options
      */
     public function generateBehaviors($table)
@@ -530,8 +531,8 @@ DESC;
             ],
         ];
         $behaviors = [
-            'string' => [
-                'class' => 'netis\utils\db\StringBehavior',
+            'labels' => [
+                'class' => 'netis\utils\db\LabelsBehavior',
                 'options' => [
                     'attributes' => [$this->getLabelAttribute($table)],
                 ],
