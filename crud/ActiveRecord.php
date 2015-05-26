@@ -31,7 +31,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     public function __toString()
     {
         /** @var \netis\utils\db\LabelsBehavior */
-        if (($string = $this->getBehavior('string')) !== null) {
+        if (($string = $this->getBehavior('labels')) !== null) {
             return implode($string->separator, $this->getAttributes($string->attributes));
         }
         return implode('/', $this->getPrimaryKey(true));

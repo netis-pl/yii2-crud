@@ -1,17 +1,21 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
+use yii\bootstrap\ActiveForm;
 
 /* @var $this yii\web\View */
-/* @var $searchModel netis\utils\db\ActiveSearchTrait */
 /* @var $model yii\db\ActiveRecord */
 /* @var $form yii\widgets\ActiveForm */
 ?>
 
 <div class="ar-form">
 
-    <?php $form = ActiveForm::begin(); ?>
+    <?php $form = ActiveForm::begin([
+        'enableAjaxValidation' => true,
+        'options' => [
+            'enctype' => 'multipart/form-data',
+        ],
+    ]); ?>
 
 <?php foreach ($model->attributes() as $attribute): ?>
     <?= $form->field($model, $attribute)->textInput() ?>

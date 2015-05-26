@@ -15,18 +15,6 @@ use yii\db\Query;
 trait ActiveSearchTrait
 {
     /**
-     * Returns a translated label for the model or specific operation.
-     * @param string $operation one of: create, read, update, delete
-     * @return string
-     */
-    abstract public function getCrudLabel($operation = null);
-
-    public function getDetailAttributes()
-    {
-        return $this->attributes();
-    }
-
-    /**
      * Creates data provider instance with search query applied
      *
      * @param array $params

@@ -208,20 +208,19 @@ class ActiveController extends \yii\rest\ActiveController
     /**
      * @param Action $action
      * @param ActiveRecord $model
-     * @param ActiveSearchTrait $searchModel
      * @return array
      */
-    public function getBreadcrumbs(Action $action, $model, $searchModel)
+    public function getBreadcrumbs(Action $action, $model)
     {
         $breadcrumbs = [];
         $id = $model === null || $model->isNewRecord ? null : $action->exportKey($model->getPrimaryKey(true));
 
         if ($action->id == 'index') {
-            $breadcrumbs[] = $searchModel->getCrudLabel();
+            $breadcrumbs[] = $model->getCrudLabel();
         }
         if ($action->id == 'update') {
             $breadcrumbs[] = [
-                'label' => $searchModel->getCrudLabel('index'),
+                'label' => $model->getCrudLabel('index'),
                 'url' => ['index'],
             ];
             if (!$model->isNewRecord) {
@@ -231,12 +230,12 @@ class ActiveController extends \yii\rest\ActiveController
                 ];
                 $breadcrumbs[] = Yii::t('app', 'Update');
             } else {
-                $breadcrumbs[] = $searchModel->getCrudLabel('create');
+                $breadcrumbs[] = $model->getCrudLabel('create');
             }
         }
         if ($action->id == 'view') {
             $breadcrumbs[] = [
-                'label' => $searchModel->getCrudLabel('index'),
+                'label' => $model->getCrudLabel('index'),
                 'url' => ['index'],
             ];
             $breadcrumbs[] = $model->__toString();
@@ -316,7 +315,6 @@ class ActiveController extends \yii\rest\ActiveController
      */
     public function getMenuCurrent(Action $action, $model, $horizontal, $privs, $defaultActions, $confirms)
     {
-
         $menu = [];
         $id = $model->isNewRecord ? null : $action->exportKey($model->getPrimaryKey(true));
 

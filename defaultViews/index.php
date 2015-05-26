@@ -11,27 +11,15 @@ use yii\grid\GridView;
 
 $controller = $this->context;
 $searchModel = $controller->getSearchModel();
-$this->title = $searchModel->getCrudLabel();
-$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, null, $searchModel);
+$this->title = $model->getCrudLabel();
+$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, null);
+$this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 ?>
-<div class="ar-index">
 
-    <h1><?= Html::encode($this->title) ?></h1>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+<h1><?= Html::encode($this->title) ?></h1>
 
-    <p>
-        <?= \yii\widgets\Menu::widget([
-            'items' => $controller->getMenu($controller->action, $searchModel),
-            'itemOptions' => [
-                'class' => 'btn btn-default',
-            ],
-        ]) ?>
-    </p>
-
-    <?= GridView::widget([
-        'dataProvider' => $dataProvider,
-        //'filterModel' => $searchModel,
-        'columns' => $columns,
-    ]); ?>
-
-</div>
+<?= GridView::widget([
+    'dataProvider' => $dataProvider,
+    //'filterModel' => $searchModel,
+    'columns' => $columns,
+]); ?>

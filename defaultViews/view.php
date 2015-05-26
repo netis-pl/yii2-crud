@@ -4,29 +4,20 @@ use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
-/* @var $searchModel netis\utils\db\ActiveSearchTrait */
 /* @var $model yii\db\ActiveRecord */
+/* @var $attributes array */
+/* @var $controller netis\utils\crud\ActiveController */
 
-$searchModel = $this->context->getSearchModel();
+$controller = $this->context;
 $this->title = $model->__toString();
-$this->params['breadcrumbs'] = $this->context->getBreadcrumbs($this->context->action, $model, $searchModel);
+$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
+$this->params['menu'] = $controller->getMenu($controller->action, $model);
 ?>
-<div class="ar-view">
 
-    <h1><?= Html::encode($this->title) ?></h1>
+<h1><?= Html::encode($this->title) ?></h1>
 
-    <p>
-        <?= \yii\widgets\Menu::widget([
-            'items' => $this->context->getMenu($this->context->action, $searchModel),
-            'itemOptions' => [
-                'class' => 'btn btn-default',
-            ],
-        ]) ?>
-    </p>
+<?= DetailView::widget([
+    'model' => $model,
+    'attributes' => $attributes,
+]) ?>
 
-    <?= DetailView::widget([
-        'model' => $model,
-        'attributes' => $searchModel->getDetailAttributes(),
-    ]) ?>
-
-</div>

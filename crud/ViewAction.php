@@ -8,6 +8,11 @@ namespace netis\utils\crud;
 
 class ViewAction extends Action
 {
+    public function getDetailAttributes()
+    {
+        return $this->attributes();
+    }
+
     /**
      * Displays a model.
      * @param string $id the primary key of the model.
@@ -20,6 +25,9 @@ class ViewAction extends Action
             call_user_func($this->checkAccess, $this->id, $model);
         }
 
-        return $model;
+        return [
+            'model' => $model,
+            'attributes' => $this->getDetailAttributes(),
+        ];
     }
 }
