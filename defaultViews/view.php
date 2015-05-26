@@ -26,7 +26,7 @@ $this->params['breadcrumbs'] = $this->context->getBreadcrumbs($this->context->ac
 
     <?= DetailView::widget([
         'model' => $model,
-        'attributes' => $searchModel->getDetailAttributes(),
+        'attributes' => $attributes,
     ]) ?>
 
 </div>
