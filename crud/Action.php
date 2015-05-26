@@ -104,4 +104,67 @@ class Action extends \yii\rest\Action
             Yii::$app->session->setFlash($key, $value, $removeAfterAccess);
         }
     }
+
+    /**
+     * Returns all primary and foreign key column names for specified model.
+     * @param ActiveRecord $model
+     * @return array names of columns from primary and foreign keys
+     */
+    protected function getModelKeys($model)
+    {
+        $keys = array_map(function ($foreignKey) {
+            array_shift($foreignKey);
+            return array_keys($foreignKey);
+        }, $model->getTableSchema()->foreignKeys);
+        $keys[] = $model->primaryKey();
+        return array_reduce($keys, 'array_merge', []);
+    }
+
+    /**
+     * Returns all special behavior attributes as two arrays: all attributes and only blameable attributes.
+     * @param ActiveRecord $model
+     * @return array two arrays: all behavior attributes and blameable attributes
+     */
+    protected function getModelBehaviorAttributes($model)
+    {
+        $behaviorAttributes = [];
+        $blameableAttributes = [];
+        foreach ($model->behaviors() as $behaviorName => $behaviorOptions) {
+            if (!is_array($behaviorOptions)) {
+                continue;
+            }
+            switch ($behaviorOptions['class']) {
+                case 'netis\utils\db\SortableBehavior':
+                    $behaviorAttributes[] = $behaviorOptions['attribute'];
+                    break;
+                case 'netis\utils\db\ToggableBehavior':
+                    if (isset($behaviorOptions['disabledAttribute'])) {
+                        $behaviorAttributes[] = $behaviorOptions['disabledAttribute'];
+                    }
+                    if (isset($behaviorOptions['enabledAttribute'])) {
+                        $behaviorAttributes[] = $behaviorOptions['enabledAttribute'];
+                    }
+                    break;
+                case 'netis\utils\db\BlameableBehavior':
+                    if (isset($behaviorOptions['createdByAttribute'])) {
+                        $behaviorAttributes[] = $behaviorOptions['createdByAttribute'];
+                        $blameableAttributes[] = $behaviorOptions['createdByAttribute'];
+                    }
+                    if (isset($behaviorOptions['updatedByAttribute'])) {
+                        $behaviorAttributes[] = $behaviorOptions['updatedByAttribute'];
+                        $blameableAttributes[] = $behaviorOptions['updatedByAttribute'];
+                    }
+                    break;
+                case 'netis\utils\db\TimestampBehavior':
+                    if (isset($behaviorOptions['createdAtAttribute'])) {
+                        $behaviorAttributes[] = $behaviorOptions['createdAtAttribute'];
+                    }
+                    if (isset($behaviorOptions['updatedAtAttribute'])) {
+                        $behaviorAttributes[] = $behaviorOptions['updatedAtAttribute'];
+                    }
+                    break;
+            }
+        }
+        return [$behaviorAttributes, $blameableAttributes];
+    }
 }

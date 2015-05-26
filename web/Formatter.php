@@ -155,7 +155,11 @@ class Formatter extends \yii\i18n\Formatter
         $route = Yii::$app->crudModelsMap[$value::className()];
         $value = Html::encode((string)$value);
 
-        return $route === null ? $value : Html::a($value, $route, $options);
+        if ($route === null || !Yii::$app->user->can($value::className().'.read', ['model' => $value])) {
+            return $value;
+        }
+
+        return Html::a($value, $route, $options);
     }
 
     /**

@@ -10,6 +10,7 @@ use netis\utils\db\ActiveQuery;
 use netis\utils\db\ActiveSearchTrait;
 use Yii;
 use yii\data\ActiveDataProvider;
+use yii\grid\ActionColumn;
 
 class IndexAction extends Action
 {
@@ -55,19 +56,28 @@ class IndexAction extends Action
             $model = new $this->controller->modelClass();
             $formats = $model->attributeFormats();
             $columns = [];
-            /**
-             * @todo skip pks, fks, behavior attributes, author and editor relations
-             * @todo link representing columns
-             * @todo link relations with auth
-             */
+            $keys = $this->getModelKeys($model);
+            list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
             foreach ($model->attributes() as $attribute) {
+                if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)) {
+                    continue;
+                }
                 $columns[] = $attribute.':'.$formats[$attribute];
             }
             foreach ($model->relations() as $relation) {
-                if ($model->getRelation($relation)->multiple) {
+                $activeRelation = $model->getRelation($relation);
+                if ($activeRelation->multiple) {
                     continue;
                 }
+                foreach ($activeRelation->link as $left => $right) {
+                    if (in_array($left, $blameableAttributes)) {
+                        continue;
+                    }
+                }
 
+                if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
+                    continue;
+                }
                 $columns[] = [
                     'attribute' => $relation,
                     'format' => 'crudLink',
@@ -75,11 +85,37 @@ class IndexAction extends Action
                 ];
             }
 
+            $actionColumn = new ActionColumn();
             return array_merge([
-                ['class' => 'yii\grid\SerialColumn'],
-            ], $columns, [
-                ['class' => 'yii\grid\ActionColumn'],
-            ]);
+                [
+                    'class' => 'yii\grid\ActionColumn',
+                    'headerOptions' => ['class' => 'column-action'],
+                    /*'buttons' => [
+                        'view'   => function ($url, $model, $key) use ($actionColumn) {
+                            if (!Yii::$app->user->can($model::className().'.read')) {
+                                return null;
+                            }
+                            return $actionColumn->buttons['view'];
+                        },
+                        'update' => function ($url, $model, $key) use ($actionColumn) {
+                            if (!Yii::$app->user->can($model::className().'.update')) {
+                                return null;
+                            }
+                            return $actionColumn->buttons['update'];
+                        },
+                        'delete' => function ($url, $model, $key) use ($actionColumn) {
+                            if (!Yii::$app->user->can($model::className().'.delete')) {
+                                return null;
+                            }
+                            return $actionColumn->buttons['delete'];
+                        },
+                    ],*/
+                ],
+                [
+                    'class' => 'yii\grid\SerialColumn',
+                    'headerOptions' => ['class' => 'column-serial'],
+                ],
+            ], $columns);
         }
         /** @var \yii\db\BaseActiveRecord $model */
         $model = new $this->modelClass;
