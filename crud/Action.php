@@ -190,9 +190,18 @@ class Action extends \yii\rest\Action
             if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
 //                continue;
             }
+            $relatedModel = new $activeRelation->modelClass;
             $relations[$relation] = [
-                'dataProvider' => new ActiveDataProvider(['query' => $activeRelation]),
-                'columns'      => IndexAction::getIndexGridColumns(new $activeRelation->modelClass),
+                'model' => $relatedModel,
+                'dataProvider' => new ActiveDataProvider([
+                    'query' => $activeRelation,
+                    'pagination' => [
+                        'pageParam' => "$relation-page",
+                        'pageSize' => 10,
+                    ],
+                    'sort' => ['sortParam' => "$relation-sort"],
+                ]),
+                'columns' => IndexAction::getIndexGridColumns($relatedModel),
             ];
         }
 

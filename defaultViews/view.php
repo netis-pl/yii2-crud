@@ -7,6 +7,7 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $attributes array */
+/* @var $relations array */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
@@ -24,14 +25,12 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
     'attributes' => $attributes,
 ])
 ?>
-<?php foreach ($relations as $name => $relation): ?>
-    <section>
-        <h1><?= 'Name' ?></h1>
-        <?=
-        GridView::widget([
-            'dataProvider' => $relation['dataProvider'],
-            'columns'      => $relation['columns'],
-        ]);
-        ?>
-    </section>
-<?php endforeach; ?>
+<?php
+foreach ($relations as $relationName => $data) {
+    echo $this->render('_relation_widget', array(
+        'model' => $model,
+        'relations' => $relations,
+        'relationName' => $relationName,
+    ));
+}
+?>
