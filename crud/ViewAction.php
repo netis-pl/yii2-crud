@@ -8,6 +8,7 @@
 namespace netis\utils\crud;
 
 use Yii;
+use yii\data\ActiveDataProvider;
 
 class ViewAction extends Action
 {
@@ -73,6 +74,11 @@ class ViewAction extends Action
         return $attributes;
     }
     
+    /**
+     * 
+     * @param Object $model
+     * @return array of yii\data\ActiveDataProvider
+     */
     public function getModelRelations($model)
     {
         $relations = [];
@@ -93,7 +99,8 @@ class ViewAction extends Action
             if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
 //                continue;
             }
-            $relations[] = $activeRelation;
+            $dataProvider                             = new ActiveDataProvider(['query' => $activeRelation]);
+            $relations[$activeRelation->relationName] = $dataProvider;
         }
         return $relations;
     }
