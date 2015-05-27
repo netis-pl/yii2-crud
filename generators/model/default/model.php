@@ -16,6 +16,14 @@ use yii\helpers\Inflector;
 /* @var $behaviors array list of behaviors (name => behavior declaration) */
 
 $queryClassFullName = ($generator->ns === $generator->queryNs) ? $queryClassName : '\\' . $generator->queryNs . '\\' . $queryClassName;
+$regexp = '/(?#! splitCamelCase Rev:20140412)
+    # Split camelCase "words". Two global alternatives. Either g1of2:
+      (?<=[a-z])      # Position is after a lowercase,
+      (?=[A-Z])       # and before an uppercase letter.
+    | (?<=[A-Z])      # Or g2of2; Position is after uppercase,
+      (?=[A-Z][a-z])  # and before upper-then-lower case.
+    /x';
+$classLabel = implode(' ', preg_split($regexp, $className));
 
 echo "<?php\n";
 ?>
@@ -88,24 +96,24 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
                 'class' => '<?= $behavior['class'] ?>',
 <?php foreach ($behavior['options'] as $option => $optionValue): ?>
                 <?= "'$option' => " . (is_array($optionValue)
-                    ? "[" . array_map(
+                    ? "[" . implode(', ', array_map(
                         function ($k, $v) {
                             return is_numeric($k) ? "'$v'" : "'$k' => '$v'";
                         },
                         array_keys($optionValue),
                         array_values($optionValue)
-                    ) . "]"
+                    )) . "]"
                     : "'{$optionValue}'") ?>,
-        <?php if ($name === 'labels'): ?>
+<?php if ($name === 'labels'): ?>
                 'crudLabels' => [
-                    'default' => "Yii::t('app', '<?= $className ?>')",
-                    'index'   => "Yii::t('app', 'Browse <?= Inflector::pluralize($className) ?>')",
-                    'create'  => "Yii::t('app', 'Create <?= $className ?>')",
-                    'read'    => "Yii::t('app', 'View <?= $className ?>')",
-                    'update'  => "Yii::t('app', 'Update <?= $className ?>')",
-                    'delete'  => "Yii::t('app', 'Delete <?= $className ?>')",
+                    'default' => <?= $generator->generateString($classLabel) ?>,
+                    'index'   => <?= $generator->generateString('Browse '.Inflector::pluralize($classLabel)) ?>,
+                    'create'  => <?= $generator->generateString('Create '.$classLabel) ?>,
+                    'read'    => <?= $generator->generateString('View '.$classLabel) ?>,
+                    'update'  => <?= $generator->generateString('Update '.$classLabel) ?>,
+                    'delete'  => <?= $generator->generateString('Delete '.$classLabel) ?>,
                 ],
-        <?php endif; ?>
+<?php endif; ?>
 <?php endforeach; ?>
             ],
 <?php endforeach; ?>

@@ -11,12 +11,12 @@ use yii\grid\GridView;
 
 $controller = $this->context;
 $searchModel = $controller->getSearchModel();
-$this->title = $model->getCrudLabel();
-$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, null);
+$this->title = $searchModel->getCrudLabel();
+$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $searchModel);
 $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 ?>
 
-<h1><?= Html::encode($this->title) ?></h1>
+<h1><span><?= Html::encode($this->title) ?></span></h1>
 
 <?= netis\utils\web\Alerts::widget() ?>
 

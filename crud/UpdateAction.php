@@ -130,37 +130,7 @@ class UpdateAction extends Action
             ];
         }
 
-        $actionColumn = new ActionColumn();
-        return array_merge([
-            [
-                'class' => 'yii\grid\ActionColumn',
-                'headerOptions' => ['class' => 'column-action'],
-                /*'buttons' => [
-                    'view'   => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.read')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['view'];
-                    },
-                    'update' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.update')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['update'];
-                    },
-                    'delete' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.delete')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['delete'];
-                    },
-                ],*/
-            ],
-            [
-                'class' => 'yii\grid\SerialColumn',
-                'headerOptions' => ['class' => 'column-serial'],
-            ],
-        ], $columns);
+        return $columns;
 
         /*
         $formControls = array();

@@ -88,7 +88,7 @@ $renderRow = function ($renderControlGroup, $columns, $form, $topColumnWidth = 1
 
     <p class="note">
         <?= Yii::t('app', 'Fields with {asterisk} are required.', [
-            '{asterisk}' => '<span class="required">*</span>'
+            'asterisk' => '<span class="required">*</span>'
         ]); ?>
     </p>
 

@@ -14,7 +14,7 @@ $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, 
 $this->params['menu'] = $controller->getMenu($controller->action, $model);
 ?>
 
-<h1><?= Html::encode($this->title) ?></h1>
+<h1><span><?= Html::encode($this->title) ?></span></h1>
 
 <?= netis\utils\web\Alerts::widget() ?>
 

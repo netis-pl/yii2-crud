@@ -500,13 +500,13 @@ DESC;
             [
                 'name' => 'timestamp',
                 'attributes' => ['created_on', 'created_at', 'create_at', 'created_date', 'date_created'],
-                'class' => 'yii\behaviors\TimestampBehavior',
+                'class' => 'netis\utils\db\TimestampBehavior',
                 'optionName' => 'createdAtAttribute',
             ],
             [
                 'name' => 'timestamp',
                 'attributes' => ['updated_on', 'updated_at', 'update_at', 'updated_date', 'date_updated'],
-                'class' => 'yii\behaviors\TimestampBehavior',
+                'class' => 'netis\utils\db\TimestampBehavior',
                 'optionName' => 'updatedAtAttribute',
             ],
             [
