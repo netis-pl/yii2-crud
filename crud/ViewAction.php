@@ -76,4 +76,52 @@ class ViewAction extends Action
         }
         return $attributes;
     }
+<<<<<<< HEAD
+=======
+    
+    /**
+     * 
+     * @param Object $model
+     * @return array of yii\data\ActiveDataProvider
+     */
+    public function getModelRelations($model)
+    {
+        $relations = [];
+        foreach ($model->relations() as $relation) {
+            list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
+
+            $activeRelation = $model->getRelation($relation);
+            //skip if has one relation
+            if (!$activeRelation->multiple) {
+                continue;
+            }
+            foreach ($activeRelation->link as $left => $right) {
+                if (in_array($left, $blameableAttributes)) {
+                    continue;
+                }
+            }
+
+            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
+//                continue;
+            }
+            $dataProvider         = new ActiveDataProvider([
+                'query' => $activeRelation,
+                'pagination' => [
+                    'pageParam' => "$relation-page",
+                    'pageSize' => 10
+                ],
+                'sort' => ['sortParam' => "$relation-sort"],
+            ]);
+            $relationModelClass   = new $activeRelation->modelClass;
+            $columns = IndexAction::formatGridColumns($relationModelClass, $behaviorAttributes, $blameableAttributes);
+            $relations[$relation] = [
+                        'dataProvider' => $dataProvider,
+                        'columns'      => $columns,
+            ];
+
+        }
+        return $relations;
+    }
+
+>>>>>>> 496fcd1e7ac339e3c5c8a4b9ef2c0f338fc8ca31
 }

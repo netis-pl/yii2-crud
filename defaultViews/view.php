@@ -30,7 +30,6 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
         <?=
         GridView::widget([
             'dataProvider' => $relation['dataProvider'],
-                //'filterModel' => $searchModel,
             'columns'      => $relation['columns'],
         ]);
         ?>
