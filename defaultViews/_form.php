@@ -22,12 +22,12 @@ $renderControlGroup = function ($name, $data, $form) use ($controller, $model) {
     if (isset($data['model'])) {
         $model = $data['model'];
     }
-    $field = $form->field($model, $data['attribute'], $data['options']);
+    $field = $form->field($model, $data['attribute']);
     if (isset($data['formMethod'])) {
         if (is_string($data['formMethod'])) {
-            echo call_user_func([$field, $data['formMethod']]);
+            echo call_user_func([$field, $data['formMethod']], $data['options']);
         } else {
-            echo call_user_func($data['formMethod'], $field);
+            echo call_user_func($data['formMethod'], $field, $data['options']);
         }
         return;
     }
@@ -42,23 +42,26 @@ $renderControlGroup = function ($name, $data, $form) use ($controller, $model) {
         <div class="form-group  <?= $errorClass ?>">
             <?= $field->label(['class' => 'control-label', 'label' => $label]); ?>
             <div>
-                <?= $data['widgetClass']::widget($data['options']); ?>
+                <?= $field->widget($data['widgetClass'], $data['options']); ?>
                 <?= $field->error(['class' => 'help-block']); ?>
             </div>
         </div>
 <?php
     return;
 };
-$renderRow = function ($renderControlGroup, $columns, $form, $topColumnWidth = 12) use (&$renderRow) {
-    $oneColumn = count($columns) == 1;
+$renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12) use (&$renderRow) {
+    if (empty($fields)) {
+        return;
+    }
+    $oneColumn = count($fields) == 1;
     echo $oneColumn ? '' : '<div class="row">';
-    $columnWidth = ($topColumnWidth / count($columns));
-    foreach ($columns as $name => $column) {
+    $columnWidth = ($topColumnWidth / count($fields));
+    foreach ($fields as $name => $column) {
         echo $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
         if (is_string($column)) {
             echo $column;
         } elseif (!is_numeric($name) && isset($column['attribute'])) {
-            $renderControlGroup($name, $column);
+            $renderControlGroup($name, $column, $form);
         } else {
             foreach ($column as $name2 => $row) {
                 if (is_string($row)) {
