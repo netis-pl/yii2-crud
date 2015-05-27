@@ -17,6 +17,7 @@
     "yiisoft/yii2": ">=2.0.4",
     "yiisoft/yii2-gii": ">=2.0.4",
     "yiisoft/yii2-bootstrap": ">=2.0.4",
+    "maddoger/yii2-select2": "1.4.*",
     "nineinchnick/yii2-audit": "dev-master"
   },
   "autoload": {

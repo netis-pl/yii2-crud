@@ -42,18 +42,21 @@ $renderControlGroup = function ($name, $data, $form) use ($controller, $model) {
         <div class="form-group  <?= $errorClass ?>">
             <?= $field->label(['class' => 'control-label', 'label' => $label]); ?>
             <div>
-                <?= $data['widgetClass']::widget($data['options']); ?>
+                <?= $field->widget($data['widgetClass'], $data['options']); ?>
                 <?= $field->error(['class' => 'help-block']); ?>
             </div>
         </div>
 <?php
     return;
 };
-$renderRow = function ($renderControlGroup, $columns, $form, $topColumnWidth = 12) use (&$renderRow) {
-    $oneColumn = count($columns) == 1;
+$renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12) use (&$renderRow) {
+    if (empty($fields)) {
+        return;
+    }
+    $oneColumn = count($fields) == 1;
     echo $oneColumn ? '' : '<div class="row">';
-    $columnWidth = ($topColumnWidth / count($columns));
-    foreach ($columns as $name => $column) {
+    $columnWidth = ($topColumnWidth / count($fields));
+    foreach ($fields as $name => $column) {
         echo $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
         if (is_string($column)) {
             echo $column;
