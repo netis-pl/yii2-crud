@@ -7,6 +7,8 @@
 namespace netis\utils\crud;
 
 use Yii;
+use yii\base\Model;
+use yii\data\ActiveDataProvider;
 use yii\db\ActiveRecordInterface;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -125,7 +127,7 @@ class Action extends \yii\rest\Action
      * @param ActiveRecord $model
      * @return array two arrays: all behavior attributes and blameable attributes
      */
-    protected function getModelBehaviorAttributes($model)
+    protected static function getModelBehaviorAttributes($model)
     {
         $behaviorAttributes = [];
         $blameableAttributes = [];
@@ -166,5 +168,34 @@ class Action extends \yii\rest\Action
             }
         }
         return [$behaviorAttributes, $blameableAttributes];
+    }
+
+    /**
+     * @param Model $model
+     * @return array of yii\data\ActiveDataProvider
+     */
+    public function getModelRelations($model)
+    {
+        if (!$model instanceof ActiveRecord) {
+            return [];
+        }
+        /** @var ActiveRecord $model */
+        $relations = [];
+        foreach ($model->relations() as $relation) {
+            $activeRelation = $model->getRelation($relation);
+            if (!$activeRelation->multiple) {
+                continue;
+            }
+
+            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
+//                continue;
+            }
+            $relations[$relation] = [
+                'dataProvider' => new ActiveDataProvider(['query' => $activeRelation]),
+                'columns'      => IndexAction::getIndexGridColumns(new $activeRelation->modelClass),
+            ];
+        }
+
+        return $relations;
     }
 }

@@ -82,7 +82,8 @@ class UpdateAction extends Action
 
         return [
             'model' => $model,
-            'fields' => $this->getFormFields(),
+            'fields' => $this->getFormFields($model),
+            'relations' => $this->getModelRelations($model),
         ];
     }
 
@@ -241,23 +242,19 @@ class UpdateAction extends Action
     }
 
     /**
-     * Retrieves form fields configuration using the modelClass.
+     * Retrieves form fields configuration.
+     * @param Model $model
      * @return array form fields
      */
-    protected function getFormFields()
+    protected function getFormFields($model)
     {
-        if (!$this->controller instanceof ActiveController) {
-            /** @var \yii\db\BaseActiveRecord $model */
-            $model = new $this->modelClass;
-
+        if (!$model instanceof ActiveRecord) {
             return $model->safeAttributes();
         }
 
         /** @var ActiveRecord $model */
-        $model = new $this->controller->modelClass();
         $hiddenAttributes = [];
         $formats = $model->attributeFormats();
-        $columns = [];
         $keys = self::getModelKeys($model);
 
         list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
