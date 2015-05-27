@@ -26,6 +26,7 @@ class ViewAction extends Action
         return array(
             'model'      => $model,
             'attributes' => $this->getDetailAttributes($model),
+            'relations'  => $this->getModelRelations($model),
         );
     }
     
@@ -70,6 +71,31 @@ class ViewAction extends Action
             ];
         }
         return $attributes;
+    }
+    
+    public function getModelRelations($model)
+    {
+        $relations = [];
+        foreach ($model->relations() as $relation) {
+            list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
+
+            $activeRelation = $model->getRelation($relation);
+            //skip if has one relation
+            if (!$activeRelation->multiple) {
+                continue;
+            }
+            foreach ($activeRelation->link as $left => $right) {
+                if (in_array($left, $blameableAttributes)) {
+                    continue;
+                }
+            }
+
+            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
+//                continue;
+            }
+            $relations[] = $activeRelation;
+        }
+        return $relations;
     }
 
 }
