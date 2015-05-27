@@ -7,6 +7,7 @@ use yii\bootstrap\ActiveForm;
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $fields array */
+/* @var $relations array */
 /* @var $form yii\widgets\ActiveForm */
 /* @var $controller netis\utils\crud\ActiveController */
 /* @var $view \netis\utils\web\View */
@@ -97,7 +98,19 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
 
     <?= $form->errorSummary($model); ?>
 
+    <fieldset>
     <?php $renderRow($renderControlGroup, $fields, $form, $maxColumnWidth); ?>
+    </fieldset>
+
+<?php
+foreach ($relations as $relationName => $data) {
+    echo $this->render('_relation_edit_widget', array(
+        'model' => $model,
+        'relations' => $relations,
+        'relationName' => $relationName,
+    ));
+}
+?>
 
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), [

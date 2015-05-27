@@ -24,5 +24,6 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
 <?= $this->render('_form', [
     'model' => $model,
     'fields' => $fields,
+    'relations' => $relations,
 ]) ?>
 

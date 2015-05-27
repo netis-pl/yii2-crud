@@ -8,6 +8,7 @@ use yii\widgets\Pjax;
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $attributes array */
+/* @var $relations array */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
@@ -25,16 +26,12 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
     'attributes' => $attributes,
 ])
 ?>
-<?php foreach ($relations as $name => $relation): ?>
-    <section>
-        <h1><?= $name ?></h1>
-        <?php Pjax::begin(['id' => $name,]) ?>
-        <?=
-        GridView::widget([
-            'dataProvider' => $relation['dataProvider'],
-            'columns'      => $relation['columns'],
-        ]);
-        ?>
-        <?php Pjax::end() ?>
-    </section>
-<?php endforeach; ?>
+<?php
+foreach ($relations as $relationName => $data) {
+    echo $this->render('_relation_widget', array(
+        'model' => $model,
+        'relations' => $relations,
+        'relationName' => $relationName,
+    ));
+}
+?>
