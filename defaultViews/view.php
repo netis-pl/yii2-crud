@@ -24,14 +24,14 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
     'attributes' => $attributes,
 ])
 ?>
-<?php foreach ($relations as $name => $dataProvider): ?>
+<?php foreach ($relations as $name => $relation): ?>
     <section>
-        <h1><?= $name ?></h1>
+        <h1><?= 'Name' ?></h1>
         <?=
         GridView::widget([
-            'dataProvider' => $dataProvider,
+            'dataProvider' => $relation['dataProvider'],
                 //'filterModel' => $searchModel,
-//            'columns'      => $columns,
+            'columns'      => $relation['columns'],
         ]);
         ?>
     </section>

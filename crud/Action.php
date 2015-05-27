@@ -110,7 +110,7 @@ class Action extends \yii\rest\Action
      * @param ActiveRecord $model
      * @return array names of columns from primary and foreign keys
      */
-    protected function getModelKeys($model)
+    protected static function getModelKeys($model)
     {
         $keys = array_map(function ($foreignKey) {
             array_shift($foreignKey);

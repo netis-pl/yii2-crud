@@ -101,7 +101,7 @@ class UpdateAction extends Action
         $model = new $this->controller->modelClass();
         $formats = $model->attributeFormats();
         $columns = [];
-        $keys = $this->getModelKeys($model);
+        $keys = self::getModelKeys($model);
         list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
         foreach ($model->safeAttributes() as $attribute) {
             if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)) {

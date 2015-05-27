@@ -9,6 +9,7 @@ namespace netis\utils\crud;
 
 use Yii;
 use yii\data\ActiveDataProvider;
+use netis\utils\crud\IndexAction;
 
 class ViewAction extends Action
 {
@@ -41,7 +42,7 @@ class ViewAction extends Action
             return $model->attributes();
         }
         $formats = $model->attributeFormats();
-        $keys    = $this->getModelKeys($model);
+        $keys    = self::getModelKeys($model);
         list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
         $attributes = [];
         foreach ($model->attributes() as $attribute) {
@@ -99,8 +100,14 @@ class ViewAction extends Action
             if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
 //                continue;
             }
-            $dataProvider                             = new ActiveDataProvider(['query' => $activeRelation]);
-            $relations[$activeRelation->relationName] = $dataProvider;
+            $dataProvider         = new ActiveDataProvider(['query' => $activeRelation]);
+            $relationModelClass   = new $activeRelation->modelClass;
+            $columns = IndexAction::formatGridColumns($relationModelClass, $behaviorAttributes, $blameableAttributes);
+            $relations[$relation] = [
+                        'dataProvider' => $dataProvider,
+                        'columns'      => $columns,
+            ];
+
         }
         return $relations;
     }

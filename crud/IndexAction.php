@@ -60,15 +60,26 @@ class IndexAction extends Action
 
         /** @var ActiveRecord $model */
         $model = new $this->controller->modelClass();
+        list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
+        return self::formatGridColumns($model, $behaviorAttributes, $blameableAttributes);
+    }
+    /**
+     * 
+     * @param Object $model
+     * @param array $behaviorAttributes
+     * @param array $blameableAttributes
+     * @return array grid columns
+     */
+    public static function formatGridColumns($model, $behaviorAttributes, $blameableAttributes)
+    {
         $formats = $model->attributeFormats();
         $columns = [];
-        $keys = $this->getModelKeys($model);
-        list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
+        $keys    = self::getModelKeys($model);
         foreach ($model->attributes() as $attribute) {
             if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)) {
                 continue;
             }
-            $columns[] = $attribute.':'.$formats[$attribute];
+            $columns[] = $attribute . ':' . $formats[$attribute];
         }
         foreach ($model->relations() as $relation) {
             $activeRelation = $model->getRelation($relation);
@@ -81,47 +92,47 @@ class IndexAction extends Action
                 }
             }
 
-            if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
+            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
                 continue;
             }
             $columns[] = [
                 'attribute' => $relation,
-                'format' => 'crudLink',
-                'visible' => true,
+                'format'    => 'crudLink',
+                'visible'   => true,
             ];
         }
 
         $actionColumn = new ActionColumn();
         return array_merge([
             [
-                'class' => 'yii\grid\ActionColumn',
+                'class'         => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'column-action'],
-                /*'buttons' => [
-                    'view'   => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.read')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['view'];
-                    },
-                    'update' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.update')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['update'];
-                    },
-                    'delete' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.delete')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['delete'];
-                    },
-                ],*/
+            /* 'buttons' => [
+              'view'   => function ($url, $model, $key) use ($actionColumn) {
+              if (!Yii::$app->user->can($model::className().'.read')) {
+              return null;
+              }
+              return $actionColumn->buttons['view'];
+              },
+              'update' => function ($url, $model, $key) use ($actionColumn) {
+              if (!Yii::$app->user->can($model::className().'.update')) {
+              return null;
+              }
+              return $actionColumn->buttons['update'];
+              },
+              'delete' => function ($url, $model, $key) use ($actionColumn) {
+              if (!Yii::$app->user->can($model::className().'.delete')) {
+              return null;
+              }
+              return $actionColumn->buttons['delete'];
+              },
+              ], */
             ],
             [
-                'class' => 'yii\grid\SerialColumn',
+                'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
             ],
-        ], $columns);
+                ], $columns);
     }
 
     /**
