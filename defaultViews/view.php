@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 use yii\grid\GridView;
+use yii\widgets\Pjax;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
@@ -26,12 +27,14 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
 ?>
 <?php foreach ($relations as $name => $relation): ?>
     <section>
-        <h1><?= 'Name' ?></h1>
+        <h1><?= $name ?></h1>
+        <?php Pjax::begin(['id' => $name,]) ?>
         <?=
         GridView::widget([
             'dataProvider' => $relation['dataProvider'],
             'columns'      => $relation['columns'],
         ]);
         ?>
+        <?php Pjax::end() ?>
     </section>
 <?php endforeach; ?>
