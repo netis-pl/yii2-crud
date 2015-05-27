@@ -100,7 +100,14 @@ class ViewAction extends Action
             if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
 //                continue;
             }
-            $dataProvider         = new ActiveDataProvider(['query' => $activeRelation]);
+            $dataProvider         = new ActiveDataProvider([
+                'query' => $activeRelation,
+                'pagination' => [
+                    'pageParam' => "$relation-page",
+                    'pageSize' => 10
+                ],
+                'sort' => ['sortParam' => "$relation-sort"],
+            ]);
             $relationModelClass   = new $activeRelation->modelClass;
             $columns = IndexAction::formatGridColumns($relationModelClass, $behaviorAttributes, $blameableAttributes);
             $relations[$relation] = [
