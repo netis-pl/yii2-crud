@@ -9,6 +9,7 @@ namespace netis\utils\crud;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\Model;
+use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\Response;
 use yii\web\ServerErrorHttpException;
@@ -180,16 +181,21 @@ class UpdateAction extends Action
 
         switch ($formats[$attribute]) {
             case 'boolean':
-                $formFields[$attribute]['formMethod'] = 'checkBoxControlGroup';
+                $formFields[$attribute]['formMethod'] = 'checkbox';
                 $formFields[$attribute]['options'] = [
                     'template' => '{beginLabel}{input}<span>{labelTitle}</span>{help}{error}{endLabel}',
                     'class' => 'checkbox style-2',
                 ];
                 break;
             case 'time':
+                $formFields[$attribute]['formMethod'] = 'textInput';
+                $formFields[$attribute]['options'] = [
+                    'value' => Html::encode($model->getAttribute($attribute)),
+                ];
+                break;
             case 'datetime':
             case 'date':
-                $formFields[$attribute]['widgetClass'] = 'Datepicker';
+                $formFields[$attribute]['widgetClass'] = 'omnilight\widgets\DatePicker';
                 $formFields[$attribute]['options'] = [
                     'model' => $model,
                     'attribute' => $attribute,
@@ -197,7 +203,7 @@ class UpdateAction extends Action
                 ];
                 break;
             case 'set':
-                $formFields[$attribute]['formMethod'] = 'dropDownListControlGroup';
+                $formFields[$attribute]['formMethod'] = 'listBox';
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
                     $formFields[$attribute]['options'] = ['empty' => Yii::t('app', 'Any')];
                 }
@@ -205,24 +211,24 @@ class UpdateAction extends Action
             case 'flags':
                 throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
             case 'paragraphs':
-                $formFields[$attribute]['formMethod'] = 'textAreaControlGroup';
+                $formFields[$attribute]['formMethod'] = 'textarea';
                 $formFields[$attribute]['options'] = [
-                    'value' => Yii::$app->formatter->format($model->getAttribute($attribute), 'text'),
+                    'value' => Html::encode($model->getAttribute($attribute)),
                     'cols' => '80',
                     'rows' => '10',
                 ];
                 break;
             case 'file':
-                $formFields[$attribute]['formMethod'] = 'fileFieldControlGroup';
+                $formFields[$attribute]['formMethod'] = 'fileInput';
                 $formFields[$attribute]['options'] = [
                     'value' => $model->getAttribute($attribute),
                 ];
                 break;
             default:
             case 'text':
-                $formFields[$attribute]['formMethod'] = 'textFieldControlGroup';
+                $formFields[$attribute]['formMethod'] = 'textInput';
                 $formFields[$attribute]['options'] = [
-                    'value' => Yii::$app->formatter->format($model->getAttribute($attribute), $formats[$attribute]),
+                    'value' => Html::encode($model->getAttribute($attribute)),
                 ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->type === 'string'
                     && $dbColumns[$attribute]->size !== null
@@ -231,6 +237,7 @@ class UpdateAction extends Action
                 }
                 break;
         }
+        return $formFields;
     }
 
     /**

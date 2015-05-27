@@ -22,12 +22,12 @@ $renderControlGroup = function ($name, $data, $form) use ($controller, $model) {
     if (isset($data['model'])) {
         $model = $data['model'];
     }
-    $field = $form->field($model, $data['attribute'], $data['options']);
+    $field = $form->field($model, $data['attribute']);
     if (isset($data['formMethod'])) {
         if (is_string($data['formMethod'])) {
-            echo call_user_func([$field, $data['formMethod']]);
+            echo call_user_func([$field, $data['formMethod']], $data['options']);
         } else {
-            echo call_user_func($data['formMethod'], $field);
+            echo call_user_func($data['formMethod'], $field, $data['options']);
         }
         return;
     }
@@ -61,7 +61,7 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
         if (is_string($column)) {
             echo $column;
         } elseif (!is_numeric($name) && isset($column['attribute'])) {
-            $renderControlGroup($name, $column);
+            $renderControlGroup($name, $column, $form);
         } else {
             foreach ($column as $name2 => $row) {
                 if (is_string($row)) {
