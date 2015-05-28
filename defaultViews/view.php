@@ -3,11 +3,12 @@
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 use yii\grid\GridView;
-use yii\data\ActiveDataProvider;
+use yii\widgets\Pjax;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $attributes array */
+/* @var $relations array */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
@@ -23,21 +24,16 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
 <?= DetailView::widget([
     'model' => $model,
     'attributes' => $attributes,
-]) ?>
-<!-- just for now -->
-<?php foreach ($relations as $relation): ?>
-    <section>
-        <h1>Nazwa</h1>
-<?php
-$dataProvider = new ActiveDataProvider(['query' => $relation])
+])
 ?>
-
-        <?=
-        GridView::widget([
-            'dataProvider' => $dataProvider,
-            //'filterModel' => $searchModel,
-//            'columns'      => $columns,
-        ]);
-        ?>
-    </section>
-<?php endforeach; ?>
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+<?php
+foreach ($relations as $relationName => $data) {
+    echo $this->render('_relation_widget', array(
+        'model' => $model,
+        'relations' => $relations,
+        'relationName' => $relationName,
+    ));
+}
+?>
+</div>

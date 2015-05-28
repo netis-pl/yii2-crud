@@ -7,7 +7,9 @@
 namespace netis\utils\crud;
 
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\base\Model;
+use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\Response;
 use yii\web\ServerErrorHttpException;
@@ -80,181 +82,207 @@ class UpdateAction extends Action
 
         return [
             'model' => $model,
-            'fields' => $this->getFormFields(),
+            'fields' => $this->getFormFields($model),
+            'relations' => $this->getModelRelations($model),
         ];
     }
 
     /**
-     * Retrieves form fields configuration using the modelClass.
+     * @param array $formFields
+     * @param ActiveRecord $model
+     * @param string $relation
+     * @param array $dbColumns
+     * @param array $hiddenAttributes
+     * @param array $blameableAttributes
+     * @return array
+     * @throws InvalidConfigException
+     */
+    protected function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes)
+    {
+        $activeRelation = $model->getRelation($relation);
+        if ($activeRelation->multiple) {
+            return $formFields;
+        }
+        $isHidden = false;
+        foreach ($activeRelation->link as $left => $right) {
+            if (in_array($left, $blameableAttributes)) {
+                return $formFields;
+            }
+            if (isset($hiddenAttributes[$left])) {
+                $formFields[$relation] = [
+                    'formMethod' => 'hiddenField',
+                    'attribute' => $left,
+                    'options' => [
+                        'value' => $model->{$left}
+                    ]
+                ];
+                unset($hiddenAttributes[$left]);
+                $isHidden = true;
+            }
+        }
+        if ($isHidden) {
+            return $formFields;
+        }
+
+        if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
+            return $formFields;
+        }
+
+        if (count($activeRelation->link) > 1) {
+            throw new InvalidConfigException('Composite hasOne relations are not supported by '.get_called_class());
+        }
+        $foreignKeys = array_keys($activeRelation->link);
+        $foreignKey = reset($foreignKeys);
+
+        $route = Yii::$app->crudModelsMap[$activeRelation->modelClass];
+        $formFields[$relation] = [
+            'widgetClass' => 'maddoger\widgets\Select2',
+            'attribute' => $foreignKey,
+            'options' => [
+                'clientOptions' => [
+                    'ajax' => [
+                        'url' => Url::toRoute($route),
+                        'dataFormat' => 'json',
+                        'quietMillis' => 300,
+                        //'data' => 'js:s2helper.data',
+                        //'results' => 'js:s2helper.results',
+                    ],
+                    //'initSelection' => 'js:s2helper.initSingle',
+                    //'formatResult' => 'js:s2helper.formatResult',
+                    //'formatSelection' => 'js:function (item) { return item.value; }',
+
+                    'width' => '100%',
+                    'allowClear' => !isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull,
+                    'closeOnSelect' => true,
+                ],
+                'options' => [
+                    'class' => 'select2',
+                    'multiple' => false,
+                ],
+            ],
+        ];
+        return $formFields;
+    }
+
+    /**
+     * @param array $formFields
+     * @param ActiveRecord $model
+     * @param string $attribute
+     * @param array $dbColumns
+     * @param array $formats
+     * @return array
+     * @throws InvalidConfigException
+     */
+    protected function addFormField($formFields, $model, $attribute, $dbColumns, $formats)
+    {
+        $formFields[$attribute] = [
+            'attribute' => $attribute,
+            'options' => [],
+        ];
+
+        switch ($formats[$attribute]) {
+            case 'boolean':
+                $formFields[$attribute]['formMethod'] = 'checkbox';
+                $formFields[$attribute]['options'] = [
+                    'template' => '{beginLabel}{input}<span>{labelTitle}</span>{help}{error}{endLabel}',
+                    'class' => 'checkbox style-2',
+                ];
+                break;
+            case 'time':
+                $formFields[$attribute]['formMethod'] = 'textInput';
+                $formFields[$attribute]['options'] = [
+                    'value' => Html::encode($model->getAttribute($attribute)),
+                ];
+                break;
+            case 'datetime':
+            case 'date':
+                $formFields[$attribute]['widgetClass'] = 'omnilight\widgets\DatePicker';
+                $formFields[$attribute]['options'] = [
+                    'model' => $model,
+                    'attribute' => $attribute,
+                    'htmlOptions' => ['class' => 'form-control']
+                ];
+                break;
+            case 'set':
+                $formFields[$attribute]['formMethod'] = 'listBox';
+                if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
+                    $formFields[$attribute]['options'] = ['empty' => Yii::t('app', 'Any')];
+                }
+                break;
+            case 'flags':
+                throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
+            case 'paragraphs':
+                $formFields[$attribute]['formMethod'] = 'textarea';
+                $formFields[$attribute]['options'] = [
+                    'value' => Html::encode($model->getAttribute($attribute)),
+                    'cols' => '80',
+                    'rows' => '10',
+                ];
+                break;
+            case 'file':
+                $formFields[$attribute]['formMethod'] = 'fileInput';
+                $formFields[$attribute]['options'] = [
+                    'value' => $model->getAttribute($attribute),
+                ];
+                break;
+            default:
+            case 'text':
+                $formFields[$attribute]['formMethod'] = 'textInput';
+                $formFields[$attribute]['options'] = [
+                    'value' => Html::encode($model->getAttribute($attribute)),
+                ];
+                if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->type === 'string'
+                    && $dbColumns[$attribute]->size !== null
+                ) {
+                    $formFields[$attribute]['options']['maxlength'] = $dbColumns[$attribute]->size;
+                }
+                break;
+        }
+        return $formFields;
+    }
+
+    /**
+     * Retrieves form fields configuration.
+     * @param Model $model
      * @return array form fields
      */
-    protected function getFormFields()
+    protected function getFormFields($model)
     {
-        if (!$this->controller instanceof ActiveController) {
-            /** @var \yii\db\BaseActiveRecord $model */
-            $model = new $this->modelClass;
-
-            return $model->attributes();
+        if (!$model instanceof ActiveRecord) {
+            return $model->safeAttributes();
         }
 
         /** @var ActiveRecord $model */
-        $model = new $this->controller->modelClass();
+        $hiddenAttributes = [];
         $formats = $model->attributeFormats();
-        $columns = [];
-        $keys = $this->getModelKeys($model);
+        $keys = self::getModelKeys($model);
+
         list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
-        foreach ($model->safeAttributes() as $attribute) {
-            if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)) {
-                continue;
-            }
-            $columns[] = $attribute.':'.$formats[$attribute];
-        }
-        foreach ($model->relations() as $relation) {
-            $activeRelation = $model->getRelation($relation);
-            if ($activeRelation->multiple) {
-                continue;
-            }
-            foreach ($activeRelation->link as $left => $right) {
-                if (in_array($left, $blameableAttributes)) {
-                    continue;
-                }
-            }
-
-            if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
-                continue;
-            }
-            $columns[] = [
-                'attribute' => $relation,
-                'format' => 'crudLink',
-                'visible' => true,
-            ];
-        }
-
-        return $columns;
-
-        /*
-        $formControls = array();
         $dbColumns = $model->getTableSchema()->columns;
-        $safeAttributes = array_flip($model->getSafeAttributeNames());
-        $hiddenAttributes = array_flip($model->getHiddenAttributeNames());
-        foreach($relations as $name => $relation) {
-            $fk = $relation['activeRelation']->foreignKey;
-            if(is_array($fk)) {
-                foreach($fk as $key => $value) {
-                    $fk = is_numeric($key) ? $value : $key;
-                }
-            }
 
-            if(isset($hiddenAttributes[$fk])) {
-                $formControls[$name] = [
-                    'formMethod' => 'hiddenField',
-                    'attribute' => $fk,
-                    'options' => [
-                        'value' => $model->{$fk}
-                    ]
-                ];
-                unset($hiddenAttributes[$fk]);
-                continue;
-            }
-
-            if($relation['relationClass'] != NetActiveRecord::BELONGS_TO || !isset($safeAttributes[$fk]))
-                continue;
-
-            $formControls[$name] = [
-                'widgetClass' => 'ESelect2',
-                'attribute' => $fk,
-                'options' => [
-                    'model' => $model,
-                    'attribute' => $fk,
-                    'options' => Select2Helper::filterDefaults("/" . $relation['matchingRelationModel']->defaultController() . "/autocomplete", Yii::t('app', 'Choose...'), true, [
-                        'width' => '100%',
-                        'allowClear' => !isset($dbColumns[$fk]) || $dbColumns[$fk]->allowNull,
-                    ]),
-                    'htmlOptions' => ['class' => 'select2']
-                ],
-            ];
+        $formFields = [];
+        foreach ($model->relations() as $relation) {
+            $formFields = $this->addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes);
         }
-
         // hidden attributes have to be hidden, not absent
-        foreach($hiddenAttributes as $name => $_) {
-            $formControls[$name] = [
+        foreach ($hiddenAttributes as $attribute => $_) {
+            $formFields[$attribute] = [
                 'formMethod' => 'hiddenField',
-                'attribute' => $name,
+                'attribute' => $attribute,
                 'options' => [
-                    'value' => $model->{$name}
+                    'value' => $model->getAttribute($attribute),
                 ]
             ];
         }
-
-        $visibleAttributes = $model->getVisibleAttributes(null, false, false, true);
-        foreach($visibleAttributes as $name => $uiTypeInfo) {
-            if(isset($dbColumns[$name]) && $dbColumns[$name]->isForeignKey)
+        foreach ($model->safeAttributes() as $attribute) {
+            if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)
+                || isset($hiddenAttributes[$attribute])
+            ) {
                 continue;
-
-            $formControls[$name] = ['attribute' => $name, 'options' => []];
-
-            if(is_array($uiTypeInfo)) {
-                $formControls[$name]['data'] = $uiTypeInfo['map'];
-                $mapSize = count($formControls[$name]['data']);
-                $uiType = $uiTypeInfo['type'];
-            } else {
-                $uiType = $uiTypeInfo;
             }
+            $formFields = $this->addFormField($formFields, $model, $attribute, $dbColumns, $formats);
+        }
 
-            switch($uiType) {
-                case 'boolean':
-                    $formControls[$name]['formMethod'] = 'checkBoxControlGroup';
-                    $formControls[$name]['options'] = [
-                        'template' => '{beginLabel}{input}<span>{labelTitle}</span>{help}{error}{endLabel}',
-                        'class' => 'checkbox style-2',
-                    ];
-                    break;
-                case 'time':
-                case 'datetime':
-                case 'date':
-                    $formControls[$name]['widgetClass'] = 'Datepicker';
-                    $formControls[$name]['options'] = [
-                        'model' => $model,
-                        'attribute' => $name,
-                        'htmlOptions' => ['class' => 'form-control']
-                    ];
-                    break;
-                case 'set':
-                    $isRadio = $mapSize < 5;
-                    if(isset($uiTypeInfo['control']) && $uiTypeInfo !== 'radio') {
-                        $isRadio = false;
-                    }
-
-                    $formControls[$name]['formMethod'] = $isRadio ? 'radioButtonListControlGroup' : 'dropDownListControlGroup';
-                    if(isset($dbColumns[$name]) && $dbColumns[$name]->allowNull) {
-                        $formControls[$name]['options'] = $isRadio ? ['uncheckValue' => null] : ['empty' => Yii::t('app', 'Any')];
-                    }
-
-                    if($isRadio) {
-                        $formControls[$name]['options']['template'] = '<div class="radio">{beginLabel}{input}<span>{labelTitle}</span>{endLabel}</div>';
-                        $formControls[$name]['options']['class'] = 'radiobox style-2';
-                    }
-                    break;
-                case 'flags':
-                    throw new CException('nie da się przekazać wartości, trzeba deserializować');
-                case 'longtext':
-                    $formControls[$name]['formMethod'] = 'textAreaControlGroup';
-                    $formControls[$name]['options'] = ['value' => Yii::app()->format->format($model->{$name}, 'text'), 'cols' => '80', 'rows' => '10'];
-                    break;
-                case 'file':
-                    $formControls[$name]['formMethod'] = 'fileFieldControlGroup';
-                    $formControls[$name]['options'] = ['value' => $model->{$name}];
-                    break;
-                default:
-                case 'text':
-                case 'password':
-                    $formControls[$name]['formMethod'] = $uiType === 'password' ? 'passwordFieldControlGroup' : 'textFieldControlGroup';
-                    $formControls[$name]['options'] = ['value' => Yii::app()->format->format($model->{$name}, $uiType)];
-                    if(isset($dbColumns[$name]) && $dbColumns[$name]->type === 'string' && $dbColumns[$name]->size !== null) {
-                        $formControls[$name]['options']['maxlength'] = $dbColumns[$name]->size;
-                    }
-                    break;
-            }
-        */
+        return $formFields;
     }
 }

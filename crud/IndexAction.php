@@ -9,6 +9,7 @@ namespace netis\utils\crud;
 use netis\utils\db\ActiveQuery;
 use netis\utils\db\ActiveSearchTrait;
 use Yii;
+use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\grid\ActionColumn;
 
@@ -41,34 +42,72 @@ class IndexAction extends Action
 
         return [
             'dataProvider' => $this->prepareDataProvider(),
-            'columns' => $this->getGridColumns(),
+            'columns' => self::getIndexGridColumns(new $this->modelClass),
         ];
     }
 
     /**
      * Retrieves grid columns configuration using the modelClass.
+     * @param Model $model
      * @return array grid columns
      */
-    protected function getGridColumns()
+    public static function getIndexGridColumns($model)
     {
-        if (!$this->controller instanceof ActiveController) {
-            /** @var \yii\db\BaseActiveRecord $model */
-            $model = new $this->modelClass;
+        $actionColumn = new ActionColumn();
+        return array_merge([
+            [
+                'class'         => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'column-action'],
+                /* 'buttons' => [
+                  'view'   => function ($url, $model, $key) use ($actionColumn) {
+                  if (!Yii::$app->user->can($model::className().'.read')) {
+                  return null;
+                  }
+                  return $actionColumn->buttons['view'];
+                  },
+                  'update' => function ($url, $model, $key) use ($actionColumn) {
+                  if (!Yii::$app->user->can($model::className().'.update')) {
+                  return null;
+                  }
+                  return $actionColumn->buttons['update'];
+                  },
+                  'delete' => function ($url, $model, $key) use ($actionColumn) {
+                  if (!Yii::$app->user->can($model::className().'.delete')) {
+                  return null;
+                  }
+                  return $actionColumn->buttons['delete'];
+                  },
+                  ], */
+            ],
+            [
+                'class'         => 'yii\grid\SerialColumn',
+                'headerOptions' => ['class' => 'column-serial'],
+            ],
+        ], self::getGridColumns($model));
+    }
 
+    /**
+     * Retrieves grid columns configuration using the modelClass.
+     * @param Model $model
+     * @return array grid columns
+     */
+    public static function getGridColumns($model)
+    {
+        if (!$model instanceof ActiveRecord) {
             return $model->attributes();
         }
 
         /** @var ActiveRecord $model */
-        $model = new $this->controller->modelClass();
+        list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
         $formats = $model->attributeFormats();
+        $keys    = self::getModelKeys($model);
+
         $columns = [];
-        $keys = $this->getModelKeys($model);
-        list($behaviorAttributes, $blameableAttributes) = $this->getModelBehaviorAttributes($model);
         foreach ($model->attributes() as $attribute) {
             if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)) {
                 continue;
             }
-            $columns[] = $attribute.':'.$formats[$attribute];
+            $columns[] = $attribute . ':' . $formats[$attribute];
         }
         foreach ($model->relations() as $relation) {
             $activeRelation = $model->getRelation($relation);
@@ -81,47 +120,17 @@ class IndexAction extends Action
                 }
             }
 
-            if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
+            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
                 continue;
             }
             $columns[] = [
                 'attribute' => $relation,
-                'format' => 'crudLink',
-                'visible' => true,
+                'format'    => 'crudLink',
+                'visible'   => true,
             ];
         }
 
-        $actionColumn = new ActionColumn();
-        return array_merge([
-            [
-                'class' => 'yii\grid\ActionColumn',
-                'headerOptions' => ['class' => 'column-action'],
-                /*'buttons' => [
-                    'view'   => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.read')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['view'];
-                    },
-                    'update' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.update')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['update'];
-                    },
-                    'delete' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className().'.delete')) {
-                            return null;
-                        }
-                        return $actionColumn->buttons['delete'];
-                    },
-                ],*/
-            ],
-            [
-                'class' => 'yii\grid\SerialColumn',
-                'headerOptions' => ['class' => 'column-serial'],
-            ],
-        ], $columns);
+        return $columns;
     }
 
     /**

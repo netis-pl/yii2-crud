@@ -106,12 +106,13 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
                     : "'{$optionValue}'") ?>,
 <?php if ($name === 'labels'): ?>
                 'crudLabels' => [
-                    'default' => <?= $generator->generateString($classLabel) ?>,
-                    'index'   => <?= $generator->generateString('Browse '.Inflector::pluralize($classLabel)) ?>,
-                    'create'  => <?= $generator->generateString('Create '.$classLabel) ?>,
-                    'read'    => <?= $generator->generateString('View '.$classLabel) ?>,
-                    'update'  => <?= $generator->generateString('Update '.$classLabel) ?>,
-                    'delete'  => <?= $generator->generateString('Delete '.$classLabel) ?>,
+                    'default'  => <?= $generator->generateString($classLabel) ?>,
+                    'relation' => <?= $generator->generateString(Inflector::pluralize($classLabel)) ?>,
+                    'index'    => <?= $generator->generateString('Browse '.Inflector::pluralize($classLabel)) ?>,
+                    'create'   => <?= $generator->generateString('Create '.$classLabel) ?>,
+                    'read'     => <?= $generator->generateString('View '.$classLabel) ?>,
+                    'update'   => <?= $generator->generateString('Update '.$classLabel) ?>,
+                    'delete'   => <?= $generator->generateString('Delete '.$classLabel) ?>,
                 ],
 <?php endif; ?>
 <?php endforeach; ?>

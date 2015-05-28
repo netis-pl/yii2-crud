@@ -158,6 +158,31 @@ class Formatter extends \yii\i18n\Formatter
 
         return Html::a($value, $route, $options);
     }
+    
+    /**
+     * Method checks if value is (-;+)infinity; If so returns text, else return parent.
+     * 
+     * @param integer|string|DateTime $value @see parent
+     * @param string $format @see parent
+     * @return string || string the formatted datetime
+     */
+    public function asDatetime($value, $format = null)
+    {        
+        if(($label = $this->isInfinity($value)) !== null) {
+            return $label;
+        }
+        return parent::asDatetime($value, $format);
+    }
+    
+    protected function isInfinity($value)
+    {
+        $value = strtolower($value);
+        switch($value) {
+            case '-infinity': return Yii::t('app', 'From infinity');
+            case 'infinity': return Yii::t('app', 'To infinity');
+            default: return null;
+        }
+    }
 
     /**
      * Filters the value based on the given format type.

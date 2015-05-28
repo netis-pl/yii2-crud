@@ -5,6 +5,7 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $fields array */
+/* @var $relations array */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
@@ -23,5 +24,6 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
 <?= $this->render('_form', [
     'model' => $model,
     'fields' => $fields,
+    'relations' => $relations,
 ]) ?>
 
