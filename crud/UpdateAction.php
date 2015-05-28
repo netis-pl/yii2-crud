@@ -183,10 +183,6 @@ class UpdateAction extends Action
         switch ($formats[$attribute]) {
             case 'boolean':
                 $formFields[$attribute]['formMethod'] = 'checkbox';
-                $formFields[$attribute]['options'] = [
-                    'template' => '{beginLabel}{input}<span>{labelTitle}</span>{help}{error}{endLabel}',
-                    'class' => 'checkbox style-2',
-                ];
                 break;
             case 'time':
                 $formFields[$attribute]['formMethod'] = 'textInput';
