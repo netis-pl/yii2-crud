@@ -17,8 +17,10 @@ $model = $relation['model'];
 
 <section>
     <h1><?= $model->getCrudLabel('relation') ?></h1>
+    <?php Pjax::begin(['id' => $relationName]) ?>
     <?= GridView::widget([
         'dataProvider' => $relation['dataProvider'],
         'columns'      => $relation['columns'],
     ]); ?>
+    <?php Pjax::end() ?>
 </section>
