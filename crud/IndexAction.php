@@ -42,7 +42,7 @@ class IndexAction extends Action
 
         return [
             'dataProvider' => $this->prepareDataProvider(),
-            'columns' => $this->getIndexColumns(new $this->modelClass),
+            'columns' => self::getIndexGridColumns(new $this->modelClass),
         ];
     }
 

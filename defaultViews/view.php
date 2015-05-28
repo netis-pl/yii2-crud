@@ -26,6 +26,7 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
     'attributes' => $attributes,
 ])
 ?>
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 <?php
 foreach ($relations as $relationName => $data) {
     echo $this->render('_relation_widget', array(
@@ -35,3 +36,4 @@ foreach ($relations as $relationName => $data) {
     ));
 }
 ?>
+</div>
