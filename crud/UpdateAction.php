@@ -52,7 +52,7 @@ class UpdateAction extends Action
             call_user_func($this->checkAccess, $this->id, $model);
         }
 
-        if (Yii::$app->request->isAjax) {
+        if (Yii::$app->request->isAjax && !Yii::$app->request->isPjax) {
             $response = clone Yii::$app->response;
             $response->format = Response::FORMAT_JSON;
             $response->content = json_encode(ActiveForm::validate($model));
@@ -183,10 +183,6 @@ class UpdateAction extends Action
         switch ($formats[$attribute]) {
             case 'boolean':
                 $formFields[$attribute]['formMethod'] = 'checkbox';
-                $formFields[$attribute]['options'] = [
-                    'template' => '{beginLabel}{input}<span>{labelTitle}</span>{help}{error}{endLabel}',
-                    'class' => 'checkbox style-2',
-                ];
                 break;
             case 'time':
                 $formFields[$attribute]['formMethod'] = 'textInput';

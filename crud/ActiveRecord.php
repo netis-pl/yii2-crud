@@ -97,8 +97,8 @@ class ActiveRecord extends \yii\db\ActiveRecord
             if (!isset($columns[$attribute])) {
                 $formats[$attribute] = Schema::TYPE_STRING;
             }
-            $dbType = $columns[$attribute]->dbType;
-            if ($dbType === 'interval') {
+            $type = $columns[$attribute]->type;
+            if ($columns[$attribute]->dbType === 'interval') {
                 $formats[$attribute] = 'interval';
                 continue;
             }
@@ -116,7 +116,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
                 }
                 continue;
             }
-            $formats[$attribute] = !isset($formatMap[$dbType]) ? 'text' : $formatMap[$dbType];
+            $formats[$attribute] = !isset($formatMap[$type]) ? 'text' : $formatMap[$type];
         }
         return $formats;
     }
