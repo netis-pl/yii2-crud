@@ -102,6 +102,19 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
     <?php $renderRow($renderControlGroup, $fields, $form, $maxColumnWidth); ?>
     </fieldset>
 
+    <div role="tabpanel" class="relations-panel">
+        <ul class="nav nav-tabs" role="tablist">
+<?php foreach ($relations as $relationName => $data): ?>
+            <li role="presentation"
+                class="<?= Yii::$app->request->getQueryParam('_pjax') === "#$relationName" ? 'active' : ''?>">
+                <a href="#tab_<?= $relationName ?>" aria-controls="tab_<?= $relationName ?>"
+                   role="tab" data-toggle="tab">
+                    <?= $data['model']->getCrudLabel('relation') ?>
+                </a>
+            </li>
+<?php endforeach; ?>
+        </ul>
+        <div class="tab-content">
 <?php
 foreach ($relations as $relationName => $data) {
     echo $this->render('_relation_edit_widget', array(
@@ -111,6 +124,20 @@ foreach ($relations as $relationName => $data) {
     ));
 }
 ?>
+        </div>
+    </div>
+
+    <!--div class="panel-group" id="relationsAccordion" role="tablist" aria-multiselectable="true">
+<?php
+/*foreach ($relations as $relationName => $data) {
+    echo $this->render('_relation_edit_widget', array(
+        'model' => $model,
+        'relations' => $relations,
+        'relationName' => $relationName,
+    ));
+}*/
+?>
+    </div-->
 
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), [

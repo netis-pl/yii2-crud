@@ -52,7 +52,7 @@ class UpdateAction extends Action
             call_user_func($this->checkAccess, $this->id, $model);
         }
 
-        if (Yii::$app->request->isAjax) {
+        if (Yii::$app->request->isAjax && !Yii::$app->request->isPjax) {
             $response = clone Yii::$app->response;
             $response->format = Response::FORMAT_JSON;
             $response->content = json_encode(ActiveForm::validate($model));
