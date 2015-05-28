@@ -9,6 +9,7 @@ use yii\widgets\Pjax;
 /* @var $relations array */
 /* @var $relationName string */
 /* @var $relation array */
+/* @var $isActive boolean */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $relation = $relations[$relationName];
@@ -39,7 +40,7 @@ $model = $relation['model'];
 </div-->
 
 <div role="tabpanel"
-     class="tab-pane fade<?= Yii::$app->request->getQueryParam('_pjax') === "#$relationName" ? ' active' : '' ?>"
+     class="tab-pane fade<?= $isActive ? ' in active' : '' ?>"
      id="tab_<?= $relationName ?>">
     <?php Pjax::begin(['id' => $relationName]); ?>
     <?= GridView::widget([

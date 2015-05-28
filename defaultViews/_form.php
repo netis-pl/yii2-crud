@@ -56,7 +56,7 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
     }
     $oneColumn = count($fields) == 1;
     echo $oneColumn ? '' : '<div class="row">';
-    $columnWidth = ($topColumnWidth / count($fields));
+    $columnWidth = ceil($topColumnWidth / count($fields));
     foreach ($fields as $name => $column) {
         echo $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
         if (is_string($column)) {
@@ -78,6 +78,16 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
     }
     echo $oneColumn ? '' : '</div>';
 };
+
+
+$pjax = Yii::$app->request->getQueryParam('_pjax');
+$activeRelation = false;
+foreach ($relations as $relationName => $data) {
+    if ($pjax === null || $pjax === "#$relationName") {
+        $activeRelation = $relationName;
+        break;
+    }
+}
 ?>
 
 <div class="ar-form">
@@ -99,14 +109,14 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
     <?= $form->errorSummary($model); ?>
 
     <fieldset>
-    <?php $renderRow($renderControlGroup, $fields, $form, $maxColumnWidth); ?>
+    <?php $renderRow($renderControlGroup, [$fields], $form, $maxColumnWidth); ?>
     </fieldset>
 
     <div role="tabpanel" class="relations-panel">
         <ul class="nav nav-tabs" role="tablist">
 <?php foreach ($relations as $relationName => $data): ?>
             <li role="presentation"
-                class="<?= Yii::$app->request->getQueryParam('_pjax') === "#$relationName" ? 'active' : ''?>">
+                class="<?= $relationName === $activeRelation ? 'active' : ''?>">
                 <a href="#tab_<?= $relationName ?>" aria-controls="tab_<?= $relationName ?>"
                    role="tab" data-toggle="tab">
                     <?= $data['model']->getCrudLabel('relation') ?>
@@ -117,11 +127,12 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
         <div class="tab-content">
 <?php
 foreach ($relations as $relationName => $data) {
-    echo $this->render('_relation_edit_widget', array(
+    echo $this->render('_relation_edit_widget', [
         'model' => $model,
         'relations' => $relations,
         'relationName' => $relationName,
-    ));
+        'isActive' => $relationName === $activeRelation,
+    ]);
 }
 ?>
         </div>

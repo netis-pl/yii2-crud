@@ -28,6 +28,15 @@ if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
     ]);
     return;
 }
+
+$pjax = Yii::$app->request->getQueryParam('_pjax');
+$activeRelation = false;
+foreach ($relations as $relationName => $data) {
+    if ($pjax === null || $pjax === "#$relationName") {
+        $activeRelation = $relationName;
+        break;
+    }
+}
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
@@ -43,7 +52,7 @@ if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
     <ul class="nav nav-tabs" role="tablist">
 <?php foreach ($relations as $relationName => $data): ?>
         <li role="presentation"
-            class="<?= Yii::$app->request->getQueryParam('_pjax') === "#$relationName" ? 'active' : ''?>">
+            class="<?= $relationName === $activeRelation ? 'active' : ''?>">
             <a href="#tab_<?= $relationName ?>" aria-controls="tab_<?= $relationName ?>"
                role="tab" data-toggle="tab">
                 <?= $data['model']->getCrudLabel('relation') ?>
@@ -58,6 +67,7 @@ if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
                 'model' => $model,
                 'relations' => $relations,
                 'relationName' => $relationName,
+                'isActive' => $relationName === $activeRelation,
             ));
         }
         ?>
