@@ -104,10 +104,12 @@ class UpdateAction extends Action
             return $formFields;
         }
         $isHidden = false;
+        $foreignKey = null;
         foreach ($activeRelation->link as $left => $right) {
-            if (in_array($left, $blameableAttributes)) {
+            if (in_array($right, $blameableAttributes)) {
                 return $formFields;
             }
+            $foreignKey = $right;
             if (isset($hiddenAttributes[$left])) {
                 $formFields[$relation] = [
                     'formMethod' => 'hiddenField',
@@ -131,17 +133,16 @@ class UpdateAction extends Action
         if (count($activeRelation->link) > 1) {
             throw new InvalidConfigException('Composite hasOne relations are not supported by '.get_called_class());
         }
-        $foreignKeys = array_keys($activeRelation->link);
-        $foreignKey = reset($foreignKeys);
 
         $route = Yii::$app->crudModelsMap[$activeRelation->modelClass];
         $formFields[$relation] = [
             'widgetClass' => 'maddoger\widgets\Select2',
             'attribute' => $foreignKey,
             'options' => [
+                'items' => $route !== null ? null : $model::find()->defaultOrder()->all(),
                 'clientOptions' => [
-                    'ajax' => [
-                        'url' => Url::toRoute($route),
+                    'ajax' => $route === null ? [] : [
+                        'url' => Url::toRoute([$route, '_format' => 'json']),
                         'dataFormat' => 'json',
                         'quietMillis' => 300,
                         //'data' => 'js:s2helper.data',
@@ -175,65 +176,80 @@ class UpdateAction extends Action
      */
     protected function addFormField($formFields, $model, $attribute, $dbColumns, $formats)
     {
-        $formFields[$attribute] = [
+        $field = [
             'attribute' => $attribute,
-            'options' => [],
+            'arguments' => [],
         ];
 
         switch ($formats[$attribute]) {
             case 'boolean':
-                $formFields[$attribute]['formMethod'] = 'checkbox';
+                $field['formMethod'] = 'checkbox';
                 break;
             case 'time':
-                $formFields[$attribute]['formMethod'] = 'textInput';
-                $formFields[$attribute]['options'] = [
-                    'value' => Html::encode($model->getAttribute($attribute)),
+                $field['formMethod'] = 'textInput';
+                $field['arguments'] = [
+                    [
+                        'value' => Html::encode($model->getAttribute($attribute)),
+                    ],
                 ];
                 break;
             case 'datetime':
             case 'date':
-                $formFields[$attribute]['widgetClass'] = 'omnilight\widgets\DatePicker';
-                $formFields[$attribute]['options'] = [
+                $field['widgetClass'] = 'omnilight\widgets\DatePicker';
+                $field['options'] = [
                     'model' => $model,
                     'attribute' => $attribute,
                     'htmlOptions' => ['class' => 'form-control']
                 ];
                 break;
             case 'set':
-                $formFields[$attribute]['formMethod'] = 'listBox';
+                //! @todo move to default case, check if enum with such name exists and add items to arguments
+                $field['formMethod'] = 'listBox';
+                $field['arguments'] = [
+                    [], // first argument is the items array
+                ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
-                    $formFields[$attribute]['options'] = ['empty' => Yii::t('app', 'Any')];
+                    $field['arguments'][] = [
+                        'empty' => Yii::t('app', 'Any'),
+                    ];
                 }
                 break;
             case 'flags':
                 throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
             case 'paragraphs':
-                $formFields[$attribute]['formMethod'] = 'textarea';
-                $formFields[$attribute]['options'] = [
-                    'value' => Html::encode($model->getAttribute($attribute)),
-                    'cols' => '80',
-                    'rows' => '10',
+                $field['formMethod'] = 'textarea';
+                $field['arguments'] = [
+                    [
+                        'value' => Html::encode($model->getAttribute($attribute)),
+                        'cols' => '80',
+                        'rows' => '10',
+                    ],
                 ];
                 break;
             case 'file':
-                $formFields[$attribute]['formMethod'] = 'fileInput';
-                $formFields[$attribute]['options'] = [
-                    'value' => $model->getAttribute($attribute),
+                $field['formMethod'] = 'fileInput';
+                $field['arguments'] = [
+                    [
+                        'value' => $model->getAttribute($attribute),
+                    ],
                 ];
                 break;
             default:
             case 'text':
-                $formFields[$attribute]['formMethod'] = 'textInput';
-                $formFields[$attribute]['options'] = [
-                    'value' => Html::encode($model->getAttribute($attribute)),
+                $field['formMethod'] = 'textInput';
+                $field['arguments'] = [
+                    [
+                        'value' => Html::encode($model->getAttribute($attribute)),
+                    ],
                 ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->type === 'string'
                     && $dbColumns[$attribute]->size !== null
                 ) {
-                    $formFields[$attribute]['options']['maxlength'] = $dbColumns[$attribute]->size;
+                    $field['arguments'][0]['maxlength'] = $dbColumns[$attribute]->size;
                 }
                 break;
         }
+        $formFields[$attribute] = $field;
         return $formFields;
     }
 

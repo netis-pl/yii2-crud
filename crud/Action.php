@@ -188,7 +188,7 @@ class Action extends \yii\rest\Action
             }
 
             if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
-//                continue;
+                continue;
             }
 
             $relatedModel = new $activeRelation->modelClass;

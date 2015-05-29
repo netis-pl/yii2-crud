@@ -183,7 +183,6 @@ class ActiveController extends \yii\rest\ActiveController
      */
     public function checkAccess($action, $model = null, $params = [])
     {
-        return true;
         return Yii::$app->user->can($this->modelClass.'.'.$action, $model === null ? null : ['model' => $model]);
     }
 

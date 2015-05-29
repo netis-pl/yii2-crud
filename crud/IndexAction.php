@@ -58,26 +58,29 @@ class IndexAction extends Action
             [
                 'class'         => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'column-action'],
-                /* 'buttons' => [
-                  'view'   => function ($url, $model, $key) use ($actionColumn) {
-                  if (!Yii::$app->user->can($model::className().'.read')) {
-                  return null;
-                  }
-                  return $actionColumn->buttons['view'];
-                  },
-                  'update' => function ($url, $model, $key) use ($actionColumn) {
-                  if (!Yii::$app->user->can($model::className().'.update')) {
-                  return null;
-                  }
-                  return $actionColumn->buttons['update'];
-                  },
-                  'delete' => function ($url, $model, $key) use ($actionColumn) {
-                  if (!Yii::$app->user->can($model::className().'.delete')) {
-                  return null;
-                  }
-                  return $actionColumn->buttons['delete'];
-                  },
-                  ], */
+                'buttons' => [
+                    'view'   => function ($url, $model, $key) use ($actionColumn) {
+                        if (!Yii::$app->user->can($model::className() . '.read')) {
+                            return null;
+                        }
+
+                        return $actionColumn->buttons['view']($url, $model, $key);
+                    },
+                    'update' => function ($url, $model, $key) use ($actionColumn) {
+                        if (!Yii::$app->user->can($model::className() . '.update')) {
+                            return null;
+                        }
+
+                        return $actionColumn->buttons['update']($url, $model, $key);
+                    },
+                    'delete' => function ($url, $model, $key) use ($actionColumn) {
+                        if (!Yii::$app->user->can($model::className() . '.delete')) {
+                            return null;
+                        }
+
+                        return $actionColumn->buttons['delete']($url, $model, $key);
+                    },
+                ],
             ],
             [
                 'class'         => 'yii\grid\SerialColumn',
