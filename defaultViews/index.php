@@ -25,7 +25,8 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
     <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
     <form data-pjax>
         <div id="w0-filters">
-            <input class="form-control" id="form-control" name="search" placeholder="<?php echo Yii::t('app', 'Search'); ?>" type="text"/>
+            <input onkeyup="jQuery('#w0').yiiGridView('applyFilter')"
+                   class="form-control" id="quickSearchIndex" name="search" placeholder="<?php echo Yii::t('app', 'Search'); ?>" type="text"/>
         </div>
     </form>
 </div>
@@ -33,7 +34,7 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 <?= GridView::widget([
     'dataProvider' => $dataProvider,
 //    'filterModel' => $searchModel,
-    'filterSelector' => '#form-control',
+    'filterSelector' => '#quickSearchIndex',
     'columns' => $columns,
 ]); ?>
 <?php Pjax::end(); ?>
