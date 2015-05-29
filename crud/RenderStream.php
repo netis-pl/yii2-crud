@@ -31,6 +31,14 @@ class RenderStream
      * @var string
      */
     private $actionId;
+    /**
+     * @var \nineinchnick\exporter\ExporterView
+     */
+    private $grid;
+    /**
+     * @var string
+     */
+    private $buffer;
 
     /**
      * @return array supported formats as mimetype => format, @see ContentNegotiator::$formats
@@ -67,6 +75,22 @@ class RenderStream
         $url = parse_url($path);
         $this->actionId = $url["host"];
 
+        $class = null;
+        switch (self::$format) {
+            case Response::FORMAT_JSON:
+                $class = 'nineinchnick\exporter\JsonView';
+                break;
+            case Response::FORMAT_XML:
+                $class = 'nineinchnick\exporter\XmlView';
+                break;
+        }
+
+        $this->grid = \Yii::createObject([
+            'class' => $class,
+            'dataProvider' => self::$params['dataProvider'],
+            'columns' => self::$params['columns'],
+        ]);
+
         return true;
     }
 
@@ -78,6 +102,9 @@ class RenderStream
      */
     public function stream_read($count)
     {
+        /**
+         * get 100 rows, return $count bytes and if anything left put it in buffer
+         */
         return false;
     }
 
