@@ -142,7 +142,7 @@ class UpdateAction extends Action
                 'items' => $route !== null ? null : $model::find()->defaultOrder()->all(),
                 'clientOptions' => [
                     'ajax' => $route === null ? [] : [
-                        'url' => Url::toRoute([$route, '_format' => 'json']),
+                        'url' => Url::toRoute([$route . '/index', '_format' => 'json']),
                         'dataFormat' => 'json',
                         'quietMillis' => 300,
                         //'data' => 'js:s2helper.data',

@@ -25,8 +25,7 @@ use yii\web\Response;
  * @todo probably add a custom auth method used when html format is selected
  *
  * To stream the result, instead of serializing it and using a response formatter
- * a stream wrapper is created, which gradually renders the response
- * using a version of ExporterView grid.
+ * a stream wrapper is created, which gradually renders the response.
  *
  * @package netis\utils\crud
  */
