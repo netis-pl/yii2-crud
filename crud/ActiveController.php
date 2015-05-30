@@ -53,7 +53,11 @@ class ActiveController extends \yii\rest\ActiveController
         return array_merge(parent::behaviors(), [
             'contentNegotiator' => [
                 'class' => ContentNegotiator::className(),
-                'formats' => array_merge(RenderStream::formats(), ['text/html' => Response::FORMAT_HTML]),
+                'formats' => [
+                    'application/json' => Response::FORMAT_JSON,
+                    'application/xml' => Response::FORMAT_XML,
+                    'text/html' => Response::FORMAT_HTML,
+                ],
             ],
             'access' => [
                 'class' => AccessControl::className(),
@@ -155,15 +159,25 @@ class ActiveController extends \yii\rest\ActiveController
         }
 
         parent::afterAction($action, $result);
-        if (!stream_wrapper_register("view", "netis\\utils\\crud\\RenderStream")) {
+        switch (Yii::$app->response->format) {
+            case Response::FORMAT_JSON:
+                $rendererClass = 'netis\\utils\\crud\\JsonRendererStream';
+                break;
+            case Response::FORMAT_XML:
+                $rendererClass = 'netis\\utils\\crud\\XmlRendererStream';
+                break;
+            default:
+                throw new \HttpInvalidParamException('Unsupported format requested: '.Yii::$app->response->format);
+        }
+        $streamName = Yii::$app->response->format.'View';
+        if (!stream_wrapper_register($streamName, $rendererClass)) {
             throw new Exception('Failed to register the RenderStream wrapper.');
         }
-        RenderStream::$format = Yii::$app->response->format;
-        RenderStream::$params = $params;
+        $rendererClass::$params = $params;
         $response = new Response();
         $response->setDownloadHeaders($action->id.'.'.Yii::$app->response->format, Yii::$app->response->acceptMimeType);
         $response->format = Response::FORMAT_RAW;
-        $response->stream = fopen("view://{$action->id}", "r");
+        $response->stream = fopen("$streamName://{$action->id}?format=".Yii::$app->response->format, "r");
 
         return $response;
     }
