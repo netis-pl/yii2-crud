@@ -33,6 +33,13 @@ class ActiveController extends \yii\rest\ActiveController
 {
     const SERIALIZATION_LIMIT = 1000;
     /**
+     * @var string|array the configuration for creating the serializer that formats the response data.
+     */
+    public $serializer = [
+        'class' => 'yii\rest\Serializer',
+        'collectionEnvelope' => 'items',
+    ];
+    /**
      * @inheritdoc
      */
     public $enableCsrfValidation = true;
