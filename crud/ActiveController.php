@@ -32,6 +32,7 @@ use yii\web\Response;
  */
 class ActiveController extends \yii\rest\ActiveController
 {
+    const SERIALIZATION_LIMIT = 1000;
     /**
      * @inheritdoc
      */
@@ -54,6 +55,7 @@ class ActiveController extends \yii\rest\ActiveController
             'contentNegotiator' => [
                 'class' => ContentNegotiator::className(),
                 'formats' => [
+                    'text/csv' => 'csv',
                     'application/json' => Response::FORMAT_JSON,
                     'application/xml' => Response::FORMAT_XML,
                     'text/html' => Response::FORMAT_HTML,
@@ -133,7 +135,18 @@ class ActiveController extends \yii\rest\ActiveController
     }
 
     /**
-     * @inheritdoc
+     * If the response format is HTML, either performs a redirect or renders a view template.
+     * If the result is or contains a data provider with pagination disabled or a large page size,
+     * then a renderer stream is used.
+     * In other cases, a serializer converts the response to an array.
+     * No extra action is taken when the result is already a Response object.
+     *
+     * @param Action $action the action just executed.
+     * @param mixed $result  the action return result.
+     * @return mixed the processed action result.
+     * @throws Exception
+     * @throws \HttpInvalidParamException
+     * @throws \yii\base\InvalidConfigException
      */
     public function afterAction($action, $result)
     {
@@ -147,6 +160,8 @@ class ActiveController extends \yii\rest\ActiveController
         } else {
             $params = $result;
         }
+
+        // render a view template for HTML response format
         if (Yii::$app->response->format === Response::FORMAT_HTML) {
             $headers = Yii::$app->response->getHeaders();
             if (($location = $headers->get('Location')) !== null) {
@@ -158,8 +173,35 @@ class ActiveController extends \yii\rest\ActiveController
             return parent::afterAction($action, $content);
         }
 
+        // use serializer for all results except large data providers
+        $dataProvider = null;
+        if ($result instanceof DataProviderInterface) {
+            $dataProvider = $result;
+        } elseif (isset($result['dataProvider']) && $result['dataProvider'] instanceof DataProviderInterface) {
+            $dataProvider = $result['dataProvider'];
+        }
+        if ($dataProvider === null
+            || ($dataProvider->getPagination() === false
+                && $dataProvider->getTotalCount() < self::SERIALIZATION_LIMIT)
+            || $dataProvider->getPagination()->getPageSize() < self::SERIALIZATION_LIMIT
+        ) {
+            if (isset($result['dataProvider'])) {
+                $data = $result['dataProvider'];
+            } elseif (isset($result['model'])) {
+                $data = $result['model'];
+            } else {
+                $data = $result;
+            }
+            $data = parent::afterAction($action, $data);
+            return Yii::createObject($this->serializer)->serialize($data);
+        }
+
+        // use a renderer stream for large data providers
         parent::afterAction($action, $result);
         switch (Yii::$app->response->format) {
+            case 'csv':
+                $rendererClass = 'netis\\utils\\crud\\CsvRendererStream';
+                break;
             case Response::FORMAT_JSON:
                 $rendererClass = 'netis\\utils\\crud\\JsonRendererStream';
                 break;
@@ -177,7 +219,11 @@ class ActiveController extends \yii\rest\ActiveController
         $response = new Response();
         $response->setDownloadHeaders($action->id.'.'.Yii::$app->response->format, Yii::$app->response->acceptMimeType);
         $response->format = Response::FORMAT_RAW;
-        $response->stream = fopen("$streamName://{$action->id}?format=".Yii::$app->response->format, "r");
+        $streamParams = [
+            'format' => Yii::$app->response->format,
+            'serializer' => $this->serializer,
+        ];
+        $response->stream = fopen("$streamName://{$action->id}?".http_build_str($streamParams), "r");
 
         return $response;
     }

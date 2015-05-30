@@ -13,7 +13,6 @@ use yii\db\DataReader;
 use yii\db\QueryInterface;
 use yii\grid\DataColumn;
 use yii\grid\GridView;
-use yii\web\Response;
 
 /**
  * A stream wrapper allowing to gradually render a response while reading it with stream functions like fread().
