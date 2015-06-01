@@ -11,6 +11,7 @@ use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\helpers\Html;
 use yii\helpers\Url;
+use yii\web\JsExpression;
 use yii\web\Response;
 use yii\web\ServerErrorHttpException;
 use yii\widgets\ActiveForm;
@@ -104,10 +105,12 @@ class UpdateAction extends Action
             return $formFields;
         }
         $isHidden = false;
+        $foreignKey = null;
         foreach ($activeRelation->link as $left => $right) {
-            if (in_array($left, $blameableAttributes)) {
+            if (in_array($right, $blameableAttributes)) {
                 return $formFields;
             }
+            $foreignKey = $right;
             if (isset($hiddenAttributes[$left])) {
                 $formFields[$relation] = [
                     'formMethod' => 'hiddenField',
@@ -131,25 +134,69 @@ class UpdateAction extends Action
         if (count($activeRelation->link) > 1) {
             throw new InvalidConfigException('Composite hasOne relations are not supported by '.get_called_class());
         }
-        $foreignKeys = array_keys($activeRelation->link);
-        $foreignKey = reset($foreignKeys);
 
+        $script = <<<JavaScript
+(function (s2helper, $, undefined) {
+    "use strict";
+    s2helper.formatResult = function (result, container, query, escapeMarkup, depth) {
+        if (typeof depth == 'undefined') {
+            depth = 0;
+        }
+        var markup = [];
+        window.Select2.util.markMatch(result, query.term, markup, escapeMarkup);
+        return markup.join("");
+    };
+
+    // generates query params
+    s2helper.data = function (term, page) {
+        return { search: term, page: page };
+    };
+
+    // builds query results from ajax response
+    s2helper.results = function (data, page) {
+        return { results: data.items, more: page < data._meta.pageCount };
+    };
+
+    s2helper.initSingle = function (element, callback) {
+        var url = element.data('select2').opts.ajax.url;
+        $.getJSON(url, {ids: element.val()}, function (data) {
+            if (typeof data.items[0] != 'undefined')
+                callback(data.items[0]);
+        });
+    };
+
+    s2helper.initMulti = function (element, callback) {
+        var url = element.data('select2').opts.ajax.url;
+        $.getJSON(url, {ids: element.val()}, function (data) {callback(data.items);});
+    };
+}( window.s2helper = window.s2helper || {}, jQuery ));
+JavaScript;
+        $this->controller->view->registerJs($script, \yii\web\View::POS_END);
         $route = Yii::$app->crudModelsMap[$activeRelation->modelClass];
+        $fields = array_merge($model->getTableSchema()->primaryKey, $model->getBehavior('labels')->attributes);
+        $labelField = reset($model->getBehavior('labels')->attributes);
         $formFields[$relation] = [
             'widgetClass' => 'maddoger\widgets\Select2',
             'attribute' => $foreignKey,
             'options' => [
+                'items' => $route !== null ? null : $model::find()->defaultOrder()->all(),
                 'clientOptions' => [
-                    'ajax' => [
-                        'url' => Url::toRoute($route),
+                    'ajax' => $route === null ? [] : [
+                        'url' => Url::toRoute([
+                            $route . '/index',
+                            '_format' => 'json',
+                            'fields' => implode(',', $fields),
+                        ]),
                         'dataFormat' => 'json',
                         'quietMillis' => 300,
-                        //'data' => 'js:s2helper.data',
-                        //'results' => 'js:s2helper.results',
+                        'data' => new JsExpression('s2helper.data'),
+                        'results' => new JsExpression('s2helper.results'),
                     ],
-                    //'initSelection' => 'js:s2helper.initSingle',
-                    //'formatResult' => 'js:s2helper.formatResult',
-                    //'formatSelection' => 'js:function (item) { return item.value; }',
+                    'initSelection' => new JsExpression('s2helper.initSingle'),
+                    'formatResult' => new JsExpression('function (result, container, query, escapeMarkup, depth) {
+return s2helper.formatResult(result.'.$labelField.', container, query, escapeMarkup, depth);
+}'),
+                    'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
 
                     'width' => '100%',
                     'allowClear' => !isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull,
@@ -175,65 +222,80 @@ class UpdateAction extends Action
      */
     protected function addFormField($formFields, $model, $attribute, $dbColumns, $formats)
     {
-        $formFields[$attribute] = [
+        $field = [
             'attribute' => $attribute,
-            'options' => [],
+            'arguments' => [],
         ];
 
         switch ($formats[$attribute]) {
             case 'boolean':
-                $formFields[$attribute]['formMethod'] = 'checkbox';
+                $field['formMethod'] = 'checkbox';
                 break;
             case 'time':
-                $formFields[$attribute]['formMethod'] = 'textInput';
-                $formFields[$attribute]['options'] = [
-                    'value' => Html::encode($model->getAttribute($attribute)),
+                $field['formMethod'] = 'textInput';
+                $field['arguments'] = [
+                    [
+                        'value' => Html::encode($model->getAttribute($attribute)),
+                    ],
                 ];
                 break;
             case 'datetime':
             case 'date':
-                $formFields[$attribute]['widgetClass'] = 'omnilight\widgets\DatePicker';
-                $formFields[$attribute]['options'] = [
+                $field['widgetClass'] = 'omnilight\widgets\DatePicker';
+                $field['options'] = [
                     'model' => $model,
                     'attribute' => $attribute,
                     'htmlOptions' => ['class' => 'form-control']
                 ];
                 break;
             case 'set':
-                $formFields[$attribute]['formMethod'] = 'listBox';
+                //! @todo move to default case, check if enum with such name exists and add items to arguments
+                $field['formMethod'] = 'listBox';
+                $field['arguments'] = [
+                    [], // first argument is the items array
+                ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
-                    $formFields[$attribute]['options'] = ['empty' => Yii::t('app', 'Any')];
+                    $field['arguments'][] = [
+                        'empty' => Yii::t('app', 'Any'),
+                    ];
                 }
                 break;
             case 'flags':
                 throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
             case 'paragraphs':
-                $formFields[$attribute]['formMethod'] = 'textarea';
-                $formFields[$attribute]['options'] = [
-                    'value' => Html::encode($model->getAttribute($attribute)),
-                    'cols' => '80',
-                    'rows' => '10',
+                $field['formMethod'] = 'textarea';
+                $field['arguments'] = [
+                    [
+                        'value' => Html::encode($model->getAttribute($attribute)),
+                        'cols' => '80',
+                        'rows' => '10',
+                    ],
                 ];
                 break;
             case 'file':
-                $formFields[$attribute]['formMethod'] = 'fileInput';
-                $formFields[$attribute]['options'] = [
-                    'value' => $model->getAttribute($attribute),
+                $field['formMethod'] = 'fileInput';
+                $field['arguments'] = [
+                    [
+                        'value' => $model->getAttribute($attribute),
+                    ],
                 ];
                 break;
             default:
             case 'text':
-                $formFields[$attribute]['formMethod'] = 'textInput';
-                $formFields[$attribute]['options'] = [
-                    'value' => Html::encode($model->getAttribute($attribute)),
+                $field['formMethod'] = 'textInput';
+                $field['arguments'] = [
+                    [
+                        'value' => Html::encode($model->getAttribute($attribute)),
+                    ],
                 ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->type === 'string'
                     && $dbColumns[$attribute]->size !== null
                 ) {
-                    $formFields[$attribute]['options']['maxlength'] = $dbColumns[$attribute]->size;
+                    $field['arguments'][0]['maxlength'] = $dbColumns[$attribute]->size;
                 }
                 break;
         }
+        $formFields[$attribute] = $field;
         return $formFields;
     }
 

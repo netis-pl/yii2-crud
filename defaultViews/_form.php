@@ -26,9 +26,9 @@ $renderControlGroup = function ($name, $data, $form) use ($controller, $model) {
     $field = $form->field($model, $data['attribute']);
     if (isset($data['formMethod'])) {
         if (is_string($data['formMethod'])) {
-            echo call_user_func([$field, $data['formMethod']], $data['options']);
+            echo call_user_func_array([$field, $data['formMethod']], $data['arguments']);
         } else {
-            echo call_user_func($data['formMethod'], $field, $data['options']);
+            echo call_user_func($data['formMethod'], $field, $data['arguments']);
         }
         return;
     }
@@ -39,15 +39,10 @@ $renderControlGroup = function ($name, $data, $form) use ($controller, $model) {
         $label = $model->getAttributeLabel($name);
     }
     $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
-?>
-        <div class="form-group  <?= $errorClass ?>">
-            <?= $field->label(['class' => 'control-label', 'label' => $label]); ?>
-            <div>
-                <?= $field->widget($data['widgetClass'], $data['options']); ?>
-                <?= $field->error(['class' => 'help-block']); ?>
-            </div>
-        </div>
-<?php
+    echo $field
+        ->label($label, ['class' => 'control-label'])
+        ->error(['class' => 'help-block'])
+        ->widget($data['widgetClass'], $data['options']);
     return;
 };
 $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12) use (&$renderRow) {

@@ -6,17 +6,39 @@
 
 namespace netis\utils\web;
 
+use netis\utils\crud\Action;
 use Yii;
 use yii\base\InvalidParamException;
 use yii\base\Model;
+use yii\db\ActiveRecord;
 use yii\helpers\Html;
 
 class Formatter extends \yii\i18n\Formatter
 {
     /**
+     * @var array the text to be displayed when formatting an infinite datetime value. The first element corresponds
+     * to the text displayed for `-infinity`, the second element for `infinity`.
+     * Defaults to `['From infinity', 'To infinity']`, where both will be translated according to [[locale]].
+     */
+    public $infinityFormat;
+    /**
      * @var EnumCollection dictionaries used when formatting an enum value.
      */
     private $enums;
+
+    /**
+     * @inheritdoc
+     */
+    public function init()
+    {
+        parent::init();
+        if ($this->infinityFormat === null) {
+            $this->infinityFormat = [
+                Yii::t('app', 'From infinity', [], $this->locale),
+                Yii::t('app', 'To infinity', [], $this->locale)
+            ];
+        }
+    }
 
     /**
      * Returns the enum collection.
@@ -140,48 +162,63 @@ class Formatter extends \yii\i18n\Formatter
 
     /**
      * Formats the value as a link to a matching controller.
-     * @param mixed $value the value to be formatted.
+     * @param Model $value the value to be formatted.
      * @param array $options the tag options in terms of name-value pairs. See [[Html::a()]].
      * @return string the formatted result.
      */
-    public function asCrudLink(Model $value, $options = [])
+    public function asCrudLink($value, $options = [])
     {
         if ($value === null) {
             return $this->nullDisplay;
         }
+        $result = Html::encode((string)$value);
+        /** @var ActiveRecord $value */
+        if (!$value instanceof ActiveRecord) {
+            return $result;
+        }
         $route = Yii::$app->crudModelsMap[$value::className()];
-        $value = Html::encode((string)$value);
+
 
         if ($route === null || !Yii::$app->user->can($value::className().'.read', ['model' => $value])) {
-            return $value;
+            return $result;
         }
 
-        return Html::a($value, $route, $options);
+        return Html::a($result, [$route . '/view', 'id' => Action::exportKey($value->getPrimaryKey())], $options);
     }
-    
+
     /**
-     * Method checks if value is (-;+)infinity; If so returns text, else return parent.
-     * 
-     * @param integer|string|DateTime $value @see parent
-     * @param string $format @see parent
-     * @return string || string the formatted datetime
+     * @inheritdoc
+     * Adds support for [-]infinity.
+     */
+    public function asDate($value, $format = null)
+    {
+        if (($label = $this->isInfinity($value)) !== null) {
+            return $label;
+        }
+        return parent::asDate($value, $format);
+    }
+
+    /**
+     * @inheritdoc
+     * Adds support for [-]infinity.
      */
     public function asDatetime($value, $format = null)
-    {        
-        if(($label = $this->isInfinity($value)) !== null) {
+    {
+        if (($label = $this->isInfinity($value)) !== null) {
             return $label;
         }
         return parent::asDatetime($value, $format);
     }
-    
+
     protected function isInfinity($value)
     {
         $value = strtolower($value);
-        switch($value) {
-            case '-infinity': return Yii::t('app', 'From infinity');
-            case 'infinity': return Yii::t('app', 'To infinity');
-            default: return null;
+        if ($value === '-infinity') {
+            return $this->infinityFormat[0];
+        } elseif ($value === 'infinity') {
+            return $this->infinityFormat[1];
         }
+        return null;
     }
 
     /**
