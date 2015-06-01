@@ -118,8 +118,8 @@ class IndexAction extends Action
                 continue;
             }
             foreach ($activeRelation->link as $left => $right) {
-                if (in_array($left, $blameableAttributes)) {
-                    continue;
+                if (in_array($right, $blameableAttributes)) {
+                    continue 2;
                 }
             }
 
