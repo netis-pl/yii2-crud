@@ -21,12 +21,14 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?= netis\utils\web\Alerts::widget() ?>
 
-<?php Pjax::begin(['timeout' => 6000]); ?>
+<?php Pjax::begin([
+    'timeout' => 6000,
+]); ?>
 <div class="input-group" style="width: 200px;">
     <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
     <form data-pjax>
-        <div id="w0-filters">
-            <input onkeyup="jQuery('#w0').yiiGridView('applyFilter')"
+        <div id="indexGrid-filters">
+            <input onkeyup="jQuery('#indexGrid').yiiGridView('applyFilter');"
                    class="form-control" id="quickSearchIndex" name="search"
                    placeholder="<?php echo Yii::t('app', 'Search'); ?>" type="text" />
         </div>
@@ -34,6 +36,7 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 </div>
 
 <?= GridView::widget([
+    'id' => 'indexGrid',
     'dataProvider' => $dataProvider,
 //    'filterModel' => $searchModel,
     'filterSelector' => '#quickSearchIndex',

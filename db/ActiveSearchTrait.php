@@ -289,7 +289,7 @@ trait ActiveSearchTrait
         }
         // skip foreign keys, relations are search in other way
         $allAttributes = array_diff(
-            $this->safeAttributeNames(),
+            $this->safeAttributes(),
             array_keys($this->getTableSchema()->foreignKeys)
         );
         $safeAttributes = [];
