@@ -90,7 +90,7 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
 
     public function behaviors()
     {
-        return array_merge([
+        return array_merge(parent::behaviors(), [
 <?php foreach ($behaviors as $name => $behavior): ?>
             '<?= $name ?>' => [
                 'class' => '<?= $behavior['class'] ?>',
@@ -118,7 +118,7 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
 <?php endforeach; ?>
             ],
 <?php endforeach; ?>
-        ], parent::behaviors());
+        ]);
     }
 
     /**

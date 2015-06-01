@@ -155,10 +155,35 @@ class IndexAction extends Action
         $modelClass = $this->modelClass;
         /** @var ActiveQuery $query */
         $query = $modelClass::find();
-        if ($query instanceof ActiveQuery) {
-            $query->defaultOrder();
-        }
 
-        return new ActiveDataProvider(['query' => $query]);
+        return new ActiveDataProvider([
+            'query' => $query,
+            'sort' => $this->getSort($query),
+        ]);
+    }
+
+    /**
+     * Creates a Sort object configuration using query default order.
+     * @param ActiveQuery $query
+     * @return array
+     */
+    private function getSort($query)
+    {
+        /* @var $model \netis\utils\crud\ActiveRecord */
+        $model = new $query->modelClass;
+        $defaults = $query instanceof ActiveQuery ? $query->getDefaultOrderColumns() : [];
+        $sort = [
+            'enableMultiSort' => true,
+            'attributes' => [],
+            'defaultOrder' => $defaults,
+        ];
+
+        foreach ($model->attributes() as $attribute) {
+            $sort['attributes'][$attribute] = [
+                'asc' => array_merge([$attribute => SORT_ASC], $defaults),
+                'desc' => array_merge([$attribute => SORT_DESC], $defaults),
+            ];
+        }
+        return $sort;
     }
 }

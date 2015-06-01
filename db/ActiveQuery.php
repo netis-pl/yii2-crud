@@ -7,30 +7,60 @@
 namespace netis\utils\db;
 
 use yii\base\InvalidConfigException;
+use yii\base\NotSupportedException;
 
 class ActiveQuery extends \yii\db\ActiveQuery
 {
+    /**
+     * Returns an array with default order columns, indexed by column name and with direction as value.
+     * @return array column name => order direction
+     */
+    public function getDefaultOrderColumns()
+    {
+        /* @var $model \netis\utils\crud\ActiveRecord */
+        $model = new $this->modelClass;
+        $columns = $model->getTableSchema()->columns;
+        try {
+            $indexes = $model->getDb()->getSchema()->findUniqueIndexes($model->getTableSchema());
+            $unique = empty($indexes) ? [] : array_flip(call_user_func_array('array_merge', $indexes));
+        } catch (NotSupportedException $e) {
+            $unique = null;
+        }
+        $order = [];
+        foreach ($model->getBehaviors() as $name => $behavior) {
+            if ($behavior instanceof SortableBehavior) {
+                $attributes = [$behavior->attribute];
+            } elseif ($behavior instanceof LabelsBehavior) {
+                if ($behavior->attributes === null) {
+                    continue;
+                }
+                $attributes = $behavior->attributes;
+            } else {
+                continue;
+            }
+
+            foreach ($attributes as $attribute) {
+                $order[$attribute] = SORT_ASC;
+                if ($unique !== null && isset($unique[$attribute]) && isset($columns[$attribute])
+                    && !$columns[$attribute]->allowNull
+                ) {
+                    return $order;
+                }
+            }
+        }
+
+        $order = array_merge($order, array_fill_keys($model->primaryKey(), SORT_ASC));
+
+        return $order;
+    }
+
     /**
      * Sets default order using display order attribute, representing attributes and primary keys.
      * @return $this
      */
     public function defaultOrder()
     {
-        /* @var $model \netis\utils\crud\ActiveRecord */
-        $model = new $this->modelClass;
-        $order = [];
-        /** @var SortableBehavior $sortable */
-        if (($sortable = $model->getBehavior('sortable')) !== null) {
-            $order[$sortable->attribute] = SORT_ASC;
-        }
-        /** @var LabelsBehavior $string */
-        if (($string = $model->getBehavior('string')) !== null && $string->attributes !== null) {
-            $order = array_merge($order, array_fill_keys($string->attributes, SORT_ASC));
-        }
-
-        $order = array_merge($order, array_fill_keys($model->primaryKey(), SORT_ASC));
-
-        $this->orderBy($order);
+        $this->orderBy($this->getDefaultOrderColumns());
         return $this;
     }
 
