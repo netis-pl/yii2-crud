@@ -1,7 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use yii\grid\GridView;
+use netis\utils\widgets\GridView;
 
 /* @var $this yii\web\View */
 /* @var $searchModel netis\utils\db\ActiveSearchTrait */
@@ -24,4 +24,5 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
     'dataProvider' => $dataProvider,
     //'filterModel' => $searchModel,
     'columns' => $columns,
+    'layout' => '{lengthPicker}{items}{summary}{pager}',
 ]); ?>
