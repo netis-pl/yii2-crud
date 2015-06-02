@@ -30,6 +30,7 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 //    'filterModel' => $searchModel,
     'filterSelector' => '#quickSearchIndex',
     'columns' => $columns,
-    'layout' => '{quickSearch}{items}{pager}{summary}{lengthPicker}',
+    'layout' => '{quickSearch}{items}<div class="row"><div class = "col-md-4">{pager}</div>'
+    . '<div class = "col-md-4 summary">{summary}</div><div class = "col-md-4">{lengthPicker}</div></div>',
 ]); ?>
 <?php Pjax::end(); ?>
