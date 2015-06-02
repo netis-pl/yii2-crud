@@ -62,11 +62,11 @@ class GridView extends \yii\grid\GridView
     {
         $placeholder = Yii::t('app', 'Search');
         $result = <<<HTML
-<div class="input-group" style="width: 200px;">
+<div class="input-group grid-quick-search" style="width: 200px;">
     <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
     <form data-pjax>
-        <div id="w0-filters">
-            <input onkeyup="jQuery('#w0').yiiGridView('applyFilter')"
+        <div id="indexGrid-filters">
+            <input onkeyup="jQuery('#indexGrid').yiiGridView('applyFilter')"
                    class="form-control" id="quickSearchIndex" name="search" placeholder="$placeholder" type="text"/>
         </div>
     </form>
