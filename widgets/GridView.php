@@ -2,6 +2,7 @@
 
 namespace netis\utils\widgets;
 
+use Yii;
 use yii\helpers\ArrayHelper;
 use yii\widgets\LinkPager;
 use yii\data\Pagination;
@@ -20,16 +21,20 @@ class GridView extends \yii\grid\GridView
         switch ($name) {
             case "{errors}":
                 return $this->renderErrors();
-            case '{summary}':
-                return $this->renderSummary();
-            case '{items}':
-                return $this->renderItems();
-            case '{pager}':
-                return $this->renderPager();
+            case '{summary}': {
+                    $this->summaryOptions = ['class' => 'summary text-center'];
+                    return Html::tag('div class ="col-md-4 summary"', $this->renderSummary());
+                }
+            case '{items}': {
+                    return Html::tag('div class ="col-md-12"', $this->renderItems());
+                }
+            case '{pager}': {
+                    return Html::tag('div class ="col-md-4"', Html::tag('div class ="pull-left"', $this->renderPager()));
+                }
             case '{sorter}':
                 return $this->renderSorter();
             case '{lengthPicker}':
-                return $this->renderLengthPicker();
+                return Html::tag('div class ="col-md-4"', $this->renderLengthPicker());
             default:
                 return false;
         }
@@ -39,12 +44,11 @@ class GridView extends \yii\grid\GridView
     {
         $this->dataProvider->getPagination()->totalCount = $this->dataProvider->getTotalCount();
         $pagination = $this->dataProvider->getPagination();
-        $choices[] = Html::tag('li', Html::a('10', $pagination->createUrl($pagination->getPage(), 10)));
-        $choices[] = Html::tag('li', Html::a('25', $pagination->createUrl($pagination->getPage(), 25)));
-        $choices[] = Html::tag('li', Html::a('50', $pagination->createUrl($pagination->getPage(), 50)));
-        $options = $this->options;
-        $options['id'] = 'w0_length';
-        $options['class'] = 'pagination pull-right';
-        return Html::tag('ul', implode("\n", $choices), $options);
+        foreach ([10, 25, 50] as $value) {
+            $choices[] = '<li><a href="' . $pagination->createUrl($pagination->getPage(), $value) . '">' . $value . '</a></li>';
+        }
+        return Html::tag('ul', implode("\n", $choices), ['class' => 'pagination pull-right']) . '<div class="pagination page-length-label pull-right">'
+                . Yii::t('app', 'Items per page') . '</div>';
     }
+
 }
