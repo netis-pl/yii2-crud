@@ -37,6 +37,13 @@ trait ActiveSearchTrait
         }
         if ($query instanceof ActiveQuery && isset($params['search'])) {
             $query->quickSearchPhrase = $params['search'];
+            // set from with an alias
+            if (empty($query->from)) {
+                /* @var $modelClass ActiveRecord */
+                $modelClass = $query->modelClass;
+                $tableName = $modelClass::tableName();
+                $query->from = [$tableName.' t'];
+            }
         }
 
         $dataProvider = new ActiveDataProvider([
