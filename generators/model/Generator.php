@@ -366,11 +366,11 @@ DESC;
             ],
             'formatDatetime' => [
                 'validator' => 'date',
-                'format' => "['yyyy-MM-dd', 'yyyy-MM-dd HH:mm', 'yyyy-MM-dd HH:mm:ss']",
+                'format' => "'yyyy-MM-dd HH:mm:ss'",
             ],
             'formatTimestamp' => [
                 'validator' => 'date',
-                'format' => "['yyyy-MM-dd', 'yyyy-MM-dd HH:mm', 'yyyy-MM-dd HH:mm:ss']",
+                'format' => "'yyyy-MM-dd HH:mm:ss'",
             ],
             'formatDate' => [
                 'validator' => 'date',
