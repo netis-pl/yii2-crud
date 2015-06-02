@@ -6,9 +6,11 @@
 
 namespace netis\utils\web;
 
+use netis\utils\crud\Action;
 use Yii;
 use yii\base\InvalidParamException;
 use yii\base\Model;
+use yii\db\ActiveRecord;
 use yii\helpers\Html;
 
 class Formatter extends \yii\i18n\Formatter
@@ -160,23 +162,28 @@ class Formatter extends \yii\i18n\Formatter
 
     /**
      * Formats the value as a link to a matching controller.
-     * @param mixed $value the value to be formatted.
+     * @param Model $value the value to be formatted.
      * @param array $options the tag options in terms of name-value pairs. See [[Html::a()]].
      * @return string the formatted result.
      */
-    public function asCrudLink(Model $value, $options = [])
+    public function asCrudLink($value, $options = [])
     {
         if ($value === null) {
             return $this->nullDisplay;
         }
+        $result = Html::encode((string)$value);
+        /** @var ActiveRecord $value */
+        if (!$value instanceof ActiveRecord) {
+            return $result;
+        }
         $route = Yii::$app->crudModelsMap[$value::className()];
-        $value = Html::encode((string)$value);
+
 
         if ($route === null || !Yii::$app->user->can($value::className().'.read', ['model' => $value])) {
-            return $value;
+            return $result;
         }
 
-        return Html::a($value, $route, $options);
+        return Html::a($result, [$route . '/view', 'id' => Action::exportKey($value->getPrimaryKey())], $options);
     }
 
     /**

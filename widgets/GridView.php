@@ -35,6 +35,8 @@ class GridView extends \yii\grid\GridView
                 return $this->renderSorter();
             case '{lengthPicker}':
                 return Html::tag('div class ="col-md-4"', $this->renderLengthPicker());
+            case '{quickSearch}':
+                return $this->renderQuickSearch();
             default:
                 return false;
         }
@@ -44,11 +46,33 @@ class GridView extends \yii\grid\GridView
     {
         $this->dataProvider->getPagination()->totalCount = $this->dataProvider->getTotalCount();
         $pagination = $this->dataProvider->getPagination();
+        $currentSize = $pagination->pageSize;
         foreach ([10, 25, 50] as $value) {
-            $choices[] = '<li><a href="' . $pagination->createUrl($pagination->getPage(), $value) . '">' . $value . '</a></li>';
+            if ($value == $currentSize){
+                $choices[] = '<li class="active"><a href="' . $pagination->createUrl($pagination->getPage(), $value) . '">' . $value . '</a></li>';
+            }  else {
+                $choices[] = '<li><a href="' . $pagination->createUrl($pagination->getPage(), $value) . '">' . $value . '</a></li>';
+            }
         }
         return Html::tag('ul', implode("\n", $choices), ['class' => 'pagination pull-right']) . '<div class="pagination page-length-label pull-right">'
                 . Yii::t('app', 'Items per page') . '</div>';
+    }
+
+    public function renderQuickSearch()
+    {
+        $placeholder = Yii::t('app', 'Search');
+        $result = <<<HTML
+<div class="input-group" style="width: 200px;">
+    <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
+    <form data-pjax>
+        <div id="w0-filters">
+            <input onkeyup="jQuery('#w0').yiiGridView('applyFilter')"
+                   class="form-control" id="quickSearchIndex" name="search" placeholder="$placeholder" type="text"/>
+        </div>
+    </form>
+</div>
+HTML;
+        return $result;
     }
 
 }

@@ -19,8 +19,7 @@
     "yiisoft/yii2-bootstrap": ">=2.0.4",
     "maddoger/yii2-select2": "1.4.*",
     "omnilight/yii2-bootstrap-datepicker": "1.0.*",
-    "nineinchnick/yii2-audit": "dev-master",
-    "nineinchnick/yii2-exporter": "dev-master"
+    "nineinchnick/yii2-audit": "dev-master"
   },
   "autoload": {
     "psr-4": { "netis\\utils\\": "" }

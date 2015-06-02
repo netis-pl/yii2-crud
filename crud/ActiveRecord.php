@@ -18,7 +18,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     public function behaviors()
     {
         return [
-            'string' => [
+            'labels' => [
                 'class' => 'netis\utils\db\LabelsBehavior',
             ],
             'trackable' => [

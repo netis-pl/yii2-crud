@@ -2,6 +2,8 @@
 
 use yii\helpers\Html;
 use netis\utils\widgets\GridView;
+use yii\widgets\Pjax;
+
 
 /* @var $this yii\web\View */
 /* @var $searchModel netis\utils\db\ActiveSearchTrait */
@@ -17,13 +19,17 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
-
 <?= netis\utils\web\Alerts::widget() ?>
-<div class="row">
-<?= GridView::widget([
-    'dataProvider' => $dataProvider,
-    //'filterModel' => $searchModel,
-    'columns' => $columns,
-    'layout' => '{items}{pager}{summary}{lengthPicker}',
+
+<?php Pjax::begin([
+    'timeout' => 6000,
 ]); ?>
-</div>
+<?= GridView::widget([
+    'id' => 'indexGrid',
+    'dataProvider' => $dataProvider,
+//    'filterModel' => $searchModel,
+    'filterSelector' => '#quickSearchIndex',
+    'columns' => $columns,
+    'layout' => '{quickSearch}{items}{pager}{summary}{lengthPicker}',
+]); ?>
+<?php Pjax::end(); ?>

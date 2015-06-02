@@ -11,6 +11,7 @@ use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\helpers\Html;
 use yii\helpers\Url;
+use yii\web\JsExpression;
 use yii\web\Response;
 use yii\web\ServerErrorHttpException;
 use yii\widgets\ActiveForm;
@@ -134,7 +135,46 @@ class UpdateAction extends Action
             throw new InvalidConfigException('Composite hasOne relations are not supported by '.get_called_class());
         }
 
+        $script = <<<JavaScript
+(function (s2helper, $, undefined) {
+    "use strict";
+    s2helper.formatResult = function (result, container, query, escapeMarkup, depth) {
+        if (typeof depth == 'undefined') {
+            depth = 0;
+        }
+        var markup = [];
+        window.Select2.util.markMatch(result, query.term, markup, escapeMarkup);
+        return markup.join("");
+    };
+
+    // generates query params
+    s2helper.data = function (term, page) {
+        return { search: term, page: page };
+    };
+
+    // builds query results from ajax response
+    s2helper.results = function (data, page) {
+        return { results: data.items, more: page < data._meta.pageCount };
+    };
+
+    s2helper.initSingle = function (element, callback) {
+        var url = element.data('select2').opts.ajax.url;
+        $.getJSON(url, {ids: element.val()}, function (data) {
+            if (typeof data.items[0] != 'undefined')
+                callback(data.items[0]);
+        });
+    };
+
+    s2helper.initMulti = function (element, callback) {
+        var url = element.data('select2').opts.ajax.url;
+        $.getJSON(url, {ids: element.val()}, function (data) {callback(data.items);});
+    };
+}( window.s2helper = window.s2helper || {}, jQuery ));
+JavaScript;
+        $this->controller->view->registerJs($script, \yii\web\View::POS_END);
         $route = Yii::$app->crudModelsMap[$activeRelation->modelClass];
+        $fields = array_merge($model->getTableSchema()->primaryKey, $model->getBehavior('labels')->attributes);
+        $labelField = reset($model->getBehavior('labels')->attributes);
         $formFields[$relation] = [
             'widgetClass' => 'maddoger\widgets\Select2',
             'attribute' => $foreignKey,
@@ -142,15 +182,21 @@ class UpdateAction extends Action
                 'items' => $route !== null ? null : $model::find()->defaultOrder()->all(),
                 'clientOptions' => [
                     'ajax' => $route === null ? [] : [
-                        'url' => Url::toRoute([$route, '_format' => 'json']),
+                        'url' => Url::toRoute([
+                            $route . '/index',
+                            '_format' => 'json',
+                            'fields' => implode(',', $fields),
+                        ]),
                         'dataFormat' => 'json',
                         'quietMillis' => 300,
-                        //'data' => 'js:s2helper.data',
-                        //'results' => 'js:s2helper.results',
+                        'data' => new JsExpression('s2helper.data'),
+                        'results' => new JsExpression('s2helper.results'),
                     ],
-                    //'initSelection' => 'js:s2helper.initSingle',
-                    //'formatResult' => 'js:s2helper.formatResult',
-                    //'formatSelection' => 'js:function (item) { return item.value; }',
+                    'initSelection' => new JsExpression('s2helper.initSingle'),
+                    'formatResult' => new JsExpression('function (result, container, query, escapeMarkup, depth) {
+return s2helper.formatResult(result.'.$labelField.', container, query, escapeMarkup, depth);
+}'),
+                    'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
 
                     'width' => '100%',
                     'allowClear' => !isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull,

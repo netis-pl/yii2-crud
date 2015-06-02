@@ -31,13 +31,10 @@ trait ActiveSearchTrait
             /** @var ActiveQuery $query */
             $query = self::find();
         }
-        if ($query instanceof ActiveQuery) {
-            $query->defaultOrder();
-        }
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' => $sort,
+            'sort' => is_array($sort) ? array_merge($this->getSort($query), $sort) : $sort,
             'pagination' => $pagination,
         ]);
 
@@ -52,6 +49,28 @@ trait ActiveSearchTrait
         return $dataProvider;
     }
 
+    /**
+     * Creates a Sort object configuration using query default order.
+     * @param ActiveQuery $query
+     * @return array
+     */
+    private function getSort($query)
+    {
+        $defaults = $query instanceof ActiveQuery ? $query->getDefaultOrderColumns() : [];
+        $sort = [
+            'enableMultiSort' => true,
+            'attributes' => [],
+            'defaultOrder' => $defaults,
+        ];
+
+        foreach ($this->attributes() as $attribute) {
+            $sort['attributes'][$attribute] = [
+                'asc' => array_merge([$attribute => SORT_ASC], $defaults),
+                'desc' => array_merge([$attribute => SORT_DESC], $defaults),
+            ];
+        }
+        return $sort;
+    }
 
     /**
      * Assigns specified token to specified attributes and validates
@@ -270,7 +289,7 @@ trait ActiveSearchTrait
         }
         // skip foreign keys, relations are search in other way
         $allAttributes = array_diff(
-            $this->safeAttributeNames(),
+            $this->safeAttributes(),
             array_keys($this->getTableSchema()->foreignKeys)
         );
         $safeAttributes = [];
