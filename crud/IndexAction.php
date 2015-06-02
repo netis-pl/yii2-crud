@@ -58,6 +58,7 @@ class IndexAction extends Action
             [
                 'class'         => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'column-action'],
+                'controller'    => Yii::$app->crudModelsMap[$model::className()],
                 'buttons' => [
                     'view'   => function ($url, $model, $key) use ($actionColumn) {
                         if (!Yii::$app->user->can($model::className() . '.read')) {

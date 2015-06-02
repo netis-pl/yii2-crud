@@ -12,7 +12,7 @@ use yii\widgets\Pjax;
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
-$this->title = $model->__toString();
+$this->title = $model->getCrudLabel('read').': '.$model->__toString();
 $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
 $this->params['menu'] = $controller->getMenu($controller->action, $model);
 

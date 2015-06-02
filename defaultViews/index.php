@@ -13,7 +13,7 @@ use yii\widgets\Pjax;
 
 $controller = $this->context;
 $searchModel = $controller->getSearchModel();
-$this->title = $searchModel->getCrudLabel();
+$this->title = $searchModel->getCrudLabel('relation');
 $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $searchModel);
 $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 ?>
