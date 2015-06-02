@@ -31,6 +31,7 @@ class LabelsBehavior extends Behavior
     {
         $this->crudLabels = array_merge([
             'default' => null,
+            'relation' => null,
             'index' => null,
             'create' => null,
             'read' => null,

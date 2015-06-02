@@ -88,53 +88,8 @@ class UpdateAction extends Action
         ];
     }
 
-    /**
-     * @param array $formFields
-     * @param ActiveRecord $model
-     * @param string $relation
-     * @param array $dbColumns
-     * @param array $hiddenAttributes
-     * @param array $blameableAttributes
-     * @return array
-     * @throws InvalidConfigException
-     */
-    protected function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes)
+    protected function registerSelect()
     {
-        $activeRelation = $model->getRelation($relation);
-        if ($activeRelation->multiple) {
-            return $formFields;
-        }
-        $isHidden = false;
-        $foreignKey = null;
-        foreach ($activeRelation->link as $left => $right) {
-            if (in_array($right, $blameableAttributes)) {
-                return $formFields;
-            }
-            $foreignKey = $right;
-            if (isset($hiddenAttributes[$left])) {
-                $formFields[$relation] = [
-                    'formMethod' => 'hiddenField',
-                    'attribute' => $left,
-                    'options' => [
-                        'value' => $model->{$left}
-                    ]
-                ];
-                unset($hiddenAttributes[$left]);
-                $isHidden = true;
-            }
-        }
-        if ($isHidden) {
-            return $formFields;
-        }
-
-        if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
-            return $formFields;
-        }
-
-        if (count($activeRelation->link) > 1) {
-            throw new InvalidConfigException('Composite hasOne relations are not supported by '.get_called_class());
-        }
-
         $script = <<<JavaScript
 (function (s2helper, $, undefined) {
     "use strict";
@@ -158,28 +113,73 @@ class UpdateAction extends Action
     };
 
     s2helper.initSingle = function (element, callback) {
-        var url = element.data('select2').opts.ajax.url;
-        $.getJSON(url, {ids: element.val()}, function (data) {
+        $.getJSON(element.data('select2').opts.ajax.url, {ids: element.val()}, function (data) {
             if (typeof data.items[0] != 'undefined')
                 callback(data.items[0]);
         });
     };
 
     s2helper.initMulti = function (element, callback) {
-        var url = element.data('select2').opts.ajax.url;
-        $.getJSON(url, {ids: element.val()}, function (data) {callback(data.items);});
+        $.getJSON(element.data('select2').opts.ajax.url, {ids: element.val()}, function (data) {callback(data.items);});
     };
 }( window.s2helper = window.s2helper || {}, jQuery ));
 JavaScript;
         $this->controller->view->registerJs($script, \yii\web\View::POS_END);
+    }
+
+    /**
+     * @param ActiveRecord $model
+     * @param array $dbColumns
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @return array
+     */
+    protected function getHasOneRelationField($model, $dbColumns, $relation, $activeRelation)
+    {
+        return $this->getRelationWidget($model, $dbColumns, $relation, $activeRelation);
+    }
+
+    /**
+     * To enable this, override and return getRelationWidget().
+     * @param ActiveRecord $model
+     * @param array $dbColumns
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @return array
+     */
+    protected function getHasManyRelationField($model, $dbColumns, $relation, $activeRelation)
+    {
+        //return null;
+        return $this->getRelationWidget($model, $dbColumns, $relation, $activeRelation);
+    }
+
+    /**
+     * @param ActiveRecord $model
+     * @param array $dbColumns
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @return array
+     */
+    protected function getRelationWidget($model, $dbColumns, $relation, $activeRelation)
+    {
+        $multiple = $activeRelation->multiple;
+        $foreignKeys = array_values($activeRelation->link);
+        $foreignKey = reset($foreignKeys);
         $route = Yii::$app->crudModelsMap[$activeRelation->modelClass];
-        $fields = array_merge($model->getTableSchema()->primaryKey, $model->getBehavior('labels')->attributes);
-        $labelField = reset($model->getBehavior('labels')->attributes);
-        $formFields[$relation] = [
+        $relModel = new $activeRelation->modelClass;
+        $primaryKey = $relModel->getTableSchema()->primaryKey;
+        $fields = array_merge($primaryKey, $relModel->getBehavior('labels')->attributes);
+        $labelField = reset($relModel->getBehavior('labels')->attributes);
+        if ($multiple) {
+            $value = self::implodeEscaped(
+                self::KEYS_SEPARATOR,
+                array_map([$this, 'exportKey'], $activeRelation->select($primaryKey)->asArray()->all())
+            );
+        } else {
+            $value = self::exportKey($model->getAttributes($foreignKeys));
+        }
+        return [
             'widgetClass' => 'maddoger\widgets\Select2',
-            'attribute' => $foreignKey,
+            'attribute' => $multiple ? $relation : $foreignKey,
             'options' => [
-                'items' => $route !== null ? null : $model::find()->defaultOrder()->all(),
+                'items' => $route !== null ? null : $relModel::find()->defaultOrder()->all(),
                 'clientOptions' => [
                     'ajax' => $route === null ? [] : [
                         'url' => Url::toRoute([
@@ -192,22 +192,79 @@ JavaScript;
                         'data' => new JsExpression('s2helper.data'),
                         'results' => new JsExpression('s2helper.results'),
                     ],
-                    'initSelection' => new JsExpression('s2helper.initSingle'),
+                    'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
                     'formatResult' => new JsExpression('function (result, container, query, escapeMarkup, depth) {
 return s2helper.formatResult(result.'.$labelField.', container, query, escapeMarkup, depth);
 }'),
                     'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
 
                     'width' => '100%',
-                    'allowClear' => !isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull,
+                    'allowClear' => $multiple
+                        ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
                     'closeOnSelect' => true,
                 ],
                 'options' => [
                     'class' => 'select2',
-                    'multiple' => false,
+                    'multiple' => $multiple,
+                    'value' => $value,
                 ],
             ],
         ];
+    }
+
+    /**
+     * @param array $formFields
+     * @param ActiveRecord $model
+     * @param string $relation
+     * @param array $dbColumns
+     * @param array $hiddenAttributes
+     * @param array $blameableAttributes
+     * @return array
+     * @throws InvalidConfigException
+     */
+    protected function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes)
+    {
+        $activeRelation = $model->getRelation($relation);
+        $isHidden = false;
+        $foreignKey = null;
+        foreach ($activeRelation->link as $left => $right) {
+            if (in_array($right, $blameableAttributes)) {
+                return $formFields;
+            }
+            if (isset($hiddenAttributes[$right])) {
+                $formFields[$relation] = [
+                    'formMethod' => 'hiddenField',
+                    'attribute' => $right,
+                    'options' => [
+                        'value' => $model->{$right}
+                    ]
+                ];
+                unset($hiddenAttributes[$right]);
+                $isHidden = true;
+            }
+        }
+        if ($isHidden) {
+            return $formFields;
+        }
+
+        if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
+            return $formFields;
+        }
+
+        if (count($activeRelation->link) > 1) {
+            throw new InvalidConfigException('Composite hasOne relations are not supported by '.get_called_class());
+        }
+
+        $this->registerSelect();
+        if ($activeRelation->multiple) {
+            if (($field = $this->getHasManyRelationField($model, $dbColumns, $relation, $activeRelation)) !== null) {
+                $formFields[$relation] = $field;
+            }
+        } else {
+            if (($field = $this->getHasOneRelationField($model, $dbColumns, $relation, $activeRelation)) !== null) {
+                $formFields[$relation] = $field;
+            }
+        }
         return $formFields;
     }
 
