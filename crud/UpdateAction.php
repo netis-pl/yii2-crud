@@ -147,8 +147,7 @@ JavaScript;
      */
     protected function getHasManyRelationField($model, $dbColumns, $relation, $activeRelation)
     {
-        //return null;
-        return $this->getRelationWidget($model, $dbColumns, $relation, $activeRelation);
+        return null;
     }
 
     /**
@@ -202,10 +201,10 @@ return s2helper.formatResult(result.'.$labelField.', container, query, escapeMar
                     'allowClear' => $multiple
                         ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
                     'closeOnSelect' => true,
+                    'multiple' => $multiple,
                 ],
                 'options' => [
                     'class' => 'select2',
-                    'multiple' => $multiple,
                     'value' => $value,
                 ],
             ],
