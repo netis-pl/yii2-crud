@@ -15,6 +15,9 @@ use yii\web\Response;
 
 class Action extends \yii\rest\Action
 {
+    const COMPOSITE_KEY_SEPARATOR = '-';
+    const KEYS_SEPARATOR = ',';
+
     /**
      * @inheritdoc
      */
@@ -67,7 +70,7 @@ class Action extends \yii\rest\Action
      */
     public static function exportKey($key)
     {
-        return implode(',', array_values((array)$key));
+        return self::implodeEscaped(self::COMPOSITE_KEY_SEPARATOR, array_values((array)$key));
     }
 
     /**
@@ -82,11 +85,51 @@ class Action extends \yii\rest\Action
         if (count($keys) <= 1) {
             return [reset($keys) => $key];
         }
-        $values = explode(',', $key);
+        $values = self::explodeEscaped(self::COMPOSITE_KEY_SEPARATOR, $key);
         if (count($keys) === count($values)) {
             return array_combine($keys, $values);
         }
         return false;
+    }
+
+    /**
+     * Joins all elements of $pieces using $glue but escaping it in the values using $escapeChar.
+     * @param string $glue
+     * @param string[] $pieces
+     * @param string $escapeChar
+     * @return string
+     */
+    public static function implodeEscaped($glue, $pieces, $escapeChar = '\\')
+    {
+        return implode($glue, array_map(function ($k) use ($glue, $escapeChar) {
+            return str_replace(
+                [$glue, $escapeChar],
+                [$escapeChar.$glue, $escapeChar.$escapeChar],
+                $k
+            );
+        }, $pieces));
+    }
+
+    /**
+     * Splits a string into elements handling an escaped delimiter.
+     * @param string $delimiter
+     * @param string $string
+     * @param string $escapeChar
+     * @return array
+     */
+    public static function explodeEscaped($delimiter, $string, $escapeChar = '\\')
+    {
+        $d = preg_quote($delimiter, "~");
+        $e = preg_quote($escapeChar, "~");
+        $tokens = preg_split(
+            '~' . $e . '(' . $e . '|' . $d . ')(*SKIP)(*FAIL)|' . $d . '~',
+            $string
+        );
+        return preg_replace(
+            ['~' . $e . $e . '~', '~' . $e . $d . '~'],
+            [$escapeChar, $delimiter],
+            $tokens
+        );
     }
 
     /**
@@ -119,7 +162,7 @@ class Action extends \yii\rest\Action
             return array_keys($foreignKey);
         }, $model->getTableSchema()->foreignKeys);
         $keys[] = $model->primaryKey();
-        return array_reduce($keys, 'array_merge', []);
+        return call_user_func_array('array_merge', $keys);
     }
 
     /**

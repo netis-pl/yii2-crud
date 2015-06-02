@@ -12,6 +12,12 @@ use yii\base\NotSupportedException;
 class ActiveQuery extends \yii\db\ActiveQuery
 {
     /**
+     * @var string Quick search phrase used to prepare conditions in this query.
+     * Used only to pass its value to the grid.
+     */
+    public $quickSearchPhrase;
+
+    /**
      * Returns an array with default order columns, indexed by column name and with direction as value.
      * @return array column name => order direction
      */
