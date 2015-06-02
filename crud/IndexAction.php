@@ -149,7 +149,7 @@ class IndexAction extends Action
         if ($this->controller instanceof ActiveController && $this->controller->searchModelClass !== null) {
             /** @var ActiveSearchTrait $searchModel */
             $searchModel = new $this->controller->searchModelClass();
-            return $searchModel->search(Yii::$app->request->queryParams);
+            return $searchModel->search(Yii::$app->request->queryParams, null, null, [], ['defaultPageSize' => 25]);
         }
         /** @var \yii\db\BaseActiveRecord $modelClass */
         $modelClass = $this->modelClass;

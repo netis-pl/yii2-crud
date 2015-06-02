@@ -1,7 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use yii\grid\GridView;
+use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
 
 
@@ -24,22 +24,12 @@ $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
 <?php Pjax::begin([
     'timeout' => 6000,
 ]); ?>
-<div class="input-group" style="width: 200px;">
-    <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
-    <form data-pjax>
-        <div id="indexGrid-filters">
-            <input onkeyup="jQuery('#indexGrid').yiiGridView('applyFilter');"
-                   class="form-control" id="quickSearchIndex" name="search"
-                   placeholder="<?php echo Yii::t('app', 'Search'); ?>" type="text" />
-        </div>
-    </form>
-</div>
-
 <?= GridView::widget([
     'id' => 'indexGrid',
     'dataProvider' => $dataProvider,
 //    'filterModel' => $searchModel,
     'filterSelector' => '#quickSearchIndex',
     'columns' => $columns,
+    'layout' => '{quickSearch}{items}{pager}{summary}{lengthPicker}',
 ]); ?>
 <?php Pjax::end(); ?>
