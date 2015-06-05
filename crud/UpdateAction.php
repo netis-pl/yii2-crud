@@ -67,7 +67,6 @@ class UpdateAction extends Action
                 if (!$model->save(false) || !$model->saveRelations(Yii::$app->getRequest()->getBodyParams())) {
                     throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
                 }
-                throw new \Exception('test');
                 $trx->commit();
 
                 if ($wasNew) {

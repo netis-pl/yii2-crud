@@ -10,7 +10,7 @@ use yii\base\Behavior;
 
 /**
  * LabelsBehavior allows to configure how a model is cast to string and its other labels.
- * @package netis\utils\crud
+ * @package netis\utils\db
  */
 class LabelsBehavior extends Behavior
 {
