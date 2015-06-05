@@ -75,6 +75,8 @@ class Action extends \yii\rest\Action
 
     /**
      * Deserializes the models primary key.
+     * If importing multiple keys, they can be split into an array
+     * using Action::explodeEscaped(Action::KEYS_SEPARATOR, $inputString).
      * @param ActiveRecordInterface $modelClass
      * @param array|string $key
      * @return array
@@ -83,11 +85,25 @@ class Action extends \yii\rest\Action
     {
         $keys = $modelClass::primaryKey();
         if (count($keys) <= 1) {
-            return [reset($keys) => $key];
+            return is_array($key)
+                ? array_map(function ($k) use ($keys) {
+                    return [reset($keys) => $k];
+                }, $key)
+                : [reset($keys) => $key];
         }
-        $values = self::explodeEscaped(self::COMPOSITE_KEY_SEPARATOR, $key);
-        if (count($keys) === count($values)) {
-            return array_combine($keys, $values);
+        if (is_array($key)) {
+            return array_filter(array_map(function ($k) use ($keys) {
+                $values = self::explodeEscaped(self::COMPOSITE_KEY_SEPARATOR, $k);
+                if (count($keys) === count($values)) {
+                    return array_combine($keys, $values);
+                }
+                return false;
+            }, $key));
+        } else {
+            $values = self::explodeEscaped(self::COMPOSITE_KEY_SEPARATOR, $key);
+            if (count($keys) === count($values)) {
+                return array_combine($keys, $values);
+            }
         }
         return false;
     }

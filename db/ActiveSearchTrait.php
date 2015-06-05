@@ -328,18 +328,15 @@ trait ActiveSearchTrait
     {
         if (!isset($params['ids'])) {
             return $query;
+        } elseif (trim($params['ids']) === '') {
+            return $query->andWhere('1=0');
         }
-        $conditions = ['or'];
         $ids = Action::explodeEscaped(Action::KEYS_SEPARATOR, $params['ids']);
-        foreach ($ids as $id) {
-            if (($keys = Action::importKey($this, $id)) !== false) {
-                $conditions[] = $keys;
-            }
+        $keys = Action::importKey($this, $ids);
+        if (empty($keys)) {
+            return $query;
         }
-        if ($conditions !== ['or']) {
-            $query->andWhere($conditions);
-        }
-        return $query;
+        return $query->andWhere(array_merge(['or'], $keys));
     }
 
     /**

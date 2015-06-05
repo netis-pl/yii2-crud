@@ -53,19 +53,22 @@ class UpdateAction extends Action
             call_user_func($this->checkAccess, $this->id, $model);
         }
 
-        if (Yii::$app->request->isAjax && !Yii::$app->request->isPjax) {
-            $response = clone Yii::$app->response;
-            $response->format = Response::FORMAT_JSON;
-            $response->content = json_encode(ActiveForm::validate($model));
-            return $response;
-        }
-
         $wasNew = $model->isNewRecord;
 
         if ($model->load(Yii::$app->getRequest()->getBodyParams())) {
-            if ($model->save()) {
-                $response = Yii::$app->getResponse();
-                $response->setStatusCode(201);
+            if (Yii::$app->request->isAjax && !Yii::$app->request->isPjax) {
+                $response = clone Yii::$app->response;
+                $response->format = Response::FORMAT_JSON;
+                $response->content = json_encode(ActiveForm::validate($model));
+                return $response;
+            }
+            if ($model->validate()) {
+                $trx = $model->getDb()->beginTransaction();
+                if (!$model->save(false) || !$model->saveRelations(Yii::$app->getRequest()->getBodyParams())) {
+                    throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
+                }
+                throw new \Exception('test');
+                $trx->commit();
 
                 if ($wasNew) {
                     $message = Yii::t('app', 'A new has been successfully created.');
@@ -75,9 +78,9 @@ class UpdateAction extends Action
                 $this->setFlash('success', $message);
 
                 $id = $this->exportKey($model->getPrimaryKey(true));
+                $response = Yii::$app->getResponse();
+                $response->setStatusCode(201);
                 $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
-            } elseif (!$model->hasErrors()) {
-                throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
             }
         }
 
@@ -147,6 +150,7 @@ JavaScript;
      */
     protected function getHasManyRelationField($model, $dbColumns, $relation, $activeRelation)
     {
+        return $this->getRelationWidget($model, $dbColumns, $relation, $activeRelation);
         return null;
     }
 
