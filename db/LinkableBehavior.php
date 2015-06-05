@@ -9,7 +9,6 @@ namespace netis\utils\db;
 use netis\utils\crud\Action;
 use yii\base\Behavior;
 use yii\base\InvalidCallException;
-use yii\db\ActiveRecord;
 use yii\db\Expression;
 use yii\db\Query;
 
@@ -30,17 +29,13 @@ class LinkableBehavior extends Behavior
      *
      * If $removeKeys is null, $keys must be all records to remain associated, including those that do not change.
      *
-     * @param string $name the case sensitive name of the relationship
+     * @param \yii\db\ActiveQuery $relation
      * @param array $keys primary keys of the records to be linked with the current model
      * @param array $removeKeys primary keys of records to be unlinked with the current model
      * @throws InvalidCallException if the method is unable to link two models.
      */
-    public function linkByKeys($name, $keys, $removeKeys = null)
+    public function linkByKeys($relation, $keys, $removeKeys = null)
     {
-        /** @var ActiveRecord $owner */
-        $owner = $this->owner;
-        $relation = $owner->getRelation($name);
-
         if ($relation->via !== null) {
             $this->linkJunctionByKeys($relation, $keys, $removeKeys);
         } else {
@@ -51,22 +46,22 @@ class LinkableBehavior extends Behavior
     /**
      * Reestablishes links between current model and records from $relation specified by $keys.
      * Removes and inserts rows into a junction table.
-     * @param ActiveQuery $relation
+     * @param \yii\db\ActiveQuery $relation
      * @param array $keys
      * @param array $removeKeys
      * @throws InvalidCallException
      */
     private function linkJunctionByKeys($relation, $keys, $removeKeys = null)
     {
-        /** @var ActiveRecord $owner */
+        /** @var \yii\db\ActiveRecord $owner */
         $owner = $this->owner;
         if ($owner->getIsNewRecord()) {
             throw new InvalidCallException('Unable to link model: the model cannot be newly created.');
         }
-        /* @var $viaRelation ActiveQuery */
+        /* @var $viaRelation \yii\db\ActiveQuery */
         $viaRelation = is_array($relation->via) ? $relation->via[1] : $relation->via;
         if (is_array($relation->via)) {
-            /* @var $viaClass ActiveRecord */
+            /* @var $viaClass \yii\db\ActiveRecord */
             $viaClass = $viaRelation->modelClass;
             $viaTable = $viaClass::getTableSchema()->fullName;
         } else {
@@ -95,7 +90,7 @@ class LinkableBehavior extends Behavior
             return;
         }
 
-        /** @var ActiveRecord $relationClass */
+        /** @var \yii\db\ActiveRecord $relationClass */
         $relationClass = $relation->modelClass;
         $quotedViaTable = $schema->quoteTableName($viaTable);
         $quotedColumns = implode(', ', array_map(
@@ -136,7 +131,7 @@ class LinkableBehavior extends Behavior
     }
 
     /**
-     * @param ActiveQuery $relation
+     * @param \yii\db\ActiveQuery $relation
      * @param array $keys
      * @param array $removeKeys
      * @throws \yii\base\InvalidConfigException
@@ -144,12 +139,12 @@ class LinkableBehavior extends Behavior
      */
     private function linkDirectByKeys($relation, $keys, $removeKeys = null)
     {
-        /** @var ActiveRecord $owner */
+        /** @var \yii\db\ActiveRecord $owner */
         $owner = $this->owner;
         // update related clearing those not in $keys and setting those which are
         //! @todo when TableSchema will allow it, check if 'on update' action is 'set default'
         // when updating the column is not possible this method should not be called at all, an exception should be thrown here
-        /** @var ActiveRecord $relatedClass */
+        /** @var \yii\db\ActiveRecord $relatedClass */
         $relatedClass = $relation->modelClass;
         $relatedTable = $relatedClass::getTableSchema()->fullName;
         $leftKeys = array_keys($relation->link);
@@ -215,7 +210,7 @@ class LinkableBehavior extends Behavior
      */
     public function saveRelations($data, $formName = null)
     {
-        /** @var ActiveRecord $owner */
+        /** @var \yii\db\ActiveRecord $owner */
         $owner = $this->owner;
         $scope = $formName === null ? $owner->formName() : $formName;
         if ($scope !== '') {
@@ -224,9 +219,11 @@ class LinkableBehavior extends Behavior
         if (empty($data)) {
             return true;
         }
-        $relations = array_flip($owner->relations());
         foreach ($data as $relationName => $keys) {
-            if (!isset($relations[$relationName]) || trim($keys) === '') {
+            if (($relation = $owner->getRelation($relationName, false)) === null) {
+                continue;
+            }
+            if (trim($keys) === '') {
                 continue;
             }
             if (!is_array($keys) || isset($keys[0])) {
@@ -239,7 +236,8 @@ class LinkableBehavior extends Behavior
                 throw new InvalidCallException('Relation keys must be either a string, a numeric array or an array with \'add\' and \'remove\' keys.');
                 continue;
             }
-            $this->linkByKeys($relationName, $addKeys, $removeKeys);
+
+            $this->linkByKeys($relation, $addKeys, $removeKeys);
         }
         return true;
     }
