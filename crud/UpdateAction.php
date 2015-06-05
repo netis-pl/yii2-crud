@@ -301,7 +301,7 @@ return s2helper.formatResult(result.'.$labelField.', container, query, escapeMar
                 $field['options'] = [
                     'model' => $model,
                     'attribute' => $attribute,
-                    'htmlOptions' => ['class' => 'form-control']
+                    'options' => ['class' => 'form-control']
                 ];
                 break;
             case 'set':
