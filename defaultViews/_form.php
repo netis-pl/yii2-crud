@@ -155,8 +155,8 @@ foreach ($relations as $relationName => $data) {
             'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
         ]);
     }
-    echo Html::activeHiddenInput($model, $relationName.'[add]');
-    echo Html::activeHiddenInput($model, $relationName.'[remove]');
+    echo Html::activeHiddenInput($model, $relationName.'[add]', ['value' => '[]']);
+    echo Html::activeHiddenInput($model, $relationName.'[remove]', ['value' => '[]']);
     echo $this->render('_relation_widget', [
         'model' => $model,
         'relations' => $relations,

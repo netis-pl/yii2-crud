@@ -31,6 +31,7 @@
         $('#' + saveButton.data('relation') + 'Pjax').on('click', 'a.remove', function (event) {
             var key = $(this).parent().closest('tr').data('key');
             netis.removeRelation(key);
+            event.preventDefault();
         });
     };
 
@@ -116,6 +117,8 @@
                 }
             }
         });
+
+        $(_settings.modalId).modal('hide');
     };
 
     netis.removeRelation = function (key) {
