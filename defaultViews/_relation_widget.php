@@ -1,7 +1,7 @@
 <?php
 
 use netis\utils\crud\ActiveRecord;
-use yii\grid\GridView;
+use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
 
 /* @var $this yii\web\View */
@@ -10,42 +10,37 @@ use yii\widgets\Pjax;
 /* @var $relationName string */
 /* @var $relation array */
 /* @var $isActive boolean */
+/* @var $buttons array */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $relation = $relations[$relationName];
 /** @var ActiveRecord $model */
 $model = $relation['model'];
-?>
 
-<!--div class="panel panel-default">
-    <div class="panel-heading" role="tab" id="heading<?= $relationName ?>">
-        <h4 class="panel-title">
-            <a data-toggle="collapse" data-parent="#relationsAccordion" href="#collapse<?= $relationName ?>"
-               aria-expanded="true" aria-controls="collapse<?= $relationName ?>">
-                <?= $model->getCrudLabel('relation'); ?>
-            </a>
-        </h4>
-    </div>
-    <div id="collapse<?= $relationName ?>" class="panel-collapse collapse" role="tabpanel"
-         aria-labelledby="heading<?= $relationName ?>">
-        <div class="panel-body">
-            <?php /*Pjax::begin(['id' => $relationName]); ?>
-            <?= GridView::widget([
-                'dataProvider' => $relation['dataProvider'],
-                'columns'      => $relation['columns'],
-            ]); ?>
-            <?php Pjax::end();*/ ?>
-        </div>
-    </div>
-</div-->
+$layout = <<<HTML
+<div class="row">
+    <div class="col-md-2">{quickSearch}</div>
+    <div class="col-md-10">{buttons}</div>
+</div>
+{items}
+<div class="row">
+    <div class="col-md-4">{pager}</div>
+    <div class="col-md-4 summary">{summary}</div>
+    <div class="col-md-4">{lengthPicker}</div>
+</div>
+HTML;
+?>
 
 <div role="tabpanel"
      class="tab-pane fade<?= $isActive ? ' in active' : '' ?>"
      id="tab_<?= $relationName ?>">
-    <?php Pjax::begin(['id' => $relationName]); ?>
+    <?php Pjax::begin(['id' => $relationName.'Pjax']); ?>
     <?= GridView::widget([
+        'id'           => $relationName.'Grid',
         'dataProvider' => $relation['dataProvider'],
         'columns'      => $relation['columns'],
+        'layout'       => $layout,
+        'buttons'      => isset($buttons) ? $buttons : [],
     ]); ?>
     <?php Pjax::end(); ?>
 </div>

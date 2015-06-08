@@ -16,21 +16,32 @@ $searchModel = $controller->getSearchModel();
 $this->title = $searchModel->getCrudLabel('relation');
 $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $searchModel);
 $this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
+
+$layout = <<<HTML
+{quickSearch}
+{items}
+<div class="row">
+    <div class="col-md-4">{pager}</div>
+    <div class="col-md-4 summary">{summary}</div>
+    <div class="col-md-4">{lengthPicker}</div>
+</div>
+HTML;
+
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?= netis\utils\web\Alerts::widget() ?>
 
 <?php Pjax::begin([
+    'id' => 'indexPjax',
     'timeout' => 6000,
 ]); ?>
 <?= GridView::widget([
-    'id' => 'indexGrid',
-    'dataProvider' => $dataProvider,
-//    'filterModel' => $searchModel,
+    'id'             => 'indexGrid',
+    'dataProvider'   => $dataProvider,
+//    'filterModel'    => $searchModel,
     'filterSelector' => '#quickSearchIndex',
-    'columns' => $columns,
-    'layout' => '{quickSearch}{items}<div class="row"><div class = "col-md-4">{pager}</div>'
-    . '<div class = "col-md-4 summary">{summary}</div><div class = "col-md-4">{lengthPicker}</div></div>',
+    'columns'        => $columns,
+    'layout'         => $layout,
 ]); ?>
 <?php Pjax::end(); ?>

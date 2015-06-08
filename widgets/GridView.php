@@ -17,6 +17,8 @@ use yii\helpers\Html;
  */
 class GridView extends \yii\grid\GridView
 {
+    public $buttons = [];
+
     /**
      * @inheritdoc
      */
@@ -24,15 +26,26 @@ class GridView extends \yii\grid\GridView
     {
         if (parent::renderSection($name) !== false) {
             return parent::renderSection($name);
-        } else
-            switch ($name) {
-                case '{lengthPicker}':
-                    return $this->renderLengthPicker();
-                case '{quickSearch}':
-                    return $this->renderQuickSearch();
-                default:
-                    return false;
-            }
+        }
+        switch ($name) {
+            case '{buttons}':
+                return $this->renderButtons();
+            case '{lengthPicker}':
+                return $this->renderLengthPicker();
+            case '{quickSearch}':
+                return $this->renderQuickSearch();
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Renders toolbar buttons.
+     * @return string the rendering result
+     */
+    public function renderButtons()
+    {
+        return implode('', $this->buttons);
     }
 
     /**
@@ -43,6 +56,7 @@ class GridView extends \yii\grid\GridView
     {
         $this->dataProvider->getPagination()->totalCount = $this->dataProvider->getTotalCount();
         $pagination = $this->dataProvider->getPagination();
+        $choices = [];
         foreach ([10, 25, 50] as $value) {
             $cssClass = $value === $pagination->pageSize ? 'active' : '';
             $url = $pagination->createUrl($pagination->getPage(), $value);
@@ -61,13 +75,14 @@ class GridView extends \yii\grid\GridView
         if (!$this->dataProvider instanceof ActiveDataProvider || !$this->dataProvider->query instanceof ActiveQuery) {
             return '';
         }
+        $id = $this->getId();
         $value = Html::encode($this->dataProvider->query->quickSearchPhrase);
         $placeholder = Yii::t('app', 'Search');
         $result = <<<HTML
     <form data-pjax>
-        <div class="input-group grid-quick-search" style="width: 200px;">
+        <div class="input-group grid-quick-search">
             <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
-                <input onkeyup="jQuery('#indexGrid').yiiGridView('applyFilter')" class="form-control"
+                <input onkeyup="jQuery('#{$id}').yiiGridView('applyFilter')" class="form-control"
                     id="quickSearchIndex" name="search" placeholder="$placeholder" value="$value" type="text"/>
         </div>
     </form>

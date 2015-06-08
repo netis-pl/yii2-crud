@@ -73,14 +73,3 @@ foreach ($relations as $relationName => $data) {
         ?>
     </div>
 </div>
-<!--div class="panel-group" id="relationsAccordion" role="tablist" aria-multiselectable="true">
-<?php
-/*foreach ($relations as $relationName => $data) {
-    echo $this->render('_relation_widget', array(
-        'model' => $model,
-        'relations' => $relations,
-        'relationName' => $relationName,
-    ));
-}*/
-?>
-</div-->

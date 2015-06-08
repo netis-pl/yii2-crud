@@ -10,6 +10,7 @@ use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\db\ActiveRecordInterface;
+use yii\grid\ActionColumn;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -86,9 +87,9 @@ class Action extends \yii\rest\Action
         $keys = $modelClass::primaryKey();
         if (count($keys) <= 1) {
             return is_array($key)
-                ? array_map(function ($k) use ($keys) {
-                    return [reset($keys) => $k];
-                }, $key)
+                ? array_filter(array_map(function ($k) use ($keys) {
+                    return empty($k) ? false : [reset($keys) => $k];
+                }, $key))
                 : [reset($keys) => $key];
         }
         if (is_array($key)) {
@@ -231,7 +232,7 @@ class Action extends \yii\rest\Action
 
     /**
      * @param Model $model
-     * @return array of yii\data\ActiveDataProvider
+     * @return array indexed by relation name, contains: model, dataProvider, columns
      */
     public function getModelRelations($model)
     {
@@ -261,7 +262,7 @@ class Action extends \yii\rest\Action
                     ],
                     'sort' => ['sortParam' => "$relation-sort"],
                 ]),
-                'columns' => IndexAction::getIndexGridColumns($relatedModel),
+                'columns' => static::getRelationGridColumns($relatedModel, $activeRelation->inverseOf),
             ];
         }
 
@@ -275,5 +276,87 @@ class Action extends \yii\rest\Action
             return $relationModel->getRelationLabels($relation);
         }
         return null;
+    }
+    
+    /**
+     * Retrieves grid columns configuration using the modelClass.
+     * @param Model $model
+     * @param string $inverseRelation
+     * @return array grid columns
+     */
+    public static function getRelationGridColumns($model, $inverseRelation)
+    {
+        $actionColumn = new ActionColumn();
+        return array_merge([
+            [
+                'class'         => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'column-action'],
+                'controller'    => Yii::$app->crudModelsMap[$model::className()],
+                'template'      => '{view}',
+                'buttons' => [
+                    'view' => function ($url, $model, $key) use ($actionColumn) {
+                        if (!Yii::$app->user->can($model::className() . '.read')) {
+                            return null;
+                        }
+
+                        return $actionColumn->buttons['view']($url, $model, $key);
+                    },
+                ],
+            ],
+            [
+                'class'         => 'yii\grid\SerialColumn',
+                'headerOptions' => ['class' => 'column-serial'],
+            ],
+        ], self::getGridColumns($model, [$inverseRelation]));
+    }
+
+    /**
+     * Retrieves grid columns configuration using the modelClass.
+     * @param Model $model
+     * @param string[] $except names of attributes or relations to be excluded
+     * @return array grid columns
+     */
+    public static function getGridColumns($model, $except = [])
+    {
+        if (!$model instanceof ActiveRecord) {
+            return $model->attributes();
+        }
+
+        /** @var ActiveRecord $model */
+        list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
+        $formats = $model->attributeFormats();
+        $keys    = self::getModelKeys($model);
+
+        $columns = [];
+        foreach ($model->attributes() as $attribute) {
+            if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)
+                || in_array($attribute, $except)
+            ) {
+                continue;
+            }
+            $columns[] = $attribute . ':' . $formats[$attribute];
+        }
+        foreach ($model->relations() as $relation) {
+            $activeRelation = $model->getRelation($relation);
+            if ($activeRelation->multiple || in_array($relation, $except)) {
+                continue;
+            }
+            foreach ($activeRelation->link as $left => $right) {
+                if (in_array($right, $blameableAttributes)) {
+                    continue 2;
+                }
+            }
+
+            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
+                continue;
+            }
+            $columns[] = [
+                'attribute' => $relation,
+                'format'    => 'crudLink',
+                'visible'   => true,
+            ];
+        }
+
+        return $columns;
     }
 }
