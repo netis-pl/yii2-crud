@@ -88,6 +88,9 @@ class ActiveController extends \yii\rest\ActiveController
             'index' => [
                 'class' => 'netis\utils\crud\IndexAction',
             ],
+            'relation' => [
+                'class' => 'netis\utils\crud\RelationAction',
+            ],
             'view' => [
                 'class' => 'netis\utils\crud\ViewAction',
             ],

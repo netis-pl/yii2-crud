@@ -82,8 +82,9 @@ class GridView extends \yii\grid\GridView
     <form data-pjax>
         <div class="input-group grid-quick-search">
             <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
-                <input onkeyup="jQuery('#{$id}').yiiGridView('applyFilter')" class="form-control"
-                    id="quickSearchIndex" name="search" placeholder="$placeholder" value="$value" type="text"/>
+                <input class="form-control"
+                    id="{$id}-quickSearch" name="search" placeholder="$placeholder" value="$value" type="text"/>
+                     <!--onkeyup="jQuery('#{$id}').yiiGridView('applyFilter')"-->
         </div>
     </form>
 HTML;

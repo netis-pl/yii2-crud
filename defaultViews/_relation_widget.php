@@ -38,6 +38,7 @@ HTML;
     <?= GridView::widget([
         'id'           => $relationName.'Grid',
         'dataProvider' => $relation['dataProvider'],
+        'filterSelector' => '#quickSearchIndex',
         'columns'      => $relation['columns'],
         'layout'       => $layout,
         'buttons'      => isset($buttons) ? $buttons : [],

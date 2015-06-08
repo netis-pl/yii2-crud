@@ -40,7 +40,7 @@ HTML;
     'id'             => 'indexGrid',
     'dataProvider'   => $dataProvider,
 //    'filterModel'    => $searchModel,
-    'filterSelector' => '#quickSearchIndex',
+    'filterSelector' => '#indexGrid-quickSearch',
     'columns'        => $columns,
     'layout'         => $layout,
 ]); ?>

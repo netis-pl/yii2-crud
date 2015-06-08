@@ -42,7 +42,7 @@ class IndexAction extends Action
 
         return [
             'dataProvider' => $this->prepareDataProvider(),
-            'columns' => self::getIndexGridColumns(new $this->modelClass),
+            'columns' => static::getIndexGridColumns(new $this->modelClass),
         ];
     }
 
@@ -87,7 +87,7 @@ class IndexAction extends Action
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
             ],
-        ], self::getGridColumns($model));
+        ], static::getGridColumns($model));
     }
 
     /**

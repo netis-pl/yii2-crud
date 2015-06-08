@@ -90,14 +90,6 @@ echo \yii\bootstrap\Modal::widget([
     'header' => '<span class="modal-title"></span>',
     'size' => \yii\bootstrap\Modal::SIZE_LARGE,
 ]);
-/**
- * @todo following:
- *       - disable h1 header, use compact table, disable per-page option
- *       - replace action column with checkbox column
- *       - mark already linked records by disabling checkbox
- *       - allow to select all on page and on all pages
- *       - add footer buttons with events
- */
 
 PjaxAsset::register($this);
 $loadingText = Yii::t('app', 'Loading, please wait.');
@@ -126,10 +118,21 @@ $('#relationModal').on('show.bs.modal', function (event) {
     'replace': false,
     'timeout': 6000
   };
-  console.log(options);
   $(document).pjax(container + ' a', container, options);
   $(document).on('submit', container + ' form[data-pjax]', function (event) {
       jQuery.pjax.submit(event, container, options);
+  });
+  $(document).on('pjax:success', '#relationModal', function (event) {
+      //$(document).off('pjax:success', '#relationModal');
+      $('#relationModal .grid-view').yiiGridView({
+          'filterUrl': button.data('pjax-url'),
+          'filterSelector': '#relationGrid-quickSearch'
+      });
+      $('#relationModal .grid-view').yiiGridView('setSelectionColumn', {
+          'name': 'selection[]',
+          'multiple': true,
+          'checkAll': 'selection_all'
+      });
   });
   $.pjax.reload(container, {
     'url': button.data('pjax-url'),
@@ -182,8 +185,10 @@ $this->registerJs($script);
 foreach ($relations as $relationName => $data) {
     if (($route = Yii::$app->crudModelsMap[$data['model']::className()]) !== null) {
         $route = \yii\helpers\Url::toRoute([
-            $route . '/index',
+            $route . '/relation',
             'per-page' => 10,
+            'relation' => $data['dataProvider']->query->inverseOf,
+            'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
         ]);
     }
     echo Html::activeHiddenInput($model, $relationName.'[add]');
@@ -200,7 +205,6 @@ foreach ($relations as $relationName => $data) {
                 'data-pjax' => '0',
                 'data-toggle' => 'modal',
                 'data-target' => '#relationModal',
-                'data-relation' => $relationName,
                 'data-title' => $data['model']->getCrudLabel('index'),
                 'data-pjax-url' => $route,
                 'class' => 'btn btn-default',
