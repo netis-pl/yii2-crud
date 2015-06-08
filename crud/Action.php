@@ -268,7 +268,7 @@ class Action extends \yii\rest\Action
 
         return $relations;
     }
-
+    
     /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
@@ -341,10 +341,12 @@ class Action extends \yii\rest\Action
             if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
                 continue;
             }
+            $label = $model->getRelationLabel($activeRelation, $relation);
             $columns[] = [
                 'attribute' => $relation,
                 'format'    => 'crudLink',
                 'visible'   => true,
+                'label'     => $label,
             ];
         }
 

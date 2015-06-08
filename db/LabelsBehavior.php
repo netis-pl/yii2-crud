@@ -26,6 +26,14 @@ class LabelsBehavior extends Behavior
      * @var array labels, required keys: default, index, create, read, update, delete
      */
     public $crudLabels = [];
+    /**
+     * @var array realtion labels
+     */
+    public $relationLabels = [];
+    /**
+     * @var array cached relation labels
+     */
+    private $_cachedRelationLabels = [];
 
     public function init()
     {
@@ -62,5 +70,20 @@ class LabelsBehavior extends Behavior
     public function getCrudLabel($operation = null)
     {
         return $this->crudLabels[$operation === null ? 'default' : $operation];
+    }
+    
+    public function getRelationLabel($activeRelation, $relation)
+    {
+        if(isset($this->_cachedRelationLabels[$activeRelation->modelClass][$relation])) {
+            return $this->_cachedRelationLabels[$activeRelation->modelClass][$relation];
+        }
+        $relationModel = new $activeRelation->modelClass;
+        if(isset($relationModel->relationLabels[$relation])) {
+            $this->_cachedRelationLabels[$activeRelation->modelClass][$relation] = $relationModel->relationLabels[$relation];
+            return $relationModel->relationLabels[$relation];
+        } else {
+            $this->_cachedRelationLabels[$activeRelation->modelClass][$relation] = $relationModel->getCrudLabel('relation');
+            return $relationModel->getCrudLabel('relation');
+        }
     }
 }
