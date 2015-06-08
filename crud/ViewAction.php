@@ -68,7 +68,7 @@ class ViewAction extends Action
             if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
                 continue;
             }
-            $label = $this->getRelationLabel($activeRelation, $relation);
+            $label = $model->getRelationLabel($activeRelation, $relation);
             $attributes[] = [
                 'attribute' => $relation,
                 'format'    => 'crudLink',
