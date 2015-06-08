@@ -88,6 +88,12 @@ foreach ($relations as $relationName => $data) {
 echo \yii\bootstrap\Modal::widget([
     'id' => 'relationModal',
     'header' => '<span class="modal-title"></span>',
+    'footer' => Html::button(Yii::t('app', 'Save'), ['class' => 'btn btn-primary'])
+        . Html::button(Yii::t('app', 'Cancel'), [
+            'class' => 'btn btn-default',
+            'data-dismiss' => 'modal',
+            'aria-hidden' => 'true',
+        ]),
     'size' => \yii\bootstrap\Modal::SIZE_LARGE,
 ]);
 
@@ -115,8 +121,7 @@ $('#relationModal').on('show.bs.modal', function (event) {
 
   var options = {
     'push': false,
-    'replace': false,
-    'timeout': 6000
+    'replace': false
   };
   $(document).pjax(container + ' a', container, options);
   $(document).on('submit', container + ' form[data-pjax]', function (event) {
@@ -137,8 +142,7 @@ $('#relationModal').on('show.bs.modal', function (event) {
   $.pjax.reload(container, {
     'url': button.data('pjax-url'),
     'push': false,
-    'replace': false,
-    'timeout': 6000
+    'replace': false
   });
 });
 JavaScript;
@@ -200,14 +204,15 @@ foreach ($relations as $relationName => $data) {
         'isActive' => $relationName === $activeRelation,
         'buttons' => [
             \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
-                'title' => Yii::t('app', 'Add'),
-                'aria-label' => Yii::t('app', 'Add'),
-                'data-pjax' => '0',
-                'data-toggle' => 'modal',
-                'data-target' => '#relationModal',
-                'data-title' => $data['model']->getCrudLabel('index'),
+                'title'         => Yii::t('app', 'Add'),
+                'aria-label'    => Yii::t('app', 'Add'),
+                'data-pjax'     => '0',
+                'data-toggle'   => 'modal',
+                'data-target'   => '#relationModal',
+                'data-relation' => $relationName,
+                'data-title'    => $data['model']->getCrudLabel('index'),
                 'data-pjax-url' => $route,
-                'class' => 'btn btn-default',
+                'class'         => 'btn btn-default',
             ]),
         ],
     ]);

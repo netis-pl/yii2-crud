@@ -32,10 +32,7 @@ HTML;
 <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?= netis\utils\web\Alerts::widget() ?>
 
-<?php Pjax::begin([
-    'id' => 'indexPjax',
-    'timeout' => 6000,
-]); ?>
+<?php Pjax::begin(['id' => 'indexPjax']); ?>
 <?= GridView::widget([
     'id'             => 'indexGrid',
     'dataProvider'   => $dataProvider,
