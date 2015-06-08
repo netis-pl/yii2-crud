@@ -91,53 +91,6 @@ class IndexAction extends Action
     }
 
     /**
-     * Retrieves grid columns configuration using the modelClass.
-     * @param Model $model
-     * @return array grid columns
-     */
-    public static function getGridColumns($model)
-    {
-        if (!$model instanceof ActiveRecord) {
-            return $model->attributes();
-        }
-
-        /** @var ActiveRecord $model */
-        list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
-        $formats = $model->attributeFormats();
-        $keys    = self::getModelKeys($model);
-
-        $columns = [];
-        foreach ($model->attributes() as $attribute) {
-            if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)) {
-                continue;
-            }
-            $columns[] = $attribute . ':' . $formats[$attribute];
-        }
-        foreach ($model->relations() as $relation) {
-            $activeRelation = $model->getRelation($relation);
-            if ($activeRelation->multiple) {
-                continue;
-            }
-            foreach ($activeRelation->link as $left => $right) {
-                if (in_array($right, $blameableAttributes)) {
-                    continue 2;
-                }
-            }
-
-            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
-                continue;
-            }
-            $columns[] = [
-                'attribute' => $relation,
-                'format'    => 'crudLink',
-                'visible'   => true,
-            ];
-        }
-
-        return $columns;
-    }
-
-    /**
      * Prepares the data provider that should return the requested collection of the models.
      * @return ActiveDataProvider
      */

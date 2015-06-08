@@ -3,6 +3,8 @@
 use yii\base\Model;
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
+use yii\helpers\Json;
+use yii\widgets\PjaxAsset;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
@@ -83,6 +85,62 @@ foreach ($relations as $relationName => $data) {
         break;
     }
 }
+echo \yii\bootstrap\Modal::widget([
+    'id' => 'relationModal',
+    'header' => '<span class="modal-title"></span>',
+    'size' => \yii\bootstrap\Modal::SIZE_LARGE,
+]);
+/**
+ * @todo following:
+ *       - disable h1 header, use compact table, disable per-page option
+ *       - replace action column with checkbox column
+ *       - mark already linked records by disabling checkbox
+ *       - allow to select all on page and on all pages
+ *       - add footer buttons with events
+ */
+
+PjaxAsset::register($this);
+$loadingText = Yii::t('app', 'Loading, please wait.');
+$script = <<<JavaScript
+$(document).on('pjax:timeout', '#relationModal', function(event) {
+  event.preventDefault()
+});
+$(document).on('pjax:error', '#relationModal', function(event) {
+  event.preventDefault()
+});
+//$(document).on('pjax:send', '#relationModal', function() { })
+//$(document).on('pjax:complete', '#relationModal', function() { })
+$('#relationModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget);
+  var modal = $(this);
+  var container = '#relationModal .modal-body';
+
+  modal.find('.modal-title').text(button.data('title'));
+  modal.find('.modal-body').text('$loadingText');
+
+  $(document).off('click.pjax', container + ' a');
+  $(document).off('submit', container + ' form[data-pjax]');
+
+  var options = {
+    'push': false,
+    'replace': false,
+    'timeout': 6000
+  };
+  console.log(options);
+  $(document).pjax(container + ' a', container, options);
+  $(document).on('submit', container + ' form[data-pjax]', function (event) {
+      jQuery.pjax.submit(event, container, options);
+  });
+  $.pjax.reload(container, {
+    'url': button.data('pjax-url'),
+    'push': false,
+    'replace': false,
+    'timeout': 6000
+  });
+});
+JavaScript;
+
+$this->registerJs($script);
 ?>
 
 <div class="ar-form">
@@ -122,28 +180,37 @@ foreach ($relations as $relationName => $data) {
         <div class="tab-content">
 <?php
 foreach ($relations as $relationName => $data) {
-    echo $this->render('_relation_edit_widget', [
+    if (($route = Yii::$app->crudModelsMap[$data['model']::className()]) !== null) {
+        $route = \yii\helpers\Url::toRoute([
+            $route . '/index',
+            'per-page' => 10,
+        ]);
+    }
+    echo Html::activeHiddenInput($model, $relationName.'[add]');
+    echo Html::activeHiddenInput($model, $relationName.'[remove]');
+    echo $this->render('_relation_widget', [
         'model' => $model,
         'relations' => $relations,
         'relationName' => $relationName,
         'isActive' => $relationName === $activeRelation,
+        'buttons' => [
+            \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+                'title' => Yii::t('app', 'Add'),
+                'aria-label' => Yii::t('app', 'Add'),
+                'data-pjax' => '0',
+                'data-toggle' => 'modal',
+                'data-target' => '#relationModal',
+                'data-relation' => $relationName,
+                'data-title' => $data['model']->getCrudLabel('index'),
+                'data-pjax-url' => $route,
+                'class' => 'btn btn-default',
+            ]),
+        ],
     ]);
 }
 ?>
         </div>
     </div>
-
-    <!--div class="panel-group" id="relationsAccordion" role="tablist" aria-multiselectable="true">
-<?php
-/*foreach ($relations as $relationName => $data) {
-    echo $this->render('_relation_edit_widget', array(
-        'model' => $model,
-        'relations' => $relations,
-        'relationName' => $relationName,
-    ));
-}*/
-?>
-    </div-->
 
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), [

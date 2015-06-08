@@ -90,6 +90,36 @@ class UpdateAction extends Action
         ];
     }
 
+    /**
+     * Retrieves grid columns configuration using the modelClass.
+     * @param Model $model
+     * @param string $inverseRelation
+     * @return array grid columns
+     */
+    public static function getRelationGridColumns($model, $inverseRelation)
+    {
+        $columns = parent::getRelationGridColumns($model, $inverseRelation);
+        if (!isset($columns[0]) || !isset($columns[0]['class']) || $columns[0]['class'] !== 'yii\grid\ActionColumn') {
+            return $columns;
+        }
+        $actionColumn = new \yii\grid\ActionColumn();
+        $columns[0]['template'] = '{view} {unlink}';
+        $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn) {
+            if (!Yii::$app->user->can($model::className() . '.read')) {
+                return null;
+            }
+
+            $options = array_merge([
+                'title' => Yii::t('app', 'Unlink'),
+                'aria-label' => Yii::t('app', 'Unlink'),
+                'data-confirm' => Yii::t('app', 'Are you sure you want to unlink this item?'),
+                'data-pjax' => '0',
+            ], $actionColumn->buttonOptions);
+            return \yii\helpers\Html::a('<span class="glyphicon glyphicon-remove"></span>', $url, $options);
+        };
+        return $columns;
+    }
+
     protected function registerSelect()
     {
         $script = <<<JavaScript
