@@ -114,6 +114,7 @@ class UpdateAction extends Action
                 'aria-label' => Yii::t('app', 'Unlink'),
                 'data-confirm' => Yii::t('app', 'Are you sure you want to unlink this item?'),
                 'data-pjax' => '0',
+                'class' => 'remove',
             ], $actionColumn->buttonOptions);
             return \yii\helpers\Html::a('<span class="glyphicon glyphicon-remove"></span>', $url, $options);
         };
@@ -179,7 +180,6 @@ JavaScript;
      */
     protected function getHasManyRelationField($model, $dbColumns, $relation, $activeRelation)
     {
-        return $this->getRelationWidget($model, $dbColumns, $relation, $activeRelation);
         return null;
     }
 

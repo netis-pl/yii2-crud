@@ -34,11 +34,29 @@ HTML;
 <div role="tabpanel"
      class="tab-pane fade<?= $isActive ? ' in active' : '' ?>"
      id="tab_<?= $relationName ?>">
-    <?php Pjax::begin(['id' => $relationName.'Pjax']); ?>
+    <?php $pjax = Pjax::begin(['id' => $relationName.'Pjax', 'linkSelector' => false]); ?>
+    <?php $fieldId = \yii\helpers\Html::getInputId($model, $relationName); ?>
+    <?php $script = <<<JavaScript
+$('#{$relationName}Pjax').data('selectionFields', {'add': '#{$fieldId}-add', 'remove': '#{$fieldId}-remove'});
+$(document).on('click.pjax', '#{$relationName}Pjax a', function(event) {
+  var container = $('#{$relationName}Pjax');
+  $.pjax.click(event, {
+    container: container,
+    data: {
+      'selection': {
+        'add': $(container.data('selectionFields').add).val(),
+        'remove': $(container.data('selectionFields').remove).val()
+      }
+    }
+  });
+});
+JavaScript;
+    ?>
+    <?php $this->registerJs($script); ?>
     <?= GridView::widget([
         'id'           => $relationName.'Grid',
         'dataProvider' => $relation['dataProvider'],
-        'filterSelector' => '#quickSearchIndex',
+        'filterSelector' => "#{$relationName}Grid-quickSearch",
         'columns'      => $relation['columns'],
         'layout'       => $layout,
         'buttons'      => isset($buttons) ? $buttons : [],

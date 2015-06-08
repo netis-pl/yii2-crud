@@ -87,71 +87,31 @@ foreach ($relations as $relationName => $data) {
 }
 echo \yii\bootstrap\Modal::widget([
     'id' => 'relationModal',
+    'size' => \yii\bootstrap\Modal::SIZE_LARGE,
     'header' => '<span class="modal-title"></span>',
-    'footer' => Html::button(Yii::t('app', 'Save'), ['class' => 'btn btn-primary'])
-        . Html::button(Yii::t('app', 'Cancel'), [
+    'footer' => implode('', [
+        Html::button(Yii::t('app', 'Save'), [
+            'id' => 'relationSave',
+            'class' => 'btn btn-primary',
+        ]),
+        Html::button(Yii::t('app', 'Cancel'), [
             'class' => 'btn btn-default',
             'data-dismiss' => 'modal',
             'aria-hidden' => 'true',
         ]),
-    'size' => \yii\bootstrap\Modal::SIZE_LARGE,
+    ]),
 ]);
 
-PjaxAsset::register($this);
-$loadingText = Yii::t('app', 'Loading, please wait.');
-$script = <<<JavaScript
-$(document).on('pjax:timeout', '#relationModal', function(event) {
-  event.preventDefault()
-});
-$(document).on('pjax:error', '#relationModal', function(event) {
-  event.preventDefault()
-});
-//$(document).on('pjax:send', '#relationModal', function() { })
-//$(document).on('pjax:complete', '#relationModal', function() { })
-$('#relationModal').on('show.bs.modal', function (event) {
-  var button = $(event.relatedTarget);
-  var modal = $(this);
-  var container = '#relationModal .modal-body';
-
-  modal.find('.modal-title').text(button.data('title'));
-  modal.find('.modal-body').text('$loadingText');
-
-  $(document).off('click.pjax', container + ' a');
-  $(document).off('submit', container + ' form[data-pjax]');
-
-  var options = {
-    'push': false,
-    'replace': false
-  };
-  $(document).pjax(container + ' a', container, options);
-  $(document).on('submit', container + ' form[data-pjax]', function (event) {
-      jQuery.pjax.submit(event, container, options);
-  });
-  $(document).on('pjax:success', '#relationModal', function (event) {
-      //$(document).off('pjax:success', '#relationModal');
-      $('#relationModal .grid-view').yiiGridView({
-          'filterUrl': button.data('pjax-url'),
-          'filterSelector': '#relationGrid-quickSearch'
-      });
-      $('#relationModal .grid-view').yiiGridView('setSelectionColumn', {
-          'name': 'selection[]',
-          'multiple': true,
-          'checkAll': 'selection_all'
-      });
-  });
-  $.pjax.reload(container, {
-    'url': button.data('pjax-url'),
-    'push': false,
-    'replace': false
-  });
-});
-JavaScript;
-
-$this->registerJs($script);
+\netis\utils\assets\RelationsAsset::register($this);
+$options = Json::htmlEncode([
+    'i18n' => [
+        'loadingText' => Yii::t('app', 'Loading, please wait.'),
+    ],
+]);
+$this->registerJs("netis.init($options)");
 ?>
 
 <div class="ar-form">
-
     <?php $form = ActiveForm::begin([
         'enableAjaxValidation' => true,
         'validateOnSubmit' => true,

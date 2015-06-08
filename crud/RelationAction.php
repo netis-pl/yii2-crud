@@ -43,7 +43,7 @@ class RelationAction extends IndexAction
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
             ],
-        ], self::getGridColumns($model));
+        ], self::getGridColumns($model, [$relation]));
     }
 
     /**
