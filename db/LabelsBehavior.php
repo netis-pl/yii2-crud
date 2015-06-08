@@ -26,6 +26,10 @@ class LabelsBehavior extends Behavior
      * @var array labels, required keys: default, index, create, read, update, delete
      */
     public $crudLabels = [];
+    /**
+     * @var array realtion labels
+     */
+    public $relationLabels = [];
 
     public function init()
     {
@@ -62,5 +66,10 @@ class LabelsBehavior extends Behavior
     public function getCrudLabel($operation = null)
     {
         return $this->crudLabels[$operation === null ? 'default' : $operation];
+    }
+    
+    public function getRelationLabels($relation)
+    {
+        return isset($this->relationLabels[$relation]) ? $this->relationLabels[$relation] : null;
     }
 }

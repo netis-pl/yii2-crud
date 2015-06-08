@@ -267,4 +267,13 @@ class Action extends \yii\rest\Action
 
         return $relations;
     }
+    
+    public function getRelationLabel($activeRelation, $relation)
+    {
+        $relationModel = new $activeRelation->modelClass;
+        if(isset($relationModel->behaviors()['labels'])) {
+            return $relationModel->getRelationLabels($relation);
+        }
+        return null;
+    }
 }
