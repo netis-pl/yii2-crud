@@ -1,5 +1,5 @@
 (function(netis, $, undefined) {
-    "use strict";
+    'use strict';
 
     var defaults = {
         modalId: '#relationModal',
@@ -28,17 +28,22 @@
         var saveButton = $(_settings.saveButtonId);
         saveButton.on('click', netis.saveRelation);
 
-        $('#' + saveButton.data('relation') + 'Pjax').on('click', 'a.remove', function (event) {
+        $('.relations-panel .tab-pane').on('click', 'a.remove', function(event) {
             var key = $(this).parent().closest('tr').data('key');
-            netis.removeRelation(key);
+            netis.removeRelation($(event.delegateTarget).children('div'), key);
             event.preventDefault();
+            return false;
         });
     };
 
-    netis.showModal = function (event) {
-        var button = $(event.relatedTarget);
-        var modal = $(this);
-        var container = _settings.modalId + ' .modal-body';
+    netis.showModal = function(event) {
+        var button = $(event.relatedTarget),
+            modal = $(this),
+            container = _settings.modalId + ' .modal-body',
+            options = {
+                'push': false,
+                'replace': false
+            };
 
         modal.find('.modal-title').text(button.data('title'));
         modal.find('.modal-body').text(_settings.i18n.loadingText);
@@ -46,15 +51,11 @@
         $(document).off('click.pjax', container + ' a');
         $(document).off('submit', container + ' form[data-pjax]');
 
-        var options = {
-            'push': false,
-            'replace': false
-        };
         $(document).pjax(container + ' a', container, options);
-        $(document).on('submit', container + ' form[data-pjax]', function (event) {
+        $(document).on('submit', container + ' form[data-pjax]', function(event) {
             $.pjax.submit(event, container, options);
         });
-        $(document).on('pjax:success', _settings.modalId, function (event) {
+        $(document).on('pjax:success', _settings.modalId, function(event) {
             var saveButton = $(_settings.saveButtonId),
                 selectionFields = $('#' + button.data('relation') + 'Pjax').data('selectionFields'),
                 added = JSON.parse($(selectionFields.add).val()),
@@ -63,7 +64,7 @@
 
             saveButton.data('relation', button.data('relation'));
 
-            grid.find("input[name='selection[]']").each(function () {
+            grid.find("input[name='selection[]']").each(function() {
                 var key = $(this).parent().closest('tr').data('key');
                 if ($.inArray(key, added) !== -1) {
                     $(this).prop('disabled', true).prop('checked', true);
@@ -89,17 +90,17 @@
         });
     };
 
-    netis.saveRelation = function (event) {
+    netis.saveRelation = function(event) {
         var saveButton = $(_settings.saveButtonId),
             container = $('#' + saveButton.data('relation') + 'Pjax'),
             grid = $(_settings.modalId + ' .grid-view'),
             add = JSON.parse($(container.data('selectionFields').add).val()),
             remove = JSON.parse($(container.data('selectionFields').remove).val());
 
-        grid.find("input[name='selection[]']:checked").not(':disabled').each(function () {
-            var key = $(this).parent().closest('tr').data('key');
-            var idx;
-            if ((idx = $.inArray(key, remove)) !== -1) {
+        grid.find("input[name='selection[]']:checked").not(':disabled').each(function() {
+            var key = $(this).parent().closest('tr').data('key'),
+                idx = $.inArray(key, remove);
+            if (idx !== -1) {
                 remove.splice(idx, 1);
             } else {
                 add.push(key);
@@ -109,27 +110,16 @@
 
         $(container.data('selectionFields').add).val(JSON.stringify(add));
         $(container.data('selectionFields').remove).val(JSON.stringify(remove));
-        $.pjax.reload(container, {
-            data: {
-                'selection': {
-                    'add': $(container.data('selectionFields').add).val(),
-                    'remove': $(container.data('selectionFields').remove).val()
-                }
-            }
-        });
+        $.pjax.reload(container);
 
         $(_settings.modalId).modal('hide');
     };
 
-    netis.removeRelation = function (key) {
-        // if in added, just remove it
-        // if not, add to removed
-        var saveButton = $(_settings.saveButtonId),
-            container = $('#' + saveButton.data('relation') + 'Pjax'),
-            add = JSON.parse($(container.data('selectionFields').add).val()),
+    netis.removeRelation = function(container, key) {
+        var add = JSON.parse($(container.data('selectionFields').add).val()),
             remove = JSON.parse($(container.data('selectionFields').remove).val()),
-            idx;
-        if ((idx = $.inArray(key, add)) !== -1) {
+            idx = $.inArray(key, add);
+        if (idx !== -1) {
             add.splice(idx, 1);
         } else {
             remove.push(key);
@@ -137,13 +127,6 @@
 
         $(container.data('selectionFields').add).val(JSON.stringify(add));
         $(container.data('selectionFields').remove).val(JSON.stringify(remove));
-        $.pjax.reload(container, {
-            data: {
-                'selection': {
-                    'add': $(container.data('selectionFields').add).val(),
-                    'remove': $(container.data('selectionFields').remove).val()
-                }
-            }
-        });
+        $.pjax.reload(container);
     };
 }(window.netis = window.netis || {}, jQuery));

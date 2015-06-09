@@ -16,18 +16,6 @@ if (!$model->isNewRecord) {
 $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
 $this->params['menu'] = $controller->getMenu($controller->action, $model);
 
-// skip the whole view if pjax requested specific part
-if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
-    && ($relationName = substr($relationName, 1)) !== ''
-    && isset($relations[$relationName])
-) {
-    echo $this->render('_relation_edit_widget', [
-        'model' => $relations[$relationName]['model'],
-        'relations' => $relations,
-        'relationName' => $relationName,
-    ]);
-    return;
-}
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>

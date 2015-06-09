@@ -52,12 +52,14 @@ class RelationAction extends IndexAction
      */
     protected function prepareDataProvider()
     {
-        // lazy load related models to mark checkboxes
         $dataProvider = parent::prepareDataProvider();
-        $relation = Yii::$app->request->getQueryParam('relation');
         /** @var \yii\db\ActiveQuery $query */
         $query = $dataProvider->query;
+
+        // lazy load related models to mark checkboxes
+        $relation = Yii::$app->request->getQueryParam('relation');
         $query->with($relation);
+
         return $dataProvider;
     }
 }

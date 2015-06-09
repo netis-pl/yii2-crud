@@ -75,15 +75,51 @@ $renderRow = function ($renderControlGroup, $fields, $form, $topColumnWidth = 12
     }
     echo $oneColumn ? '' : '</div>';
 };
-
+$renderRelation = function ($model, $relations, $relationName, $activeRelation) {
+    $data = $relations[$relationName];
+    if (($route = Yii::$app->crudModelsMap[$data['model']::className()]) !== null) {
+        $route = \yii\helpers\Url::toRoute([
+            $route . '/relation',
+            'per-page' => 10,
+            'relation' => $data['dataProvider']->query->inverseOf,
+            'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
+        ]);
+    }
+    echo Html::activeHiddenInput($model, $relationName.'[add]', ['value' => '[]']);
+    echo Html::activeHiddenInput($model, $relationName.'[remove]', ['value' => '[]']);
+    echo $this->render('_relation_widget', [
+        'model' => $model,
+        'relations' => $relations,
+        'relationName' => $relationName,
+        'isActive' => $relationName === $activeRelation,
+        'buttons' => [
+            \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+                'title'         => Yii::t('app', 'Add'),
+                'aria-label'    => Yii::t('app', 'Add'),
+                'data-pjax'     => '0',
+                'data-toggle'   => 'modal',
+                'data-target'   => '#relationModal',
+                'data-relation' => $relationName,
+                'data-title'    => $data['model']->getCrudLabel('index'),
+                'data-pjax-url' => $route,
+                'class'         => 'btn btn-default',
+            ]),
+        ],
+    ]);
+};
 
 $pjax = Yii::$app->request->getQueryParam('_pjax');
 $activeRelation = false;
 foreach ($relations as $relationName => $data) {
-    if ($pjax === null || $pjax === "#$relationName") {
+    if ($pjax === null || $pjax === "#{$relationName}Pjax") {
         $activeRelation = $relationName;
         break;
     }
+}
+if ($pjax !== null) {
+    // optimization: render only the relation widget instead of the whole form
+    $renderRelation($model, $relations, $relationName, $activeRelation);
+    return;
 }
 echo \yii\bootstrap\Modal::widget([
     'id' => 'relationModal',
@@ -147,35 +183,7 @@ $this->registerJs("netis.init($options)");
         <div class="tab-content">
 <?php
 foreach ($relations as $relationName => $data) {
-    if (($route = Yii::$app->crudModelsMap[$data['model']::className()]) !== null) {
-        $route = \yii\helpers\Url::toRoute([
-            $route . '/relation',
-            'per-page' => 10,
-            'relation' => $data['dataProvider']->query->inverseOf,
-            'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
-        ]);
-    }
-    echo Html::activeHiddenInput($model, $relationName.'[add]', ['value' => '[]']);
-    echo Html::activeHiddenInput($model, $relationName.'[remove]', ['value' => '[]']);
-    echo $this->render('_relation_widget', [
-        'model' => $model,
-        'relations' => $relations,
-        'relationName' => $relationName,
-        'isActive' => $relationName === $activeRelation,
-        'buttons' => [
-            \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
-                'title'         => Yii::t('app', 'Add'),
-                'aria-label'    => Yii::t('app', 'Add'),
-                'data-pjax'     => '0',
-                'data-toggle'   => 'modal',
-                'data-target'   => '#relationModal',
-                'data-relation' => $relationName,
-                'data-title'    => $data['model']->getCrudLabel('index'),
-                'data-pjax-url' => $route,
-                'class'         => 'btn btn-default',
-            ]),
-        ],
-    ]);
+    $renderRelation($model, $relations, $relationName, $activeRelation);
 }
 ?>
         </div>

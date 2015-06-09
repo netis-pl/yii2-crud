@@ -38,17 +38,11 @@ HTML;
     <?php $fieldId = \yii\helpers\Html::getInputId($model, $relationName); ?>
     <?php $script = <<<JavaScript
 $('#{$relationName}Pjax').data('selectionFields', {'add': '#{$fieldId}-add', 'remove': '#{$fieldId}-remove'});
-$(document).on('click.pjax', '#{$relationName}Pjax a', function(event) {
+$(document).pjax('#{$relationName}Pjax a', '#{$relationName}Pjax');
+$(document).on('pjax:beforeSend', '#{$relationName}Pjax', function(event, xhr, options) {
   var container = $('#{$relationName}Pjax');
-  $.pjax.click(event, {
-    container: container,
-    data: {
-      'selection': {
-        'add': $(container.data('selectionFields').add).val(),
-        'remove': $(container.data('selectionFields').remove).val()
-      }
-    }
-  });
+  xhr.setRequestHeader('X-Selection-add', $(container.data('selectionFields').add).val());
+  xhr.setRequestHeader('X-Selection-remove', $(container.data('selectionFields').remove).val());
 });
 JavaScript;
     ?>

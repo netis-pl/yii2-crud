@@ -91,6 +91,57 @@ class UpdateAction extends Action
     }
 
     /**
+     * When the request is pjax, use the selection query param.
+     * @inheritdoc
+     */
+    public function getModelRelations($model)
+    {
+        $relations = parent::getModelRelations($model);
+        if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
+            && ($relationName = substr($relationName, 1, -4)) !== ''
+            && isset($relations[$relationName])
+        ) {
+            $headers = Yii::$app->request->getHeaders();
+            $selection = [
+                'add' => $headers->get('X-Selection-add'),
+                'remove' => $headers->get('X-Selection-remove'),
+            ];
+            /** @var ActiveRecord $relatedModel */
+            $relatedModel = $relations[$relationName]['model'];
+            /** @var \yii\db\ActiveQuery $query */
+            $query = $relations[$relationName]['dataProvider']->query;
+
+            $conditions = ['or'];
+            $fkCondition = [
+                'in',
+                array_keys($query->link),
+                array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
+            ];
+            if (!empty($selection['add'])
+                && ($add = json_decode($selection['add'])) !== null && !empty($add)
+            ) {
+                $conditions[] = ['in', $relatedModel::primaryKey(), self::importKey($relatedModel, $add)];
+            }
+            if (!empty($selection['remove'])
+                && ($remove = json_decode($selection['remove'])) !== null && !empty($remove)
+            ) {
+                $conditions[] = [
+                    'and',
+                    $fkCondition,
+                    ['not in', $relatedModel::primaryKey(), self::importKey($relatedModel, $remove)]
+                ];
+            } else {
+                $conditions[] = $fkCondition;
+            }
+            if ($conditions !== ['or']) {
+                $query->andWhere($conditions);
+                $query->primaryModel = null;
+            }
+        }
+        return $relations;
+    }
+
+    /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
      * @param string $inverseRelation
@@ -112,7 +163,7 @@ class UpdateAction extends Action
             $options = array_merge([
                 'title' => Yii::t('app', 'Unlink'),
                 'aria-label' => Yii::t('app', 'Unlink'),
-                'data-confirm' => Yii::t('app', 'Are you sure you want to unlink this item?'),
+                //'data-confirm' => Yii::t('app', 'Are you sure you want to unlink this item?'),
                 'data-pjax' => '0',
                 'class' => 'remove',
             ], $actionColumn->buttonOptions);
