@@ -103,8 +103,8 @@ class UpdateAction extends Action
         ) {
             $headers = Yii::$app->request->getHeaders();
             $selection = [
-                'add' => $headers->get('X-Selection-add'),
-                'remove' => $headers->get('X-Selection-remove'),
+                'add' => self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-add')),
+                'remove' => self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-remove')),
             ];
             /** @var ActiveRecord $relatedModel */
             $relatedModel = $relations[$relationName]['model'];
@@ -117,18 +117,14 @@ class UpdateAction extends Action
                 array_keys($query->link),
                 array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
             ];
-            if (!empty($selection['add'])
-                && ($add = json_decode($selection['add'])) !== null && !empty($add)
-            ) {
-                $conditions[] = ['in', $relatedModel::primaryKey(), self::importKey($relatedModel, $add)];
+            if (!empty($selection['add'])) {
+                $conditions[] = ['in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['add'])];
             }
-            if (!empty($selection['remove'])
-                && ($remove = json_decode($selection['remove'])) !== null && !empty($remove)
-            ) {
+            if (!empty($selection['remove'])) {
                 $conditions[] = [
                     'and',
                     $fkCondition,
-                    ['not in', $relatedModel::primaryKey(), self::importKey($relatedModel, $remove)]
+                    ['not in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['remove'])]
                 ];
             } else {
                 $conditions[] = $fkCondition;

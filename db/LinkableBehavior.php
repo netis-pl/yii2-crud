@@ -223,7 +223,7 @@ class LinkableBehavior extends Behavior
             if (($relation = $owner->getRelation($relationName, false)) === null) {
                 continue;
             }
-            if (trim($keys) === '') {
+            if (is_string($keys) && trim($keys) === '') {
                 continue;
             }
             if (!is_array($keys) || isset($keys[0])) {

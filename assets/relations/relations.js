@@ -6,7 +6,9 @@
         saveButtonId: '#relationSave',
         i18n: {
             loadingText: 'Loading, please wait.'
-        }
+        },
+        compositeKeySeparator: '-',
+        keysSeparator: ','
     };
 
     var _settings;
@@ -58,8 +60,8 @@
         $(document).on('pjax:success', _settings.modalId, function(event) {
             var saveButton = $(_settings.saveButtonId),
                 selectionFields = $('#' + button.data('relation') + 'Pjax').data('selectionFields'),
-                added = JSON.parse($(selectionFields.add).val()),
-                removed = JSON.parse($(selectionFields.remove).val()),
+                added = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.add).val()),
+                removed = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.remove).val()),
                 grid = $(_settings.modalId + ' .grid-view');
 
             saveButton.data('relation', button.data('relation'));
@@ -94,8 +96,8 @@
         var saveButton = $(_settings.saveButtonId),
             container = $('#' + saveButton.data('relation') + 'Pjax'),
             grid = $(_settings.modalId + ' .grid-view'),
-            add = JSON.parse($(container.data('selectionFields').add).val()),
-            remove = JSON.parse($(container.data('selectionFields').remove).val());
+            add = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').add).val()),
+            remove = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').remove).val());
 
         grid.find("input[name='selection[]']:checked").not(':disabled').each(function() {
             var key = $(this).parent().closest('tr').data('key'),
@@ -108,16 +110,16 @@
         });
 
 
-        $(container.data('selectionFields').add).val(JSON.stringify(add));
-        $(container.data('selectionFields').remove).val(JSON.stringify(remove));
+        $(container.data('selectionFields').add).val(netis.implodeEscaped(_settings.keysSeparator, add));
+        $(container.data('selectionFields').remove).val(netis.implodeEscaped(_settings.keysSeparator, remove));
         $.pjax.reload(container);
 
         $(_settings.modalId).modal('hide');
     };
 
     netis.removeRelation = function(container, key) {
-        var add = JSON.parse($(container.data('selectionFields').add).val()),
-            remove = JSON.parse($(container.data('selectionFields').remove).val()),
+        var add = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').add).val()),
+            remove = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').remove).val()),
             idx = $.inArray(key, add);
         if (idx !== -1) {
             add.splice(idx, 1);
@@ -125,8 +127,42 @@
             remove.push(key);
         }
 
-        $(container.data('selectionFields').add).val(JSON.stringify(add));
-        $(container.data('selectionFields').remove).val(JSON.stringify(remove));
+        $(container.data('selectionFields').add).val(netis.implodeEscaped(_settings.keysSeparator, add));
+        $(container.data('selectionFields').remove).val(netis.implodeEscaped(_settings.keysSeparator, remove));
         $.pjax.reload(container);
+    };
+
+    netis.implodeEscaped = function(glue, pieces, escapeChar) {
+        if (escapeChar === undefined) {
+            escapeChar = '\\';
+        }
+        return $.map(pieces, function(k) {
+            return String(k).replace(/escapeChar/g, escapeChar + escapeChar).replace(/glue/g, escapeChar + glue);
+        }).join(glue);
+    };
+
+    netis.explodeEscaped = function(delimiter, string, escapeChar, removeEmpty) {
+        if (escapeChar === undefined) {
+            escapeChar = '\\';
+        }
+        if (removeEmpty === undefined) {
+            removeEmpty = true;
+        }
+        var lastIndex = 0,
+            prevIndex = -1,
+            result = [];
+        while ((lastIndex = string.indexOf(delimiter, lastIndex + 1)) > -1) {
+            if (string[lastIndex - 1] !== escapeChar) {
+                if (!removeEmpty || lastIndex - prevIndex + 1 > 0) {
+                    result.push(string.substring(prevIndex + 1, lastIndex));
+                }
+                prevIndex = lastIndex;
+            }
+        }
+        if (!removeEmpty || string.length - prevIndex + 1 > 0) {
+            result.push(string.substring(prevIndex + 1));
+        }
+
+        return result;
     };
 }(window.netis = window.netis || {}, jQuery));

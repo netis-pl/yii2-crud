@@ -85,8 +85,8 @@ $renderRelation = function ($model, $relations, $relationName, $activeRelation) 
             'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
         ]);
     }
-    echo Html::activeHiddenInput($model, $relationName.'[add]', ['value' => '[]']);
-    echo Html::activeHiddenInput($model, $relationName.'[remove]', ['value' => '[]']);
+    echo Html::activeHiddenInput($model, $relationName.'[add]');
+    echo Html::activeHiddenInput($model, $relationName.'[remove]');
     echo $this->render('_relation_widget', [
         'model' => $model,
         'relations' => $relations,
@@ -143,6 +143,8 @@ $options = Json::htmlEncode([
     'i18n' => [
         'loadingText' => Yii::t('app', 'Loading, please wait.'),
     ],
+    'keysSeparator' => \netis\utils\crud\Action::KEYS_SEPARATOR,
+    'compositeKeySeparator' => \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR,
 ]);
 $this->registerJs("netis.init($options)");
 ?>
