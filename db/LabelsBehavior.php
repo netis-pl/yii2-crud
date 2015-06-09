@@ -34,6 +34,10 @@ class LabelsBehavior extends Behavior
      * @var array cached relation labels
      */
     private $_cachedRelationLabels = [];
+    /**
+     * @var string name of method whitch translates label
+     */
+    public $translate = '';
 
     public function init()
     {
