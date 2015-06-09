@@ -40,7 +40,15 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         /** @var \netis\utils\db\LabelsBehavior */
         if (($string = $this->getBehavior('labels')) !== null) {
-            return implode($string->separator, $this->getAttributes($string->attributes));
+            if($string->translate) {
+                $attributes = [];
+                foreach ($this->getAttributes($string->attributes) as  $attribute) {
+                    $attributes[] = static::{$string->translate}($attribute);
+                }
+            }else {
+                $attributes = $this->getAttributes($string->attributes);
+            }
+            return implode($string->separator, $attributes);
         }
         return implode('/', $this->getPrimaryKey(true));
     }
