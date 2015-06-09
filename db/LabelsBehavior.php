@@ -33,12 +33,16 @@ class LabelsBehavior extends Behavior
     /**
      * @var array cached relation labels
      */
-    private $_cachedRelationLabels = [];
+    private $cachedRelationLabels = [];
     /**
-     * @var string name of method whitch translates label
+     * @var string name of method which translates label
      */
     public $translate = '';
 
+    /**
+     * @inheritdoc
+     * @throws \yii\base\InvalidConfigException
+     */
     public function init()
     {
         $this->crudLabels = array_merge([
@@ -71,23 +75,34 @@ class LabelsBehavior extends Behavior
         }
     }
 
+    /**
+     * Fetches translated label from the crudLabels property.
+     * @param string $operation one of: default, relation, index, create, read, update, delete
+     * @return string
+     */
     public function getCrudLabel($operation = null)
     {
         return $this->crudLabels[$operation === null ? 'default' : $operation];
     }
-    
+
+    /**
+     * Fetches translated label from the relationLabels property or relation model.
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @param string $relation
+     * @return string
+     */
     public function getRelationLabel($activeRelation, $relation)
     {
-        if(isset($this->_cachedRelationLabels[$activeRelation->modelClass][$relation])) {
-            return $this->_cachedRelationLabels[$activeRelation->modelClass][$relation];
+        $modelClass = $activeRelation->modelClass;
+        if (isset($this->cachedRelationLabels[$modelClass][$relation])) {
+            return $this->cachedRelationLabels[$modelClass][$relation];
         }
-        $relationModel = new $activeRelation->modelClass;
-        if(isset($relationModel->relationLabels[$relation])) {
-            $this->_cachedRelationLabels[$activeRelation->modelClass][$relation] = $relationModel->relationLabels[$relation];
-            return $relationModel->relationLabels[$relation];
+        $relationModel = new $modelClass;
+        if (isset($relationModel->relationLabels[$relation])) {
+            $label = $relationModel->relationLabels[$relation];
         } else {
-            $this->_cachedRelationLabels[$activeRelation->modelClass][$relation] = $relationModel->getCrudLabel('relation');
-            return $relationModel->getCrudLabel('relation');
+            $label = $relationModel->getCrudLabel('relation');
         }
+        return $this->cachedRelationLabels[$modelClass][$relation] = $label;
     }
 }

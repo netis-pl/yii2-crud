@@ -232,7 +232,7 @@ class ActiveController extends \yii\rest\ActiveController
             'format' => Yii::$app->response->format,
             'serializer' => $this->serializer,
         ];
-        $response->stream = fopen("$streamName://{$action->id}?".http_build_str($streamParams), "r");
+        $response->stream = fopen("$streamName://{$action->id}?".\http_build_query($streamParams), "r");
 
         return $response;
     }

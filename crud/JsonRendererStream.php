@@ -14,16 +14,36 @@ class JsonRendererStream extends RendererStream
 {
     public function renderHeader()
     {
-        return "[\n" . json_encode($this->getHeader());
+        /** @var \yii\rest\Serializer $serializer */
+        $serializer = $this->serializer;
+        if ($serializer->collectionEnvelope === null) {
+            return "[";
+        }
+        // \n\"labels\": " . json_encode($this->getHeader()).",
+        return "{\n\"{$serializer->collectionEnvelope}\": [";
     }
 
-    public function renderRow($data)
+    public function renderRow($data, $index, $count)
     {
-        return ',' . json_encode($data->toArray());
+        return ($index !== 0 ? ",\n" : "\n") . json_encode($this->serializeModel($data));
     }
 
     public function renderFooter()
     {
-        return "\n]";
+        /** @var \yii\rest\Serializer $serializer */
+        $serializer = $this->serializer;
+
+        if ($serializer->collectionEnvelope === null) {
+            return "\n]";
+        }
+        $result = "\n]";
+        /** @var \yii\data\ActiveDataProvider $dataProvider */
+        $dataProvider = $this->grid->dataProvider;
+        if (($pagination = $dataProvider->getPagination()) !== false) {
+            $serialized = $this->serializePagination($pagination);
+            $result .= ",\"{$serializer->linksEnvelope}\": " . json_encode($serialized[$serializer->linksEnvelope]);
+            $result .= ",\"{$serializer->metaEnvelope}\": " . json_encode($serialized[$serializer->metaEnvelope]);
+        }
+        return $result . "\n}";
     }
 }

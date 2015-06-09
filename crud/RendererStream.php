@@ -9,10 +9,13 @@ namespace netis\utils\crud;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\data\ActiveDataProvider;
+use yii\db\ActiveQuery;
 use yii\db\DataReader;
 use yii\db\QueryInterface;
+use yii\grid\Column;
 use yii\grid\DataColumn;
 use yii\grid\GridView;
+use yii\rest\Serializer;
 
 /**
  * A stream wrapper allowing to gradually render a response while reading it with stream functions like fread().
@@ -37,13 +40,17 @@ class RendererStream
      */
     public $encoding;
     /**
+     * @var string|array the configuration for creating the serializer that formats the response data.
+     */
+    public $serializer;
+    /**
      * @var string
      */
     private $actionId;
     /**
      * @var GridView
      */
-    private $grid;
+    protected $grid;
     /**
      * @var DataReader
      */
@@ -56,6 +63,14 @@ class RendererStream
      * @var string
      */
     private $buffer = '';
+    /**
+     * @var array
+     */
+    private $requestedFields;
+    /**
+     * @var array
+     */
+    private $serializedPagination;
 
     /**
      * Opens file or URL.
@@ -84,9 +99,9 @@ class RendererStream
         $query = [];
         parse_str($url['query'], $query);
         $this->actionId = $url["host"];
-        foreach (['encoding', 'format'] as $option) {
+        foreach (['encoding', 'format', 'serializer'] as $option) {
             if (isset($query[$option])) {
-                $this->$option = $query[$option];
+                $this->$option = $option === 'serializer' ? \Yii::createObject($query[$option]) : $query[$option];
             }
         }
 
@@ -104,6 +119,12 @@ class RendererStream
             if ($column instanceof DataColumn) {
                 $column->enableSorting = false;
             }
+        }
+
+        /** @var ActiveDataProvider $dataProvider */
+        $dataProvider = $this->grid->dataProvider;
+        if (($pagination = $dataProvider->getPagination()) !== false) {
+            $this->serializePagination($pagination);
         }
 
         return true;
@@ -126,7 +147,8 @@ class RendererStream
             if ($this->rowNumber === 0) {
                 $this->buffer .= $this->renderHeader();
             }
-            for ($i = 0; $i < 100; $i++, $this->rowNumber++) {
+            $rowCount = $this->dataReader->getRowCount();
+            for ($i = 0; $i < 100; $i++) {
                 $row = $this->dataReader->read();
                 if ($row === false) {
                     $this->dataReader = null;
@@ -136,7 +158,7 @@ class RendererStream
                 $models = $query->populate([$row]);
                 //$dataProvider->setmodels($models);
 
-                $this->buffer .= $this->renderRow(reset($models));
+                $this->buffer .= $this->renderRow(reset($models), $this->rowNumber++, $rowCount);
             }
         }
         if ($this->buffer === '' && $this->dataReader === null) {
@@ -206,6 +228,12 @@ class RendererStream
     protected function getHeader()
     {
         $headers = [];
+        $query = $this->grid->dataProvider->query;
+        if ($query instanceof ActiveQuery) {
+            $modelClass = $query->modelClass;
+            return (new $modelClass)->attributeLabels();
+        }
+        /** @var Column $column */
         foreach ($this->grid->columns as $column) {
             $r = new \ReflectionMethod($column, 'renderHeaderCellContent');
             $r->setAccessible(true);
@@ -251,16 +279,98 @@ class RendererStream
 
     public function renderHeader()
     {
-        return "array(\n" . var_export($this->getHeader());
+        /** @var \yii\rest\Serializer $serializer */
+        $serializer = $this->serializer;
+        if ($serializer->collectionEnvelope === null) {
+            return "array(";
+        }
+        // \n\"labels\" => " . var_export($this->getHeader())."
+        return "array(\n\"{$this->serializer->collectionEnvelope}\" => array(";
     }
 
-    public function renderRow($data)
+    public function renderRow($data, $index, $count)
     {
-        return var_export($data->toArray());
+        return var_export($this->serializeModel($data)).",\n";
     }
 
     public function renderFooter()
     {
-        return "\n)";
+        /** @var \yii\rest\Serializer $serializer */
+        $serializer = $this->serializer;
+
+        $result = "\n";
+        if ($serializer->collectionEnvelope !== null) {
+            $result .= ")";
+        }
+        /** @var ActiveDataProvider $dataProvider */
+        $dataProvider = $this->grid->dataProvider;
+        if (($pagination = $dataProvider->getPagination()) !== false) {
+            $serialized = $this->serializePagination($pagination);
+            $result .= ",'{$serializer->linksEnvelope}' => " . var_export($serialized[$serializer->linksEnvelope]);
+            $result .= ",'{$serializer->metaEnvelope}' => " . var_export($serialized[$serializer->metaEnvelope]);
+        }
+        return $result . ")";
     }
+
+    // {{{ parts of Serializer
+
+    /**
+     * @return array the names of the requested fields. The first element is an array
+     * representing the list of default fields requested, while the second element is
+     * an array of the extra fields requested in addition to the default fields.
+     * @see Model::fields()
+     * @see Model::extraFields()
+     */
+    protected function getRequestedFields()
+    {
+        if ($this->requestedFields !== null) {
+            return $this->requestedFields;
+        }
+        /** @var \yii\rest\Serializer $serializer */
+        $serializer = $this->serializer;
+        $fields = \Yii::$app->request->get($serializer->fieldsParam);
+        $expand = \Yii::$app->request->get($serializer->expandParam);
+
+        return $this->requestedFields = [
+            preg_split('/\s*,\s*/', $fields, -1, PREG_SPLIT_NO_EMPTY),
+            preg_split('/\s*,\s*/', $expand, -1, PREG_SPLIT_NO_EMPTY),
+        ];
+    }
+
+    /**
+     * Serializes a model object.
+     * @param \yii\base\Arrayable $model
+     * @return array the array representation of the model
+     */
+    protected function serializeModel($model)
+    {
+        list ($fields, $expand) = $this->getRequestedFields();
+        return $model->toArray($fields, $expand);
+    }
+
+    /**
+     * Serializes a pagination into an array.
+     * @param \yii\data\Pagination $pagination
+     * @return array the array representation of the pagination
+     * @see addPaginationHeaders()
+     */
+    protected function serializePagination($pagination)
+    {
+        if ($this->serializedPagination !== null) {
+            return $this->serializedPagination;
+        }
+        /** @var \yii\rest\Serializer $serializer */
+        $serializer = $this->serializer;
+        return $this->serializedPagination = [
+            $serializer->linksEnvelope => \yii\web\Link::serialize($pagination->getLinks(true)),
+            $serializer->metaEnvelope => [
+                'totalCount' => $pagination->totalCount,
+                'pageCount' => $pagination->getPageCount(),
+                'currentPage' => $pagination->getPage() + 1,
+                'perPage' => $pagination->getPageSize(),
+            ],
+        ];
+    }
+
+    // }}}
 }
