@@ -31,6 +31,7 @@ HTML;
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?= netis\utils\web\Alerts::widget() ?>
+<?= $this->render('_search', ['model' => $searchModel]); ?>
 
 <?php Pjax::begin(['id' => 'indexPjax']); ?>
 <?= GridView::widget([

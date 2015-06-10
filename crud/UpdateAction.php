@@ -14,6 +14,7 @@ use yii\helpers\Url;
 use yii\web\JsExpression;
 use yii\web\Response;
 use yii\web\ServerErrorHttpException;
+use yii\web\View;
 use yii\widgets\ActiveForm;
 
 /**
@@ -478,5 +479,122 @@ return s2helper.formatResult(result.'.$labelField.', container, query, escapeMar
         }
 
         return $formFields;
+    }
+
+    /**
+     * @param View $view
+     * @param ActiveRecord $model
+     * @param ActiveForm $form
+     * @param string $name
+     * @param array $data
+     */
+    public function renderControlGroup($view, $model, $form, $name, $data)
+    {
+        /** @var Model $model */
+        /** @var ActiveForm $form */
+        if (isset($data['model'])) {
+            $model = $data['model'];
+        }
+        $field = $form->field($model, $data['attribute']);
+        if (isset($data['formMethod'])) {
+            if (is_string($data['formMethod'])) {
+                echo call_user_func_array([$field, $data['formMethod']], $data['arguments']);
+            } else {
+                echo call_user_func($data['formMethod'], $field, $data['arguments']);
+            }
+            return;
+        }
+        if (isset($data['options']['label'])) {
+            $label = $data['options']['label'];
+            unset($data['options']['label']);
+        } else {
+            $label = $model->getAttributeLabel($name);
+        }
+        $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
+        echo $field
+            ->label($label, ['class' => 'control-label'])
+            ->error(['class' => 'help-block'])
+            ->widget($data['widgetClass'], $data['options']);
+        return;
+    }
+
+    /**
+     * @param View $view
+     * @param ActiveRecord $model
+     * @param ActiveForm $form
+     * @param array $fields
+     * @param int $topColumnWidth
+     */
+    public function renderRow($view, $model, $form, $fields, $topColumnWidth = 12)
+    {
+        if (empty($fields)) {
+            return;
+        }
+        $oneColumn = count($fields) == 1;
+        echo $oneColumn ? '' : '<div class="row">';
+        $columnWidth = ceil($topColumnWidth / count($fields));
+        foreach ($fields as $name => $column) {
+            echo $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
+            if (is_string($column)) {
+                echo $column;
+            } elseif (!is_numeric($name) && isset($column['attribute'])) {
+                $this->renderControlGroup($view, $model, $form, $name, $column);
+            } else {
+                foreach ($column as $name2 => $row) {
+                    if (is_string($row)) {
+                        echo $row;
+                    } elseif (!is_numeric($name2) && isset($row['attribute'])) {
+                        $this->renderControlGroup($view, $model, $form, $name2, $row);
+                    } else {
+                        $this->renderRow($view, $model, $form, $row);
+                    }
+                }
+            }
+            echo $oneColumn ? '' : '</div>';
+        }
+        echo $oneColumn ? '' : '</div>';
+    }
+
+    /**
+     * @param View $view
+     * @param ActiveRecord $model
+     * @param array $relations
+     * @param string $relationName
+     * @param string $activeRelation name of currently active relation (first one)
+     */
+    public function renderRelation($view, $model, $relations, $relationName, $activeRelation)
+    {
+        $data = $relations[$relationName];
+        /** @var ActiveRecord $relatedModel */
+        $relatedModel = $data['model'];
+        if (($route = Yii::$app->crudModelsMap[$relatedModel::className()]) !== null) {
+            $route = \yii\helpers\Url::toRoute([
+                $route . '/relation',
+                'per-page' => 10,
+                'relation' => $data['dataProvider']->query->inverseOf,
+                'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
+            ]);
+        }
+        echo Html::activeHiddenInput($model, $relationName.'[add]');
+        echo Html::activeHiddenInput($model, $relationName.'[remove]');
+        echo $view->render('_relation_widget', [
+            'model' => $model,
+            'relations' => $relations,
+            'relationName' => $relationName,
+            'isActive' => $relationName === $activeRelation,
+            'buttons' => [
+                \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+                    'title'         => Yii::t('app', 'Add'),
+                    'aria-label'    => Yii::t('app', 'Add'),
+                    'data-pjax'     => '0',
+                    'data-toggle'   => 'modal',
+                    'data-target'   => '#relationModal',
+                    'data-relation' => $relationName,
+                    'data-title'    => $relatedModel->getCrudLabel('index'),
+                    'data-pjax-url' => $route,
+                    'class'         => 'btn btn-default',
+                ]),
+            ],
+        ]);
     }
 }
