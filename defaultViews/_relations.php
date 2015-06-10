@@ -1,15 +1,15 @@
 <?php
 
+use netis\utils\web\FormBuilder;
+
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $relations array */
 /* @var $form yii\widgets\ActiveForm */
 /* @var $controller netis\utils\crud\ActiveController */
-/* @var $action netis\utils\crud\UpdateAction */
 /* @var $view \netis\utils\web\View */
 
 $controller = $this->context;
-$action = $controller->action;
 $view = $this;
 
 $pjax = Yii::$app->request->getQueryParam('_pjax');
@@ -36,7 +36,7 @@ foreach ($relations as $relationName => $data) {
     </ul>
     <div class="tab-content">
         <?php foreach ($relations as $relationName => $data): ?>
-            <?php $action->renderRelation($this, $model, $relations, $relationName, $activeRelation); ?>
+            <?php FormBuilder::renderRelation($this, $model, $relations, $relationName, $activeRelation); ?>
         <?php endforeach; ?>
     </div>
 </div>

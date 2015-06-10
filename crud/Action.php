@@ -172,7 +172,7 @@ class Action extends \yii\rest\Action
      * @param ActiveRecord $model
      * @return array names of columns from primary and foreign keys
      */
-    protected static function getModelKeys($model)
+    public static function getModelKeys($model)
     {
         $keys = array_map(function ($foreignKey) {
             array_shift($foreignKey);
@@ -187,7 +187,7 @@ class Action extends \yii\rest\Action
      * @param ActiveRecord $model
      * @return array two arrays: all behavior attributes and blameable attributes
      */
-    protected static function getModelBehaviorAttributes($model)
+    public static function getModelBehaviorAttributes($model)
     {
         $behaviorAttributes = [];
         $blameableAttributes = [];

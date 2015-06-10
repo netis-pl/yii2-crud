@@ -39,10 +39,13 @@ class IndexAction extends Action
         if ($this->checkAccess) {
             call_user_func($this->checkAccess, $this->id);
         }
+        $controller = $this->controller;
+        $model = $controller instanceof ActiveController ? $controller->getSearchModel() : new $this->modelClass();
 
         return [
             'dataProvider' => $this->prepareDataProvider(),
-            'columns' => static::getIndexGridColumns(new $this->modelClass),
+            'columns' => static::getIndexGridColumns($model),
+            'searchFields' => \netis\utils\web\FormBuilder::getFormFields($model),
         ];
     }
 

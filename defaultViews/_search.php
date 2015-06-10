@@ -1,10 +1,12 @@
 <?php
 
+use netis\utils\web\FormBuilder;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
 /* @var $this yii\web\View */
 /* @var $model netis\utils\db\ActiveSearchTrait */
+/* @var $fields array */
 /* @var $form yii\widgets\ActiveForm */
 ?>
 
@@ -15,9 +17,9 @@ use yii\widgets\ActiveForm;
         'method' => 'get',
     ]); ?>
 
-<?php foreach ($model->getColumns() as $column): ?>
-    <?= $form->field($model, $column) ?>
-<?php endforeach; ?>
+    <fieldset>
+        <?php FormBuilder::renderRow($this, $model, $form, $fields, Yii::$app->request->getIsAjax() ? 12 : 6); ?>
+    </fieldset>
 
     <div class="form-group">
         <?= Html::submitButton(Yii::t('app', 'Search'), ['class' => 'btn btn-primary']) ?>

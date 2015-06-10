@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 use yii\helpers\Json;
+use netis\utils\web\FormBuilder;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
@@ -16,6 +17,8 @@ use yii\helpers\Json;
 $controller = $this->context;
 $action = $controller->action;
 $view = $this;
+
+FormBuilder::registerSelect($this);
 
 // init relation tools used in _relations subview
 // relations modal may contain a form and must be rendered outside ActiveForm
@@ -65,7 +68,7 @@ $this->registerJs("netis.init($options)");
     <?= $form->errorSummary($model); ?>
 
     <fieldset>
-    <?php $action->renderRow($this, $model, $form, [$fields], Yii::$app->request->getIsAjax() ? 12 : 6); ?>
+    <?php FormBuilder::renderRow($this, $model, $form, [$fields], Yii::$app->request->getIsAjax() ? 12 : 6); ?>
     </fieldset>
 
     <?= $this->render('_relations', [
