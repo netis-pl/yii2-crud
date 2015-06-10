@@ -328,7 +328,6 @@ trait ActiveSearchTrait
      * Parse $params data and build filters.
      * @param array $params
      * @param \yii\db\ActiveQuery $query
-     * @param array $columns
      * @return \yii\db\ActiveQuery
      */
     protected function getSearchFilters(array $params, \yii\db\ActiveQuery $query)

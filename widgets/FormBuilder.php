@@ -84,8 +84,8 @@ JavaScript;
      */
     protected static function getHasManyRelationField($model, $relation, $dbColumns, $activeRelation, $multiple = false)
     {
-        // disabled because select2 multiple-ajax-mode needs to be fixed first
-        if ($multiple) {
+        // disabled because it's not yet implemented in ActiveSearchTrait
+        if (false && $multiple) {
             return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple);
         }
         return null;

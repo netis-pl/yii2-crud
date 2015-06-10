@@ -19,9 +19,11 @@ $fields = [];
 for ($i = 0; $i < $columnsNumber; $i++) {
     $fields[] = array_slice($sourceFields, $i * $size, $size);
 }
+
+$visible = array_filter($model->getAttributes()) !== [];
 ?>
 
-<div class="ar-search">
+<div id="advancedSearch" class="collapse <?= $visible ? 'in' : '' ?> ar-search">
 
     <?php $form = ActiveForm::begin([
         'action' => ['index'],

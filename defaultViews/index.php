@@ -22,8 +22,15 @@ if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
     $this->title = Yii::t('app', 'Browse');
 }
 
+$searchLabel = Yii::t('app', 'Advanced search');
 $layout = <<<HTML
-{quickSearch}
+<div class="row">
+    <div class="col-md-3">{quickSearch}</div>
+    <div class="col-md-3">
+        <a class="btn btn-primary" data-toggle="collapse" href="#advancedSearch"
+           aria-expanded="false" aria-controls="advancedSearch">$searchLabel</a>
+    </div>
+</div>
 {items}
 <div class="row">
     <div class="col-md-4">{pager}</div>
