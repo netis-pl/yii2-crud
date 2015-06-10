@@ -1,6 +1,6 @@
 <?php
 
-use netis\utils\web\FormBuilder;
+use netis\utils\widgets\FormBuilder;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */

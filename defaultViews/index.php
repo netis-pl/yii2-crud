@@ -6,17 +6,21 @@ use yii\widgets\Pjax;
 
 
 /* @var $this yii\web\View */
-/* @var $searchModel netis\utils\db\ActiveSearchTrait */
+/* @var $searchModel \yii\base\Model */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $columns array */
 /* @var $searchFields array*/
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
-$searchModel = $controller->getSearchModel();
-$this->title = $searchModel->getCrudLabel('relation');
-$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $searchModel);
-$this->params['menu'] = $controller->getMenu($controller->action, $searchModel);
+
+if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
+    $this->title                 = $searchModel->getCrudLabel('relation');
+    $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $searchModel);
+    $this->params['menu']        = $controller->getMenu($controller->action, $searchModel);
+} else {
+    $this->title = Yii::t('app', 'Browse');
+}
 
 $layout = <<<HTML
 {quickSearch}

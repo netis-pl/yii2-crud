@@ -41,11 +41,13 @@ class IndexAction extends Action
         }
         $controller = $this->controller;
         $model = $controller instanceof ActiveController ? $controller->getSearchModel() : new $this->modelClass();
-
+        // prepared here because it modifies $model
+        $dataProvider = $this->prepareDataProvider($model);
         return [
-            'dataProvider' => $this->prepareDataProvider(),
+            'dataProvider' => $dataProvider,
             'columns' => static::getIndexGridColumns($model),
-            'searchFields' => \netis\utils\web\FormBuilder::getFormFields($model),
+            'searchModel' => $model,
+            'searchFields' => \netis\utils\widgets\FormBuilder::getFormFields($model, true),
         ];
     }
 
@@ -95,33 +97,31 @@ class IndexAction extends Action
 
     /**
      * Prepares the data provider that should return the requested collection of the models.
+     * @param \yii\base\Model
      * @return ActiveDataProvider
      */
-    protected function prepareDataProvider()
+    protected function prepareDataProvider($model)
     {
         if ($this->prepareDataProvider !== null) {
             return call_user_func($this->prepareDataProvider, $this);
         }
 
-        if ($this->controller instanceof ActiveController && $this->controller->searchModelClass !== null) {
-            /** @var ActiveSearchTrait $searchModel */
-            $searchModel = new $this->controller->searchModelClass();
-            return $searchModel->search(Yii::$app->request->queryParams, null, null, [], [
-                'pageSizeLimit' => [1, 0x7FFFFFFF],
-                'defaultPageSize' => 25,
-            ]);
-        }
-        /** @var \yii\db\BaseActiveRecord $modelClass */
-        $modelClass = $this->modelClass;
         /** @var ActiveQuery $query */
-        $query = $modelClass::find();
+        $query = $model::find();
+        $sort = $this->getSort($query);
+        $pagination = [
+            'pageSizeLimit' => [1, 0x7FFFFFFF],
+            'defaultPageSize' => 25,
+        ];
+
+        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+            return $model->search(Yii::$app->request->queryParams, $query, $sort, $pagination);
+        }
 
         return new ActiveDataProvider([
             'query' => $query,
-            'sort' => $this->getSort($query),
-            'pagination' => [
-                'pageSizeLimit' => [1, 0x7FFFFFFF],
-            ],
+            'sort' => $sort,
+            'pagination' => $pagination,
         ]);
     }
 

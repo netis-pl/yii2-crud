@@ -13,7 +13,7 @@ $controller = $this->context;
 if (($pjax = Yii::$app->request->getQueryParam('_pjax')) !== null) {
     // optimization: render only the relation widget instead of the whole form
     $relationName = substr($pjax, 1, -4);
-    \netis\utils\web\FormBuilder::renderRelation($this, $model, $relations, $relationName, $relationName);
+    \netis\utils\widgets\FormBuilder::renderRelation($this, $model, $relations, $relationName, $relationName);
     return;
 }
 

@@ -4,9 +4,10 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\web;
+namespace netis\utils\widgets;
 
 use netis\utils\crud\Action;
+use netis\utils\db\ActiveQuery;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\Html;
@@ -69,7 +70,7 @@ JavaScript;
      */
     protected static function getHasOneRelationField($model, $relation, $dbColumns, $activeRelation, $multiple = false)
     {
-        return static::getRelationWidget($model, $dbColumns, $relation, $activeRelation, $multiple);
+        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple);
     }
 
     /**
@@ -83,8 +84,9 @@ JavaScript;
      */
     protected static function getHasManyRelationField($model, $relation, $dbColumns, $activeRelation, $multiple = false)
     {
+        // disabled because select2 multiple-ajax-mode needs to be fixed first
         if ($multiple) {
-            return static::getRelationWidget($model, $dbColumns, $relation, $activeRelation);
+            return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple);
         }
         return null;
     }
@@ -97,7 +99,7 @@ JavaScript;
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      */
-    protected function getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple = null)
+    protected static function getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple = false)
     {
         $isMany = $activeRelation->multiple;
         $foreignKeys = array_values($activeRelation->link);
@@ -106,49 +108,69 @@ JavaScript;
         /** @var \yii\db\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
         $primaryKey = $relModel->getTableSchema()->primaryKey;
-        $fields = array_merge($primaryKey, $relModel->getBehavior('labels')->attributes);
-        $labelField = reset($relModel->getBehavior('labels')->attributes);
+        if (($labelAttributes = $relModel->getBehavior('labels')->attributes) !== null) {
+            $fields = array_merge($primaryKey, $labelAttributes);
+            $labelField = reset($labelAttributes);
+        } else {
+            $fields = $primaryKey;
+            $labelField = reset($primaryKey);
+        }
         if ($isMany) {
             $value = Action::implodeEscaped(
                 Action::KEYS_SEPARATOR,
-                array_map([$this, 'exportKey'], $activeRelation->select($primaryKey)->asArray()->all())
+                array_map(
+                    '\netis\utils\crud\Action::exportKey',
+                    $activeRelation->select($primaryKey)->asArray()->all()
+                )
             );
         } else {
             $value = Action::exportKey($model->getAttributes($foreignKeys));
+        }
+        $items = null;
+        if ($route === null) {
+            $relQuery = $relModel::find();
+            if ($relQuery instanceof ActiveQuery) {
+                $relQuery->defaultOrder();
+            }
+            $items = $relQuery->all();
         }
         return [
             'widgetClass' => 'maddoger\widgets\Select2',
             'attribute' => $isMany ? $relation : $foreignKey,
             'options' => [
-                'items' => $route !== null ? null : $relModel::find()->defaultOrder()->all(),
-                'clientOptions' => [
-                    'ajax' => $route === null ? [] : [
-                        'url' => Url::toRoute([
-                            $route . '/index',
-                            '_format' => 'json',
-                            'fields' => implode(',', $fields),
-                        ]),
-                        'dataFormat' => 'json',
-                        'quietMillis' => 300,
-                        'data' => new JsExpression('s2helper.data'),
-                        'results' => new JsExpression('s2helper.results'),
-                    ],
-                    'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
-                    'formatResult' => new JsExpression('function (result, container, query, escapeMarkup, depth) {
-return s2helper.formatResult(result.'.$labelField.', container, query, escapeMarkup, depth);
-}'),
-                    'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
+                'items' => $items,
+                'clientOptions' => array_merge(
+                    [
+                        'formatResult' => new JsExpression('function (result, container, query, escapeMarkup, depth) {
+    return s2helper.formatResult(result.'.$labelField.', container, query, escapeMarkup, depth);
+    }'),
+                        'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
 
-                    'width' => '100%',
-                    'allowClear' => $multiple || $isMany
-                        ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
-                    'closeOnSelect' => true,
-                    'multiple' => $multiple,
-                ],
-                'options' => [
+                        'width' => '100%',
+                        'allowClear' => $multiple || $isMany
+                            ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
+                        'closeOnSelect' => true,
+                    ],
+                    $multiple && $items === null ? ['multiple' => true] : [],
+                    $route === null ? [] : [
+                        'ajax' => [
+                            'url' => Url::toRoute([
+                                $route . '/index',
+                                '_format' => 'json',
+                                'fields' => implode(',', $fields),
+                            ]),
+                            'dataFormat' => 'json',
+                            'quietMillis' => 300,
+                            'data' => new JsExpression('s2helper.data'),
+                            'results' => new JsExpression('s2helper.results'),
+                        ],
+                        'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
+                    ]
+                ),
+                'options' => array_merge([
                     'class' => 'select2',
                     'value' => $value,
-                ],
+                ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
             ],
         ];
     }
@@ -169,7 +191,7 @@ return s2helper.formatResult(result.'.$labelField.', container, query, escapeMar
         $activeRelation = $model->getRelation($relation);
         $isHidden = false;
         foreach ($activeRelation->link as $left => $right) {
-            if (!$multiple && in_array($right, $blameableAttributes)) {
+            if (in_array($right, $blameableAttributes)) {
                 return $formFields;
             }
             if (isset($hiddenAttributes[$right])) {
@@ -332,7 +354,7 @@ return s2helper.formatResult(result.'.$labelField.', container, query, escapeMar
             ];
         }
         foreach ($model->safeAttributes() as $attribute) {
-            if (in_array($attribute, $keys) || (!$multiple && in_array($attribute, $behaviorAttributes))
+            if (in_array($attribute, $keys) || (in_array($attribute, $behaviorAttributes))
                 || isset($hiddenAttributes[$attribute])
             ) {
                 continue;

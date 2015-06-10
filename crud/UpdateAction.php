@@ -6,7 +6,7 @@
 
 namespace netis\utils\crud;
 
-use netis\utils\web\FormBuilder;
+use netis\utils\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
 use yii\helpers\Url;

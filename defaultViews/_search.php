@@ -1,6 +1,6 @@
 <?php
 
-use netis\utils\web\FormBuilder;
+use netis\utils\widgets\FormBuilder;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
@@ -8,6 +8,17 @@ use yii\widgets\ActiveForm;
 /* @var $model netis\utils\db\ActiveSearchTrait */
 /* @var $fields array */
 /* @var $form yii\widgets\ActiveForm */
+
+FormBuilder::registerSelect($this);
+
+// split fields into four columns
+$sourceFields = $fields;
+$columnsNumber = 5;
+$size = ceil(count($sourceFields) / (double)$columnsNumber);
+$fields = [];
+for ($i = 0; $i < $columnsNumber; $i++) {
+    $fields[] = array_slice($sourceFields, $i * $size, $size);
+}
 ?>
 
 <div class="ar-search">
@@ -18,7 +29,7 @@ use yii\widgets\ActiveForm;
     ]); ?>
 
     <fieldset>
-        <?php FormBuilder::renderRow($this, $model, $form, $fields, Yii::$app->request->getIsAjax() ? 12 : 6); ?>
+        <?php FormBuilder::renderRow($this, $model, $form, $fields, 10); ?>
     </fieldset>
 
     <div class="form-group">

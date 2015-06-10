@@ -3,7 +3,7 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 use yii\helpers\Json;
-use netis\utils\web\FormBuilder;
+use netis\utils\widgets\FormBuilder;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */

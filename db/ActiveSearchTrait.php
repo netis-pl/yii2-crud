@@ -24,12 +24,11 @@ trait ActiveSearchTrait
      * @param array $params
      *
      * @param \yii\db\ActiveQuery $query
-     * @param array $columns
      * @param Sort|array $sort
      * @param Pagination|array $pagination
      * @return ActiveDataProvider
      */
-    public function search($params, \yii\db\ActiveQuery $query = null, array $columns = null, $sort = [], $pagination = [])
+    public function search($params, \yii\db\ActiveQuery $query = null, $sort = [], $pagination = [])
     {
         if ($query === null) {
             /** @var ActiveQuery $query */
@@ -37,13 +36,6 @@ trait ActiveSearchTrait
         }
         if ($query instanceof ActiveQuery && isset($params['search'])) {
             $query->quickSearchPhrase = $params['search'];
-            // set from with an alias
-            if (empty($query->from)) {
-                /* @var $modelClass ActiveRecord */
-                $modelClass = $query->modelClass;
-                $tableName = $modelClass::tableName();
-                $query->from = [$tableName.' t'];
-            }
         }
 
         $dataProvider = new ActiveDataProvider([
@@ -52,11 +44,7 @@ trait ActiveSearchTrait
             'pagination' => $pagination,
         ]);
 
-        if ($columns === null && (($string = $this->getBehavior('string')) !== null)) {
-            $columns = $string->attributes;
-        }
-
-        $this->getSearchFilters($params, $query, $columns);
+        $this->getSearchFilters($params, $query);
 
         return $dataProvider;
     }
@@ -156,6 +144,7 @@ trait ActiveSearchTrait
                 $conditions[] = ['in', $tablePrefix.'.'.$schema->quoteSimpleColumnName($attribute), $matching];
             }
         }
+        $oldAttributes = $this->getAttributes($attributes);
         $this->setAttributes($plainAttributes);
         $this->validate($attributes);
         $validAttributes = array_diff($attributes, array_keys($this->getErrors()));
@@ -175,7 +164,7 @@ trait ActiveSearchTrait
 
             $conditions[] = $this->getAttributeCondition($attribute, $value, $formats, $tablePrefix, $hasILike);
         }
-        $this->setAttributes(array_fill_keys($attributes, null));
+        $this->setAttributes($oldAttributes);
 
         if ($conditions !== ['or']) {
             $query->andWhere($conditions);
@@ -221,10 +210,9 @@ trait ActiveSearchTrait
     /**
      * Use one value to compare against all columns.
      * @param \yii\db\ActiveQuery $query
-     * @param array $columns
      * @return \yii\db\ActiveQuery
      */
-    protected function getQuickSearchFilters(\yii\db\ActiveQuery $query, array $columns = null)
+    protected function getQuickSearchFilters(\yii\db\ActiveQuery $query)
     {
         if (!$query instanceof ActiveQuery) {
             return $query;
@@ -284,12 +272,12 @@ trait ActiveSearchTrait
      * Use a distinct compare value for each column. Primary and foreign keys support multiple values.
      * @param array $params
      * @param \yii\db\ActiveQuery $query
-     * @param array $columns
      * @return \yii\db\ActiveQuery
      */
-    protected function getAttributesSearchFilters(array $params, \yii\db\ActiveQuery $query, array $columns = null)
+    protected function getAttributesSearchFilters(array $params, \yii\db\ActiveQuery $query)
     {
         $this->load($params);
+        $this->validate();
 
         $tablePrefix = $this->getDb()->getSchema()->quoteSimpleTableName('t');
         $conditions = ['or'];
@@ -310,7 +298,8 @@ trait ActiveSearchTrait
 
             $conditions[] = $this->getAttributeCondition($attribute, $value, $formats, $tablePrefix, $hasILike);
         }
-        $this->setAttributes(array_fill_keys($attributes, null));
+        // don't clear attributes to allow rendering filled search form
+        //$this->setAttributes(array_fill_keys($attributes, null));
         if ($conditions !== ['or']) {
             $query->andWhere($conditions);
         }
@@ -321,10 +310,9 @@ trait ActiveSearchTrait
      * If the 'ids' param is set, extracts primary keys from it and adds them as a query condition.
      * @param array $params
      * @param \yii\db\ActiveQuery $query
-     * @param array $columns
      * @return \yii\db\ActiveQuery
      */
-    protected function getKeysSearchFilters(array $params, \yii\db\ActiveQuery $query, array $columns = null)
+    protected function getKeysSearchFilters(array $params, \yii\db\ActiveQuery $query)
     {
         if (!isset($params['ids'])) {
             return $query;
@@ -343,13 +331,20 @@ trait ActiveSearchTrait
      * @param array $columns
      * @return \yii\db\ActiveQuery
      */
-    protected function getSearchFilters(array $params, \yii\db\ActiveQuery $query, array $columns = null)
+    protected function getSearchFilters(array $params, \yii\db\ActiveQuery $query)
     {
-        if ($query instanceof ActiveQuery) {
-            $this->getQuickSearchFilters($query, $columns);
+        // set from with an alias
+        if (empty($query->from)) {
+            /* @var $modelClass ActiveRecord */
+            $modelClass = $query->modelClass;
+            $tableName = $modelClass::tableName();
+            $query->from = [$tableName.' t'];
         }
-        $this->getAttributesSearchFilters($params, $query, $columns);
-        $this->getKeysSearchFilters($params, $query, $columns);
+        if ($query instanceof ActiveQuery) {
+            $this->getQuickSearchFilters($query);
+        }
+        $this->getAttributesSearchFilters($params, $query);
+        $this->getKeysSearchFilters($params, $query);
         return $query;
     }
 }
