@@ -512,8 +512,13 @@ class ActiveController extends \yii\rest\ActiveController
                 }
             }
             foreach ($items as $key => $item) {
-                if ((isset($item['active']) && $item['active']) || (isset($item['disabled']) && $item['disabled'])) {
-                    $item['url'] = '';
+                $isActive = isset($item['active']) && $item['active'];
+                $isDisabled = isset($item['disabled']) && $item['disabled'];
+                if ($isActive || $isDisabled) {
+                    $item['url'] = '#';
+                    if ($isDisabled) {
+                        \yii\helpers\Html::addCssClass($item['options'], 'disabled');
+                    }
                     if (isset($item['linkOptions']) && isset($item['linkOptions']['confirm'])
                     ) {
                         unset($item['linkOptions']['confirm']);
