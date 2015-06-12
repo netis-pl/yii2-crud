@@ -48,11 +48,12 @@ class RelationAction extends IndexAction
 
     /**
      * Prepares the data provider that should return the requested collection of the models.
+     * @param \yii\base\Model
      * @return ActiveDataProvider
      */
-    protected function prepareDataProvider()
+    protected function prepareDataProvider($model)
     {
-        $dataProvider = parent::prepareDataProvider();
+        $dataProvider = parent::prepareDataProvider($model);
         /** @var \yii\db\ActiveQuery $query */
         $query = $dataProvider->query;
 

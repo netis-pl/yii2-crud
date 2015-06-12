@@ -27,7 +27,7 @@ $layout = <<<HTML
 <div class="row">
     <div class="col-md-3">{quickSearch}</div>
     <div class="col-md-3">
-        <a class="btn btn-primary" data-toggle="collapse" href="#advancedSearch"
+        <a class="btn btn-default" data-toggle="collapse" href="#advancedSearch"
            aria-expanded="false" aria-controls="advancedSearch">$searchLabel</a>
     </div>
 </div>

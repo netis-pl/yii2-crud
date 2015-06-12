@@ -325,7 +325,18 @@ class Action extends \yii\rest\Action
             ) {
                 continue;
             }
-            $columns[] = $attribute . ':' . $formats[$attribute];
+            $isNumeric = in_array($formats[$attribute], [
+                'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'money',
+            ]);
+            $columns[] = [
+                'attribute' => $attribute,
+                'format' => $formats[$attribute],
+                'contentOptions' => $isNumeric
+                    ? function ($model, $key, $index, $column) {
+                        return $model->{$column->attribute} === null ? [] : ['class' => 'text-right'];
+                    }
+                    : [],
+            ];
         }
         foreach ($model->relations() as $relation) {
             $activeRelation = $model->getRelation($relation);

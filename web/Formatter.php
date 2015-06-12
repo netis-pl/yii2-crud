@@ -8,6 +8,7 @@ namespace netis\utils\web;
 
 use netis\utils\crud\Action;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
 use yii\base\Model;
 use yii\db\ActiveRecord;
@@ -184,6 +185,25 @@ class Formatter extends \yii\i18n\Formatter
         }
 
         return Html::a($result, [$route . '/view', 'id' => Action::exportKey($value->getPrimaryKey())], $options);
+    }
+
+    /**
+     * Formats the value as a currency number. The value is assumed to be a subunit and is multiplied by 100.
+     *
+     * @param mixed $value the value to be formatted.
+     * @param string $currency the 3-letter ISO 4217 currency code indicating the currency to use.
+     * If null, [[currencyCode]] will be used.
+     * @param array $options optional configuration for the number formatter.
+     * This parameterwill be merged with [[numberFormatterOptions]].
+     * @param array $textOptions optional configuration for the number formatter.
+     * This parameter will be merged with [[numberFormatterTextOptions]].
+     * @return string the formatted result.
+     * @throws InvalidParamException if the input value is not numeric or the formatting failed.
+     * @throws InvalidConfigException if no currency is given and [[currencyCode]] is not defined.
+     */
+    public function asMinorCurrency($value, $currency = null, $options = [], $textOptions = [])
+    {
+        return parent::asCurrency($value / 100.0, $currency, $options, $textOptions);
     }
 
     /**
