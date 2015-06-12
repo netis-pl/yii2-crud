@@ -2,12 +2,12 @@
 
 use netis\utils\widgets\FormBuilder;
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
+use yii\bootstrap\ActiveForm;
 
 /* @var $this yii\web\View */
 /* @var $model netis\utils\db\ActiveSearchTrait */
 /* @var $fields array */
-/* @var $form yii\widgets\ActiveForm */
+/* @var $form yii\bootstrap\ActiveForm */
 
 FormBuilder::registerSelect($this);
 

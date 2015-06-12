@@ -249,7 +249,17 @@ JavaScript;
 
         switch ($formats[$attribute]) {
             case 'boolean':
-                $field['formMethod'] = 'checkbox';
+                if ($multiple) {
+                    $field['formMethod'] = function ($field, $arguments) {
+                        return $field->inline()->radioList([
+                            '0' => Yii::$app->formatter->booleanFormat[0],
+                            '1' => Yii::$app->formatter->booleanFormat[1],
+                            '' => Yii::t('app', 'Any'),
+                        ]);
+                    };
+                } else {
+                    $field['formMethod'] = 'checkbox';
+                }
                 break;
             case 'time':
                 $field['formMethod'] = 'textInput';
