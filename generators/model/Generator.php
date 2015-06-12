@@ -167,6 +167,88 @@ DESC;
         return $files;
     }
 
+    protected function getSchemaNames()
+    {
+        $db = $this->getDbConnection();
+
+        $schema = $db->getSchema();
+        if ($schema->hasMethod('getSchemaNames')) { // keep BC to Yii versions < 2.0.4
+            try {
+                $schemaNames = $schema->getSchemaNames();
+            } catch (NotSupportedException $e) {
+                // schema names are not supported by schema
+            }
+        }
+        if (!isset($schemaNames)) {
+            if (($pos = strpos($this->tableName, '.')) !== false) {
+                $schemaNames = [substr($this->tableName, 0, $pos)];
+            } else {
+                $schemaNames = [''];
+            }
+        }
+        return $schemaNames;
+    }
+
+    protected function isManyRelation($table, $fks)
+    {
+        $uniqueKeys = [$table->primaryKey];
+        try {
+            $uniqueKeys = array_merge($uniqueKeys, $this->getDbConnection()->getSchema()->findUniqueIndexes($table));
+        } catch (NotSupportedException $e) {
+            // ignore
+        }
+        foreach ($uniqueKeys as $uniqueKey) {
+            if (count(array_diff(array_merge($uniqueKey, $fks), array_intersect($uniqueKey, $fks))) === 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @return array the generated relation declarations
+     */
+    protected function generateRelations()
+    {
+        if (!$this->generateRelations) {
+            return [];
+        }
+
+        $relations = parent::generateRelations();
+        $relationNames = [];
+
+        // generate inverse relations
+
+        $db = $this->getDbConnection();
+
+        foreach ($this->getSchemaNames() as $schemaName) {
+            foreach ($db->getSchema()->getTableSchemas($schemaName) as $table) {
+                $className = $this->generateClassName($table->fullName);
+                foreach ($table->foreignKeys as $refs) {
+                    $refTable = $refs[0];
+                    $refTableSchema = $db->getTableSchema($refTable);
+                    unset($refs[0]);
+                    $fks = array_keys($refs);
+
+                    $leftRelationName = $this->generateRelationName($relationNames, $table, $fks[0], false);
+                    $relationNames[$table->fullName][$leftRelationName] = true;
+                    $hasMany = $this->isManyRelation($table, $fks);
+                    $rightRelationName = $this->generateRelationName($relationNames, $refTableSchema, $className, $hasMany);
+                    $relationNames[$refTableSchema->fullName][$rightRelationName] = true;
+
+                    $relations[$table->fullName][$leftRelationName][0] =
+                        rtrim($relations[$table->fullName][$leftRelationName][0], ';')
+                        . "->inverseOf('".lcfirst($rightRelationName)."');";
+                    $relations[$refTableSchema->fullName][$rightRelationName][0] =
+                        rtrim($relations[$refTableSchema->fullName][$rightRelationName][0], ';')
+                        . "->inverseOf('".lcfirst($leftRelationName)."');";
+                }
+            }
+        }
+
+        return $relations;
+    }
+
     /**
      * Generates validation rules for the unique indexes of specified table.
      * @param \yii\db\TableSchema $table the table schema
@@ -378,7 +460,7 @@ DESC;
             ],
             'formatTime' => [
                 'validator' => 'date',
-                'format' => "['HH:mm', 'HH:mm:ss']",
+                'format' => "'HH:mm:ss'",
             ],
             'filterBoolean' => [
                 'validator' => 'filter',
