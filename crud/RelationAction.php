@@ -15,12 +15,18 @@ class RelationAction extends IndexAction
     /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
+     * @param array $fields
      * @return array grid columns
      */
-    public static function getIndexGridColumns($model)
+    public static function getIndexGridColumns($model, $fields)
     {
         $id = Yii::$app->request->getQueryParam('id');
         $relation = Yii::$app->request->getQueryParam('relation');
+        foreach ($fields as $key => $field) {
+            if (((is_array($field) || is_callable($field)) && $key === $relation) || $field === $relation) {
+                unset($fields[$key]);
+            }
+        }
         return array_merge([
             [
                 'class'         => 'yii\grid\CheckboxColumn',
@@ -43,7 +49,7 @@ class RelationAction extends IndexAction
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
             ],
-        ], self::getGridColumns($model, [$relation]));
+        ], self::getGridColumns($model, $fields));
     }
 
     /**

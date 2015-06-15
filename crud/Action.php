@@ -20,6 +20,46 @@ class Action extends \yii\rest\Action
     const KEYS_SEPARATOR = ',';
 
     /**
+     * @var string[]|callable a list of fields or a PHP callable returning list of fields that will be used to
+     * create columns, detail view attributes or form fields.
+     *
+     * The signature of the callable should be:
+     *
+     * ```php
+     * function ($action, $model) {
+     *     // $action is the action object currently running
+     *     // $modelClass is the AR model
+     * }
+     * ```
+     *
+     * The list should be an array of field names or field definitions.
+     * If the former, the field name will be treated as an object property name whose value will be used
+     * as the field value. If the latter, the array key should be the field name while the array value should be
+     * the corresponding field definition which can be either an object property name or a PHP callable
+     * returning the corresponding field value. The signature of the callable should be:
+     *
+     * ```php
+     * function ($model) {
+     *     // $modelClass is the AR model
+     * }
+     * ```
+     *
+     * If not set, defaults to model attributes and hasOne relations.
+     *
+     * @see ActiveRecord::toArray()
+     */
+    public $fields;
+
+    /**
+     * @var string[]|callable a list of fields or a PHP callable returning list of fields that will be used
+     * as extra fields in view and update actions.
+     *
+     * By default, those are hasMany relations.
+     * @see [[$fields]]
+     */
+    public $extraFields;
+
+    /**
      * @inheritdoc
      */
     public function init()
@@ -183,6 +223,53 @@ class Action extends \yii\rest\Action
     }
 
     /**
+     * Uses the $fields property to return an array with field names or definitions.
+     * @param ActiveRecord $model
+     * @return array
+     */
+    public function getFields($model)
+    {
+        if (is_array($this->fields)) {
+            return $this->fields;
+        } elseif (is_callable($this->fields)) {
+            return call_user_func($this->fields, $this, $model);
+        }
+        $fields = $model->attributes();
+        foreach ($model->relations() as $relation) {
+            $activeRelation = $model->getRelation($relation);
+            if ($activeRelation->multiple) {
+                continue;
+            }
+            $fields[] = $relation;
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Uses the $extraFields property to return an array with extra field names or definitions.
+     * @param ActiveRecord $model
+     * @return array
+     */
+    public function getExtraFields($model)
+    {
+        if (is_array($this->extraFields)) {
+            return $this->extraFields;
+        } elseif (is_callable($this->extraFields)) {
+            return call_user_func($this->extraFields, $this, $model);
+        }
+        $extraFields = [];
+        foreach ($model->relations() as $relation) {
+            $activeRelation = $model->getRelation($relation);
+            if (!$activeRelation->multiple) {
+                continue;
+            }
+            $extraFields[] = $relation;
+        }
+        return $extraFields;
+    }
+
+    /**
      * Returns all special behavior attributes as two arrays: all attributes and only blameable attributes.
      * @param ActiveRecord $model
      * @return array two arrays: all behavior attributes and blameable attributes
@@ -232,50 +319,69 @@ class Action extends \yii\rest\Action
 
     /**
      * @param Model $model
+     * @param array $extraFields
      * @return array indexed by relation name, contains: model, dataProvider, columns
      */
-    public function getModelRelations($model)
+    public function getModelRelations($model, $extraFields)
     {
         if (!$model instanceof ActiveRecord) {
             return [];
         }
         /** @var ActiveRecord $model */
-        $relations = [];
-        foreach ($model->relations() as $relation) {
-            $activeRelation = $model->getRelation($relation);
-            if (!$activeRelation->multiple) {
+        $result = [];
+        foreach ($extraFields as $key => $field) {
+            if (is_array($field)) {
+                $result[$key] = $field;
+                continue;
+            } elseif (is_callable($field)) {
+                $result[$key] = call_user_func($field, $model);
                 continue;
             }
 
-            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
+            $relation = $model->getRelation($field);
+            if (!$relation->multiple) {
                 continue;
             }
 
-            $relatedModel = new $activeRelation->modelClass;
-            $relations[$relation] = [
+            if (!Yii::$app->user->can($relation->modelClass . '.read')) {
+                continue;
+            }
+
+            $relatedModel = new $relation->modelClass;
+
+            $subfields = $relatedModel->attributes();
+            foreach ($relatedModel->relations() as $subrelation) {
+                $activeRelation = $relatedModel->getRelation($subrelation);
+                if ($activeRelation->multiple || $subrelation === $relation->inverseOf) {
+                    continue;
+                }
+                $subfields[] = $subrelation;
+            }
+
+            $result[$field] = [
                 'model' => $relatedModel,
                 'dataProvider' => new ActiveDataProvider([
-                    'query' => $activeRelation,
+                    'query' => $relation,
                     'pagination' => [
-                        'pageParam' => "$relation-page",
+                        'pageParam' => "$field-page",
                         'pageSize' => 10,
                     ],
-                    'sort' => ['sortParam' => "$relation-sort"],
+                    'sort' => ['sortParam' => "$field-sort"],
                 ]),
-                'columns' => static::getRelationGridColumns($relatedModel, $activeRelation->inverseOf),
+                'columns' => static::getRelationGridColumns($relatedModel, $subfields),
             ];
         }
 
-        return $relations;
+        return $result;
     }
     
     /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
-     * @param string $inverseRelation
+     * @param array $fields
      * @return array grid columns
      */
-    public static function getRelationGridColumns($model, $inverseRelation)
+    public static function getRelationGridColumns($model, $fields)
     {
         $actionColumn = new ActionColumn();
         return array_merge([
@@ -298,16 +404,16 @@ class Action extends \yii\rest\Action
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
             ],
-        ], self::getGridColumns($model, [$inverseRelation]));
+        ], self::getGridColumns($model, $fields));
     }
 
     /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
-     * @param string[] $except names of attributes or relations to be excluded
+     * @param array $fields
      * @return array grid columns
      */
-    public static function getGridColumns($model, $except = [])
+    public static function getGridColumns($model, $fields)
     {
         if (!$model instanceof ActiveRecord) {
             return $model->attributes();
@@ -317,44 +423,50 @@ class Action extends \yii\rest\Action
         list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
         $formats = $model->attributeFormats();
         $keys    = self::getModelKeys($model);
+        $attributes = $model->attributes();
 
         $columns = [];
-        foreach ($model->attributes() as $attribute) {
-            if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)
-                || in_array($attribute, $except)
-            ) {
+        foreach ($fields as $key => $field) {
+            if (is_array($field)) {
+                $columns[$key] = $field;
+                continue;
+            } elseif (is_callable($field)) {
+                $columns[$key] = call_user_func($field, $model);
                 continue;
             }
-            $isNumeric = in_array($formats[$attribute], [
-                'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'money',
-            ]);
-            $columns[] = [
-                'attribute' => $attribute,
-                'format' => $formats[$attribute],
-                'contentOptions' => $isNumeric
-                    ? function ($model, $key, $index, $column) {
-                        return $model->{$column->attribute} === null ? [] : ['class' => 'text-right'];
-                    }
-                    : [],
-            ];
-        }
-        foreach ($model->relations() as $relation) {
-            $activeRelation = $model->getRelation($relation);
-            if ($activeRelation->multiple || in_array($relation, $except)) {
+
+            if (in_array($field, $attributes)) {
+                if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
+                    continue;
+                }
+                $isNumeric = in_array($formats[$field], [
+                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'money',
+                ]);
+                $columns[] = [
+                    'attribute' => $field,
+                    'format' => $formats[$field],
+                    'contentOptions' => $isNumeric
+                        ? function ($model, $key, $index, $column) {
+                            return $model->{$column->attribute} === null ? [] : ['class' => 'text-right'];
+                        }
+                        : [],
+                ];
                 continue;
             }
-            foreach ($activeRelation->link as $left => $right) {
+
+            $relation = $model->getRelation($field);
+            foreach ($relation->link as $left => $right) {
                 if (in_array($right, $blameableAttributes)) {
                     continue 2;
                 }
             }
 
-            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
+            if (!Yii::$app->user->can($relation->modelClass . '.read')) {
                 continue;
             }
-            $label = $model->getRelationLabel($activeRelation, $relation);
+            $label = $model->getRelationLabel($relation, $field);
             $columns[] = [
-                'attribute' => $relation,
+                'attribute' => $field,
                 'format'    => 'crudLink',
                 'visible'   => true,
                 'label'     => $label,

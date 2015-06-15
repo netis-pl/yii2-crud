@@ -7,7 +7,6 @@
 namespace netis\utils\crud;
 
 use netis\utils\db\ActiveQuery;
-use netis\utils\db\ActiveSearchTrait;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -43,20 +42,23 @@ class IndexAction extends Action
         $model = $controller instanceof ActiveController ? $controller->getSearchModel() : new $this->modelClass();
         // prepared here because it modifies $model
         $dataProvider = $this->prepareDataProvider($model);
+        $fields = $this->getFields($model);
+
         return [
             'dataProvider' => $dataProvider,
-            'columns' => static::getIndexGridColumns($model),
+            'columns' => static::getIndexGridColumns($model, $fields),
             'searchModel' => $model,
-            'searchFields' => \netis\utils\widgets\FormBuilder::getFormFields($model, true),
+            'searchFields' => \netis\utils\widgets\FormBuilder::getFormFields($model, $fields, true),
         ];
     }
 
     /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
+     * @param array $fields
      * @return array grid columns
      */
-    public static function getIndexGridColumns($model)
+    public static function getIndexGridColumns($model, $fields)
     {
         $actionColumn = new ActionColumn();
         return array_merge([
@@ -92,7 +94,7 @@ class IndexAction extends Action
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
             ],
-        ], static::getGridColumns($model));
+        ], static::getGridColumns($model, $fields));
     }
 
     /**

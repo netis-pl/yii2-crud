@@ -332,10 +332,11 @@ JavaScript;
     /**
      * Retrieves form fields configuration.
      * @param \yii\base\Model $model
+     * @param array $fields
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array form fields
      */
-    public static function getFormFields($model, $multiple = false)
+    public static function getFormFields($model, $fields, $multiple = false)
     {
         if (!$model instanceof \yii\db\ActiveRecord) {
             return $model->safeAttributes();
@@ -348,9 +349,27 @@ JavaScript;
 
         list($behaviorAttributes, $blameableAttributes) = Action::getModelBehaviorAttributes($model);
         $dbColumns = $model->getTableSchema()->columns;
+        $attributes = $model->safeAttributes();
+        $relations = $model->relations();
 
+        $attributeFields = [];
+        $relationFields = [];
         $formFields = [];
-        foreach ($model->relations() as $relation) {
+        foreach ($fields as $key => $field) {
+            if (is_array($field)) {
+                $formFields[$key] = $field;
+                continue;
+            } elseif (is_callable($field)) {
+                $formFields[$key] = call_user_func($field, $model);
+                continue;
+            }
+            if (in_array($field, $relations)) {
+                $relationFields[] = $field;
+            } elseif (in_array($field, $attributes)) {
+                $attributeFields[] = $field;
+            }
+        }
+        foreach ($relationFields as $relation) {
             $formFields = static::addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple);
         }
         // hidden attributes have to be hidden, not absent
@@ -363,7 +382,7 @@ JavaScript;
                 ],
             ];
         }
-        foreach ($model->safeAttributes() as $attribute) {
+        foreach ($attributeFields as $attribute) {
             if (in_array($attribute, $keys) || (in_array($attribute, $behaviorAttributes))
                 || isset($hiddenAttributes[$attribute])
             ) {

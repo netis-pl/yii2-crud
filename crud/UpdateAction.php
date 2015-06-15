@@ -83,8 +83,8 @@ class UpdateAction extends Action
 
         return [
             'model' => $model,
-            'fields' => FormBuilder::getFormFields($model),
-            'relations' => $this->getModelRelations($model),
+            'fields' => FormBuilder::getFormFields($model, $this->getFields($model)),
+            'relations' => $this->getModelRelations($model, $this->getExtraFields($model)),
         ];
     }
 
@@ -92,9 +92,9 @@ class UpdateAction extends Action
      * When the request is pjax, use the selection query param.
      * @inheritdoc
      */
-    public function getModelRelations($model)
+    public function getModelRelations($model, $extraFields)
     {
-        $relations = parent::getModelRelations($model);
+        $relations = parent::getModelRelations($model, $extraFields);
         if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
             && ($relationName = substr($relationName, 1, -4)) !== ''
             && isset($relations[$relationName])

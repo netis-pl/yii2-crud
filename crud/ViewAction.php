@@ -27,17 +27,18 @@ class ViewAction extends Action
         }
         return [
             'model'      => $model,
-            'attributes' => $this->getDetailAttributes($model),
-            'relations'  => $this->getModelRelations($model),
+            'attributes' => $this->getDetailAttributes($model, $this->getFields($model)),
+            'relations'  => $this->getModelRelations($model, $this->getExtraFields($model)),
         ];
     }
 
     /**
      * Retrieves detail view attributes configuration using the modelClass.
      * @param Model $model
+     * @param array $fields
      * @return array detail view attributes
      */
-    public function getDetailAttributes($model)
+    public function getDetailAttributes($model, $fields)
     {
         if (!$model instanceof ActiveRecord) {
             return $model->attributes();
@@ -46,36 +47,46 @@ class ViewAction extends Action
         $formats = $model->attributeFormats();
         $keys    = self::getModelKeys($model);
         list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
-        $attributes = [];
-        foreach ($model->attributes() as $attribute) {
-            if (in_array($attribute, $keys) || in_array($attribute, $behaviorAttributes)) {
+        $attributes = $model->attributes();
+        $result = [];
+        foreach ($fields as $key => $field) {
+            if (is_array($field)) {
+                $result[$key] = $field;
+                continue;
+            } elseif (is_callable($field)) {
+                $result[$key] = call_user_func($field, $model);
                 continue;
             }
-            $attributes[] = $attribute . ':' . $formats[$attribute];
-        }
-        foreach ($model->relations() as $relation) {
-            $activeRelation = $model->getRelation($relation);
-            //skip if has many relation
-            if ($activeRelation->multiple) {
+
+            if (in_array($field, $attributes)) {
+                if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
+                    continue;
+                }
+                $result[] = [
+                    'attribute' => $field,
+                    'format' => $formats[$field],
+                ];
                 continue;
             }
-            foreach ($activeRelation->link as $left => $right) {
+
+            $relation = $model->getRelation($field);
+            foreach ($relation->link as $left => $right) {
                 if (in_array($left, $blameableAttributes)) {
                     continue;
                 }
             }
 
-            if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
+            if (!Yii::$app->user->can($relation->modelClass . '.read')) {
                 continue;
             }
-            $label = $model->getRelationLabel($activeRelation, $relation);
-            $attributes[] = [
-                'attribute' => $relation,
+            $label = $model->getRelationLabel($relation, $field);
+            $result[] = [
+                'attribute' => $field,
                 'format'    => 'crudLink',
                 'visible'   => true,
                 'label'     => $label,
             ];
         }
-        return $attributes;
+        return $result;
     }
 }
