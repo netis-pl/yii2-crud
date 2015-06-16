@@ -21,7 +21,7 @@ use yii\db\Schema;
  * - added relations() method to return list of relations
  * - added attributeFormats() to return default attribute formats
  * @package netis\utils\crud
- * @method bool saveRelations(array $data, string $formName)
+ * @method bool saveRelations(array $data, string $formName = null)
  * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
  * @method string getCrudLabel(string $operation)
  * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, string $relation)
@@ -71,7 +71,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     /**
      * Returns the attribute formats. Possible formats include:
      * - text: string, text, email, url
-     * - numbers: boolean, smallint, integer, bigint, float, decimal, money
+     * - numbers: boolean, smallint, integer, bigint, float, decimal, money, currency, minorCurrency
      * - dates and time: datetime, timestamp, time, date, interval
      * - others: binary.
      *

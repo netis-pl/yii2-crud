@@ -134,10 +134,15 @@ JavaScript;
             }
             $items = $relQuery->all();
         }
+        $label = null;
+        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+            $label = $model->getRelationLabel($activeRelation, $relation);
+        }
         return [
             'widgetClass' => 'maddoger\widgets\Select2',
             'attribute' => $isMany ? $relation : $foreignKey,
             'options' => [
+                'label' => $label,
                 'items' => $items,
                 'clientOptions' => array_merge(
                     [
@@ -352,8 +357,6 @@ JavaScript;
         $attributes = $model->safeAttributes();
         $relations = $model->relations();
 
-        $attributeFields = [];
-        $relationFields = [];
         $formFields = [];
         foreach ($fields as $key => $field) {
             if (is_array($field)) {
@@ -364,13 +367,15 @@ JavaScript;
                 continue;
             }
             if (in_array($field, $relations)) {
-                $relationFields[] = $field;
+                $formFields = static::addRelationField($formFields, $model, $field, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple);
             } elseif (in_array($field, $attributes)) {
-                $attributeFields[] = $field;
+                if (in_array($field, $keys) || (in_array($field, $behaviorAttributes))
+                    || isset($hiddenAttributes[$field])
+                ) {
+                    continue;
+                }
+                $formFields = static::addFormField($formFields, $model, $field, $dbColumns, $formats, $multiple);
             }
-        }
-        foreach ($relationFields as $relation) {
-            $formFields = static::addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple);
         }
         // hidden attributes have to be hidden, not absent
         foreach ($hiddenAttributes as $attribute => $_) {
@@ -381,14 +386,6 @@ JavaScript;
                     'value' => $model->getAttribute($attribute),
                 ],
             ];
-        }
-        foreach ($attributeFields as $attribute) {
-            if (in_array($attribute, $keys) || (in_array($attribute, $behaviorAttributes))
-                || isset($hiddenAttributes[$attribute])
-            ) {
-                continue;
-            }
-            $formFields = static::addFormField($formFields, $model, $attribute, $dbColumns, $formats, $multiple);
         }
 
         return $formFields;

@@ -83,7 +83,7 @@ class UpdateAction extends Action
 
         return [
             'model' => $model,
-            'fields' => FormBuilder::getFormFields($model, $this->getFields($model)),
+            'fields' => FormBuilder::getFormFields($model, $this->getFields($model, 'form')),
             'relations' => $this->getModelRelations($model, $this->getExtraFields($model)),
         ];
     }

@@ -7,6 +7,7 @@
 namespace netis\utils\crud;
 
 use netis\utils\db\ActiveQuery;
+use netis\utils\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -42,13 +43,12 @@ class IndexAction extends Action
         $model = $controller instanceof ActiveController ? $controller->getSearchModel() : new $this->modelClass();
         // prepared here because it modifies $model
         $dataProvider = $this->prepareDataProvider($model);
-        $fields = $this->getFields($model);
 
         return [
             'dataProvider' => $dataProvider,
-            'columns' => static::getIndexGridColumns($model, $fields),
+            'columns' => static::getIndexGridColumns($model, $this->getFields($model, 'grid')),
             'searchModel' => $model,
-            'searchFields' => \netis\utils\widgets\FormBuilder::getFormFields($model, $fields, true),
+            'searchFields' => FormBuilder::getFormFields($model, $this->getFields($model, 'searchForm'), true),
         ];
     }
 

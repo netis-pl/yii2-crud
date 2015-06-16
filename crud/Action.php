@@ -26,8 +26,9 @@ class Action extends \yii\rest\Action
      * The signature of the callable should be:
      *
      * ```php
-     * function ($action, $model) {
+     * function ($action, $context, $model) {
      *     // $action is the action object currently running
+     *     // $context is one of: 'grid', 'detail', 'form', 'searchForm'
      *     // $modelClass is the AR model
      * }
      * ```
@@ -244,14 +245,15 @@ class Action extends \yii\rest\Action
     /**
      * Uses the $fields property to return an array with field names or definitions.
      * @param ActiveRecord $model
+     * @param string $context one of: 'grid', 'detail', 'form', 'searchForm'
      * @return array
      */
-    public function getFields($model)
+    public function getFields($model, $context = null)
     {
         if (is_array($this->fields)) {
             return $this->fields;
         } elseif (is_callable($this->fields)) {
-            return call_user_func($this->fields, $this, $model);
+            return call_user_func($this->fields, $this, $context, $model);
         }
         return self::getDefaultFields($model);
     }
@@ -259,14 +261,15 @@ class Action extends \yii\rest\Action
     /**
      * Uses the $extraFields property to return an array with extra field names or definitions.
      * @param ActiveRecord $model
+     * @param string $context one of: 'grid', 'detail', 'form', 'searchForm'
      * @return array
      */
-    public function getExtraFields($model)
+    public function getExtraFields($model, $context = null)
     {
         if (is_array($this->extraFields)) {
             return $this->extraFields;
         } elseif (is_callable($this->extraFields)) {
-            return call_user_func($this->extraFields, $this, $model);
+            return call_user_func($this->extraFields, $this, $context, $model);
         }
         return self::getDefaultFields($model, true);
     }
@@ -404,8 +407,24 @@ class Action extends \yii\rest\Action
                 continue;
             }
 
+            /** @var ActiveRecord $relatedModel */
             $relatedModel = new $relation->modelClass;
-            $relatedFields = array_diff(self::getDefaultFields($relatedModel), [$relation->inverseOf]);
+            $relatedController = Yii::$app->crudModelsMap[$relatedModel::className()];
+            $map = $this->controller->module->controllerMap[basename($relatedController)];
+            if (isset(
+                $map['actionsClassMap'],
+                $map['actionsClassMap']['index'],
+                $map['actionsClassMap']['index']['fields']
+            )) {
+                $relatedFields = $map['actionsClassMap']['index']['fields'];
+                if (is_callable($this->fields)) {
+                    $relatedFields = call_user_func($relatedFields, $this, $relatedModel);
+                }
+            } else {
+                $relatedFields = self::getDefaultFields($relatedModel);
+            }
+            $relatedFields = array_diff($relatedFields, [$relation->inverseOf]);
+
             $result[$field] = [
                 'model' => $relatedModel,
                 'dataProvider' => new ActiveDataProvider([
@@ -488,7 +507,7 @@ class Action extends \yii\rest\Action
                     continue;
                 }
                 $isNumeric = in_array($formats[$field], [
-                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'money',
+                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'money', 'currency', 'minorCurrency',
                 ]);
                 $columns[] = [
                     'attribute' => $field,

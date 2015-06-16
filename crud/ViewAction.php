@@ -27,7 +27,7 @@ class ViewAction extends Action
         }
         return [
             'model'      => $model,
-            'attributes' => $this->getDetailAttributes($model, $this->getFields($model)),
+            'attributes' => $this->getDetailAttributes($model, $this->getFields($model, 'detail')),
             'relations'  => $this->getModelRelations($model, $this->getExtraFields($model)),
         ];
     }
