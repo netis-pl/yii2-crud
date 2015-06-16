@@ -14,6 +14,19 @@ use yii\db\Expression;
 use yii\db\Query;
 use yii\db\Schema;
 
+/**
+ * ActiveRecord class extended with the following functionality:
+ * - attached the linkable, labels and trackable behaviors by default
+ * - ability to cast to string
+ * - added relations() method to return list of relations
+ * - added attributeFormats() to return default attribute formats
+ * @package netis\utils\crud
+ * @method bool saveRelations(array $data, string $formName)
+ * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
+ * @method string getCrudLabel(string $operation)
+ * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, string $relation)
+ * @method ActiveRecord loadVersion(integer $version_id)
+ */
 class ActiveRecord extends \yii\db\ActiveRecord
 {
 

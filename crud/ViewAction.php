@@ -59,7 +59,7 @@ class ViewAction extends Action
             }
 
             if (in_array($field, $attributes)) {
-                if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
+                if (in_array($field, $keys) || in_array($field, $blameableAttributes)) {
                     continue;
                 }
                 $result[] = [
@@ -79,12 +79,11 @@ class ViewAction extends Action
             if (!Yii::$app->user->can($relation->modelClass . '.read')) {
                 continue;
             }
-            $label = $model->getRelationLabel($relation, $field);
             $result[] = [
                 'attribute' => $field,
                 'format'    => 'crudLink',
                 'visible'   => true,
-                'label'     => $label,
+                'label'     => $model instanceof ActiveRecord ? $model->getRelationLabel($relation, $field) : null,
             ];
         }
         return $result;

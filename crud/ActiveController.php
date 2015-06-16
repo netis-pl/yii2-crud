@@ -107,7 +107,11 @@ class ActiveController extends \yii\rest\ActiveController
         ];
         foreach ($actions as $id => $action) {
             if (isset($this->actionsClassMap[$id])) {
-                $actions[$id]['class'] = $this->actionsClassMap[$id];
+                if (is_string($this->actionsClassMap[$id])) {
+                    $actions[$id]['class'] = $this->actionsClassMap[$id];
+                } else {
+                    $actions[$id] = array_merge($actions[$id], $this->actionsClassMap[$id]);
+                }
             }
         }
         return $actions;

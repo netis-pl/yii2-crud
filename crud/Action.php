@@ -223,6 +223,25 @@ class Action extends \yii\rest\Action
     }
 
     /**
+     * Returns default fields list by combining model attributes with hasOne relations or just hasMany relations.
+     * @param ActiveRecord $model
+     * @param bool $extra if false, returns attributes and hasOne relations, if true, returns only hasMany relations
+     * @return array default list of fields
+     */
+    public static function getDefaultFields($model, $extra = false)
+    {
+        $fields = $extra ? [] : $model->attributes();
+        foreach ($model->relations() as $relation) {
+            $activeRelation = $model->getRelation($relation);
+            if ((!$extra && $activeRelation->multiple) || ($extra && !$activeRelation->multiple)) {
+                continue;
+            }
+            $fields[] = $relation;
+        }
+        return $fields;
+    }
+
+    /**
      * Uses the $fields property to return an array with field names or definitions.
      * @param ActiveRecord $model
      * @return array
@@ -234,16 +253,7 @@ class Action extends \yii\rest\Action
         } elseif (is_callable($this->fields)) {
             return call_user_func($this->fields, $this, $model);
         }
-        $fields = $model->attributes();
-        foreach ($model->relations() as $relation) {
-            $activeRelation = $model->getRelation($relation);
-            if ($activeRelation->multiple) {
-                continue;
-            }
-            $fields[] = $relation;
-        }
-
-        return $fields;
+        return self::getDefaultFields($model);
     }
 
     /**
@@ -258,15 +268,62 @@ class Action extends \yii\rest\Action
         } elseif (is_callable($this->extraFields)) {
             return call_user_func($this->extraFields, $this, $model);
         }
-        $extraFields = [];
-        foreach ($model->relations() as $relation) {
-            $activeRelation = $model->getRelation($relation);
-            if (!$activeRelation->multiple) {
-                continue;
+        return self::getDefaultFields($model, true);
+    }
+
+    /**
+     * Sorts the fields list, field names in $order take precedence in specified order.
+     *
+     * For example, to remove some columns and order a few others:
+     * ```
+     * return Action::orderFields(
+     *    array_diff(Action::getDefaultFields($model), ['is_sale_order', 'number']),
+     *    ['display_number', 'orderStatus'],
+     *    true // keep the default order of other attributes
+     * );
+     * ```
+     * @param array $fields field array, @see $fields
+     * @param string[] $order field names
+     * @param bool $stable if false, field not mentioned in $order param will be sorted alphabetically
+     * @return array
+     */
+    public static function orderFields($fields, $order, $stable = false)
+    {
+        // build a names index and reindex $fields because numeric keys can be non continuous
+        $names = [];
+        $result = [];
+        foreach ($fields as $key => $field) {
+            if (is_array($field) || is_callable($field)) {
+                $names[] = $key;
+                $result[$key] = $field;
+            } else {
+                $names[] = $field;
+                $result[] = $field;
             }
-            $extraFields[] = $relation;
         }
-        return $extraFields;
+        $indexes = array_flip($names);
+        $order = array_flip(array_reverse($order));
+        uksort($result, function ($a, $b) use ($order, $names, $indexes, $stable) {
+            if (!is_string($a)) {
+                $akey = $a;
+                $a = $names[$akey];
+            } else {
+                $akey = $indexes[$a];
+            }
+            if (!is_string($b)) {
+                $bkey = $b;
+                $b = $names[$bkey];
+            } else {
+                $bkey = $indexes[$b];
+            }
+            $wa = isset($order[$a]) ? $order[$a] : -1;
+            $wb = isset($order[$b]) ? $order[$b] : -1;
+            if ($wa === $wb) {
+                return $stable ? $akey - $bkey : strcasecmp($a, $b);
+            }
+            return $wb - $wa;
+        });
+        return $result;
     }
 
     /**
@@ -348,16 +405,7 @@ class Action extends \yii\rest\Action
             }
 
             $relatedModel = new $relation->modelClass;
-
-            $subfields = $relatedModel->attributes();
-            foreach ($relatedModel->relations() as $subrelation) {
-                $activeRelation = $relatedModel->getRelation($subrelation);
-                if ($activeRelation->multiple || $subrelation === $relation->inverseOf) {
-                    continue;
-                }
-                $subfields[] = $subrelation;
-            }
-
+            $relatedFields = array_diff(self::getDefaultFields($relatedModel), [$relation->inverseOf]);
             $result[$field] = [
                 'model' => $relatedModel,
                 'dataProvider' => new ActiveDataProvider([
@@ -368,7 +416,7 @@ class Action extends \yii\rest\Action
                     ],
                     'sort' => ['sortParam' => "$field-sort"],
                 ]),
-                'columns' => static::getRelationGridColumns($relatedModel, $subfields),
+                'columns' => static::getRelationGridColumns($relatedModel, $relatedFields),
             ];
         }
 

@@ -101,7 +101,7 @@ class LabelsBehavior extends Behavior
         if (isset($relationModel->relationLabels[$relation])) {
             $label = $relationModel->relationLabels[$relation];
         } else {
-            $label = $relationModel->getCrudLabel('relation');
+            $label = $relationModel->getCrudLabel($activeRelation->multiple ? 'relation' : 'default');
         }
         return $this->cachedRelationLabels[$modelClass][$relation] = $label;
     }
