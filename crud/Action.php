@@ -296,7 +296,7 @@ class Action extends \yii\rest\Action
         $names = [];
         $result = [];
         foreach ($fields as $key => $field) {
-            if (is_array($field) || is_callable($field)) {
+            if (is_array($field) || (!is_string($field) && is_callable($field))) {
                 $names[] = $key;
                 $result[$key] = $field;
             } else {
@@ -393,7 +393,7 @@ class Action extends \yii\rest\Action
             if (is_array($field)) {
                 $result[$key] = $field;
                 continue;
-            } elseif (is_callable($field)) {
+            } elseif (!is_string($field) && is_callable($field)) {
                 $result[$key] = call_user_func($field, $model);
                 continue;
             }
@@ -409,19 +409,22 @@ class Action extends \yii\rest\Action
 
             /** @var ActiveRecord $relatedModel */
             $relatedModel = new $relation->modelClass;
-            $relatedController = Yii::$app->crudModelsMap[$relatedModel::className()];
-            $map = $this->controller->module->controllerMap[basename($relatedController)];
-            if (isset(
-                $map['actionsClassMap'],
-                $map['actionsClassMap']['index'],
-                $map['actionsClassMap']['index']['fields']
-            )) {
-                $relatedFields = $map['actionsClassMap']['index']['fields'];
-                if (is_callable($this->fields)) {
-                    $relatedFields = call_user_func($relatedFields, $this, $relatedModel);
+            $relatedFields = self::getDefaultFields($relatedModel);
+            if (isset(Yii::$app->crudModelsMap[$relatedModel::className()])) {
+                $relatedController = Yii::$app->crudModelsMap[$relatedModel::className()];
+                if (isset($this->controller->module->controllerMap[basename($relatedController)])) {
+                    $map = $this->controller->module->controllerMap[basename($relatedController)];
+                    if (isset(
+                        $map['actionsClassMap'],
+                        $map['actionsClassMap']['index'],
+                        $map['actionsClassMap']['index']['fields']
+                    )) {
+                        $relatedFields = $map['actionsClassMap']['index']['fields'];
+                        if (is_callable($this->fields)) {
+                            $relatedFields = call_user_func($relatedFields, $this, $relatedModel);
+                        }
+                    }
                 }
-            } else {
-                $relatedFields = self::getDefaultFields($relatedModel);
             }
             $relatedFields = array_diff($relatedFields, [$relation->inverseOf]);
 
@@ -497,7 +500,7 @@ class Action extends \yii\rest\Action
             if (is_array($field)) {
                 $columns[$key] = $field;
                 continue;
-            } elseif (is_callable($field)) {
+            } elseif (!is_string($field) && is_callable($field)) {
                 $columns[$key] = call_user_func($field, $model);
                 continue;
             }
@@ -507,14 +510,15 @@ class Action extends \yii\rest\Action
                     continue;
                 }
                 $isNumeric = in_array($formats[$field], [
-                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'money', 'currency', 'minorCurrency',
+                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal',
+                    'shortWeight', 'shortLength', 'money', 'currency', 'minorCurrency',
                 ]);
                 $columns[] = [
                     'attribute' => $field,
                     'format' => $formats[$field],
                     'contentOptions' => $isNumeric
                         ? function ($model, $key, $index, $column) {
-                            return $model->{$column->attribute} === null ? [] : ['class' => 'text-right'];
+                            return $model->{$column->attribute} === null ? [] : ['class' => 'text-right text-nowrap'];
                         }
                         : [],
                 ];

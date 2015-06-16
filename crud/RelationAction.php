@@ -23,7 +23,9 @@ class RelationAction extends IndexAction
         $id = Yii::$app->request->getQueryParam('id');
         $relation = Yii::$app->request->getQueryParam('relation');
         foreach ($fields as $key => $field) {
-            if (((is_array($field) || is_callable($field)) && $key === $relation) || $field === $relation) {
+            if (((is_array($field) || (!is_string($field) && is_callable($field))) && $key === $relation)
+                || $field === $relation
+            ) {
                 unset($fields[$key]);
             }
         }

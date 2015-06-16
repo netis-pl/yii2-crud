@@ -26,6 +26,10 @@ class Formatter extends \yii\i18n\Formatter
      * @var EnumCollection dictionaries used when formatting an enum value.
      */
     private $enums;
+    /**
+     * @var boolean whether the [PHP intl extension](http://php.net/manual/en/book.intl.php) is loaded.
+     */
+    private $_intlLoaded = false;
 
     /**
      * @inheritdoc
@@ -39,6 +43,7 @@ class Formatter extends \yii\i18n\Formatter
                 Yii::t('app', 'To infinity', [], $this->locale)
             ];
         }
+        $this->_intlLoaded = extension_loaded('intl');
     }
 
     /**
@@ -116,12 +121,12 @@ class Formatter extends \yii\i18n\Formatter
             ], $this->locale);
         }
         if ($interval->m > 0) {
-            $parts[] = Yii::t('yii', '{delta, plural, =1{a month} other{# months}}', [
+            $parts[] = Yii::t('app', '{delta, plural, =1{a month} other{# months}}', [
                 'delta' => $interval->m,
             ], $this->locale);
         }
         if ($interval->d > 0) {
-            $parts[] = Yii::t('yii', '{delta, plural, =1{a day} other{# days}}', [
+            $parts[] = Yii::t('app', '{delta, plural, =1{a day} other{# days}}', [
                 'delta' => $interval->d,
             ], $this->locale);
         }
@@ -228,6 +233,143 @@ class Formatter extends \yii\i18n\Formatter
             return $label;
         }
         return parent::asDatetime($value, $format);
+    }
+
+    /**
+     * Formats the value in milimeters as a length in human readable form for example `12 m`.
+     *
+     * This is the short form of [[asLength]].
+     *
+     * @param integer $value value in milimeters to be formatted.
+     * @param integer $decimals the number of digits after the decimal point.
+     * @param array $options optional configuration for the number formatter.
+     *                       This parameter will be merged with [[numberFormatterOptions]].
+     * @param array $textOptions optional configuration for the number formatter.
+     *                           This parameter will be merged with [[numberFormatterTextOptions]].
+     * @return string the formatted result.
+     * @throws InvalidParamException if the input value is not numeric or the formatting failed.
+     * @see asWeight
+     */
+    public function asShortLength($value, $decimals = null, $options = [], $textOptions = [])
+    {
+        if ($value === null) {
+            return $this->nullDisplay;
+        }
+
+        list($params, $position) = $this->formatSiNumber($value, $decimals, 2, $options, $textOptions);
+
+        switch ($position) {
+            case 0:
+                return Yii::t('app', '{nFormatted} mm', $params, $this->locale);
+            case 1:
+                return Yii::t('app', '{nFormatted} m', $params, $this->locale);
+            default:
+                return Yii::t('app', '{nFormatted} km', $params, $this->locale);
+        }
+    }
+
+    /**
+     * Formats the value in grams as a weight in human readable form for example `12 kg`.
+     *
+     * This is the short form of [[asWeight]].
+     *
+     * @param integer $value value in grams to be formatted.
+     * @param integer $decimals the number of digits after the decimal point.
+     * @param array $options optional configuration for the number formatter.
+     *                       This parameter will be merged with [[numberFormatterOptions]].
+     * @param array $textOptions optional configuration for the number formatter.
+     *                           This parameter will be merged with [[numberFormatterTextOptions]].
+     * @return string the formatted result.
+     * @throws InvalidParamException if the input value is not numeric or the formatting failed.
+     * @see asWeight
+     */
+    public function asShortWeight($value, $decimals = null, $options = [], $textOptions = [])
+    {
+        if ($value === null) {
+            return $this->nullDisplay;
+        }
+
+        list($params, $position) = $this->formatSiNumber($value, $decimals, 1, $options, $textOptions);
+
+        switch ($position) {
+            case 0:
+                return Yii::t('app', '{nFormatted} g', $params, $this->locale);
+            case 1:
+                return Yii::t('app', '{nFormatted} kg', $params, $this->locale);
+            default:
+                return Yii::t('app', '{nFormatted} t', $params, $this->locale);
+        }
+    }
+
+    /**
+     * Given the value in a base unit formats number part of the human readable form.
+     *
+     * @param string|integer|float $value value in base unit to be formatted.
+     * @param integer $decimals the number of digits after the decimal point
+     * @param integer $maxPosition maximum internal position of size unit
+     * @param array $options optional configuration for the number formatter.
+     *                       This parameter will be merged with [[numberFormatterOptions]].
+     * @param array $textOptions optional configuration for the number formatter.
+     *                           This parameter will be merged with [[numberFormatterTextOptions]].
+     * @return array [parameters for Yii::t containing formatted number, internal position of size unit]
+     * @throws InvalidParamException if the input value is not numeric or the formatting failed.
+     */
+    private function formatSiNumber($value, $decimals, $maxPosition, $options, $textOptions)
+    {
+        if (is_string($value) && is_numeric($value)) {
+            $value = (int) $value;
+        }
+        if (!is_numeric($value)) {
+            throw new InvalidParamException("'$value' is not a numeric value.");
+        }
+        $formatBase = 1000;
+
+        $position = 0;
+        do {
+            if ($value < $formatBase) {
+                break;
+            }
+            $value = $value / $formatBase;
+            $position++;
+        } while ($position < $maxPosition + 1);
+
+        // no decimals for base unit
+        if ($position === 0) {
+            $decimals = 0;
+        } elseif ($decimals !== null) {
+            $value = round($value, $decimals);
+        }
+        // disable grouping for edge cases like 1023 to get 1023 B instead of 1,023 B
+        $oldThousandSeparator = $this->thousandSeparator;
+        $this->thousandSeparator = '';
+        if ($this->_intlLoaded) {
+            $options[\NumberFormatter::GROUPING_USED] = false;
+        }
+        // format the size value
+        $params = [
+            // this is the unformatted number used for the plural rule
+            'n' => $value,
+            // this is the formatted number used for display
+            'nFormatted' => $this->asDecimal($value, $decimals, $options, $textOptions),
+        ];
+        $this->thousandSeparator = $oldThousandSeparator;
+
+        return [$params, $position];
+    }
+
+    /**
+     * Formats the value as HTML-encoded trimmed text with full text in title attribute.
+     * @param string $value the value to be formatted.
+     * @return string the formatted result.
+     */
+    public function asShortText($value)
+    {
+        if ($value === null) {
+            return $this->nullDisplay;
+        }
+        return '<p data-toggle="tooltip" title="' . Html::encode($value) . '">'
+            . Html::encode(mb_strimwidth($value, 0, 30, "…", 'UTF-8'))
+            . '</p>';
     }
 
     protected function isInfinity($value)
