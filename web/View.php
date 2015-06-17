@@ -49,7 +49,7 @@ class View extends \yii\web\View
     {
         $path = parent::findViewFile($view, $context);
 
-        if (strncmp($view, '@', 1) === 0 || is_file($path)) {
+        if (is_file($path)) {
             return $path;
         }
 

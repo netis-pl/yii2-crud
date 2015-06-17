@@ -276,7 +276,9 @@ trait ActiveSearchTrait
      */
     protected function getAttributesSearchFilters(array $params, \yii\db\ActiveQuery $query)
     {
-        $this->load($params);
+        if (!$this->load($params)) {
+            return $query;
+        }
         $this->validate();
 
         $tablePrefix = $this->getDb()->getSchema()->quoteSimpleTableName('t');
