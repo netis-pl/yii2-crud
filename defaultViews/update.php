@@ -11,10 +11,15 @@ use yii\helpers\Html;
 $controller = $this->context;
 
 if (($pjax = Yii::$app->request->getQueryParam('_pjax')) !== null) {
-    // optimization: render only the relation widget instead of the whole form
-    $relationName = substr($pjax, 1, -4);
-    \netis\utils\widgets\FormBuilder::renderRelation($this, $model, $relations, $relationName, $relationName);
-    return;
+    if ($pjax === '#relationModal .modal-body') {
+        $relations = [];
+    } else {
+        // optimization: render only the relation widget instead of the whole form
+        $relationName = substr($pjax, 1, -4);
+        \netis\utils\widgets\FormBuilder::renderRelation($this, $model, $relations, $relationName, $relationName);
+
+        return;
+    }
 }
 
 $this->title = $model->getCrudLabel($model->isNewRecord ? 'create' : 'update');

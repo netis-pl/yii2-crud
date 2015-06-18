@@ -23,7 +23,7 @@ use yii\db\Schema;
  * @package netis\utils\crud
  * @method bool saveRelations(array $data, string $formName = null)
  * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
- * @method string getCrudLabel(string $operation)
+ * @method string getCrudLabel(string $operation = null)
  * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, string $relation)
  * @method ActiveRecord loadVersion(integer $version_id)
  */

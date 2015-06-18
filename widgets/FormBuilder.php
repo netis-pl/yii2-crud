@@ -200,13 +200,16 @@ JavaScript;
                 return $formFields;
             }
             if (isset($hiddenAttributes[$right])) {
-                $formFields[$relation] = [
-                    'formMethod' => 'hiddenField',
+                $formFields[$relation] = Html::activeHiddenInput($model, $right);
+                /*$formFields[$relation] = [
+                    'formMethod' => 'hiddenInput',
                     'attribute' => $right,
-                    'options' => [
-                        'value' => $model->{$right}
+                    'arguments' => [
+                        [
+                            'value' => $model->{$right},
+                        ],
                     ]
-                ];
+                ];*/
                 unset($hiddenAttributes[$right]);
                 $isHidden = true;
             }
@@ -339,18 +342,19 @@ JavaScript;
      * @param \yii\base\Model $model
      * @param array $fields
      * @param bool $multiple true for multiple values inputs, usually used for search forms
+     * @param array $hiddenAttributes list of attribute names to render as hidden fields
      * @return array form fields
      */
-    public static function getFormFields($model, $fields, $multiple = false)
+    public static function getFormFields($model, $fields, $multiple = false, $hiddenAttributes = [])
     {
         if (!$model instanceof \yii\db\ActiveRecord) {
             return $model->safeAttributes();
         }
 
         /** @var \netis\utils\crud\ActiveRecord $model */
-        $hiddenAttributes = [];
         $formats = $model->attributeFormats();
         $keys = Action::getModelKeys($model);
+        $hiddenAttributes = array_flip($hiddenAttributes);
 
         list($behaviorAttributes, $blameableAttributes) = Action::getModelBehaviorAttributes($model);
         $dbColumns = $model->getTableSchema()->columns;
@@ -379,13 +383,16 @@ JavaScript;
         }
         // hidden attributes have to be hidden, not absent
         foreach ($hiddenAttributes as $attribute => $_) {
-            $formFields[$attribute] = [
-                'formMethod' => 'hiddenField',
+            $formFields[$attribute] = Html::activeHiddenInput($model, $attribute);
+            /*$formFields[$attribute] = [
+                'formMethod' => 'hiddenInput',
                 'attribute' => $attribute,
-                'options' => [
-                    'value' => $model->getAttribute($attribute),
+                'arguments' => [
+                    [
+                        'value' => $model->getAttribute($attribute),
+                    ],
                 ],
-            ];
+            ];*/
         }
 
         return $formFields;
@@ -475,14 +482,27 @@ JavaScript;
         $data = $relations[$relationName];
         /** @var \yii\db\ActiveRecord $relatedModel */
         $relatedModel = $data['model'];
+        $createRoute = null;
+        $searchRoute = null;
         if (($route = Yii::$app->crudModelsMap[$relatedModel::className()]) !== null) {
-            $route = Url::toRoute([
+            $inverseOf = $data['dataProvider']->query->inverseOf;
+            $searchRoute = Url::toRoute([
                 $route . '/relation',
                 'per-page' => 10,
-                'relation' => $data['dataProvider']->query->inverseOf,
+                'relation' => $inverseOf,
                 'id' => Action::exportKey($model->getPrimaryKey()),
             ]);
+            $createRoute = Url::toRoute([
+                $route . '/update',
+                'hide' => $inverseOf,
+                $relatedModel->formName() => [
+                    $inverseOf => Action::exportKey($model->getPrimaryKey()),
+                ],
+            ]);
         }
+        $parts = explode('\\', $relatedModel::className());
+        $relatedModelClass = array_pop($parts);
+        $relatedSearchModelClass = implode('\\', $parts) . '\\search\\' . $relatedModelClass;
         echo Html::activeHiddenInput($model, $relationName.'[add]');
         echo Html::activeHiddenInput($model, $relationName.'[remove]');
         echo $view->render('_relation_widget', [
@@ -490,19 +510,34 @@ JavaScript;
             'relations' => $relations,
             'relationName' => $relationName,
             'isActive' => $relationName === $activeRelation,
-            'buttons' => [
-                Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
-                    'title'         => Yii::t('app', 'Add'),
-                    'aria-label'    => Yii::t('app', 'Add'),
-                    'data-pjax'     => '0',
-                    'data-toggle'   => 'modal',
-                    'data-target'   => '#relationModal',
-                    'data-relation' => $relationName,
-                    'data-title'    => $relatedModel->getCrudLabel('index'),
-                    'data-pjax-url' => $route,
-                    'class'         => 'btn btn-default',
-                ]),
-            ],
+            'buttons' => array_merge(
+                $createRoute === null ? [] : [
+                    Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
+                        'title'         => Yii::t('app', 'Create new'),
+                        'aria-label'    => Yii::t('app', 'Create new'),
+                        'data-pjax'     => '0',
+                        'data-toggle'   => 'modal',
+                        'data-target'   => '#relationModal',
+                        'data-relation' => $relationName,
+                        'data-title'    => $relatedModel->getCrudLabel('create'),
+                        'data-pjax-url' => $createRoute,
+                        'class'         => 'btn btn-default',
+                    ]),
+                ],
+                $searchRoute === null || !class_exists($relatedSearchModelClass) ? [] : [
+                    Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+                        'title'         => Yii::t('app', 'Add existing'),
+                        'aria-label'    => Yii::t('app', 'Add existing'),
+                        'data-pjax'     => '0',
+                        'data-toggle'   => 'modal',
+                        'data-target'   => '#relationModal',
+                        'data-relation' => $relationName,
+                        'data-title'    => $relatedModel->getCrudLabel('index'),
+                        'data-pjax-url' => $searchRoute,
+                        'class'         => 'btn btn-default',
+                    ]),
+                ]
+            ),
         ]);
     }
 }

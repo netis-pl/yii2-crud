@@ -20,34 +20,36 @@ $view = $this;
 
 FormBuilder::registerSelect($this);
 
-// init relation tools used in _relations subview
-// relations modal may contain a form and must be rendered outside ActiveForm
-echo \yii\bootstrap\Modal::widget([
-    'id' => 'relationModal',
-    'size' => \yii\bootstrap\Modal::SIZE_LARGE,
-    'header' => '<span class="modal-title"></span>',
-    'footer' => implode('', [
-        Html::button(Yii::t('app', 'Save'), [
-            'id' => 'relationSave',
-            'class' => 'btn btn-primary',
+if (!empty($relations)) {
+    // init relation tools used in _relations subview
+    // relations modal may contain a form and must be rendered outside ActiveForm
+    echo \yii\bootstrap\Modal::widget([
+        'id'     => 'relationModal',
+        'size'   => \yii\bootstrap\Modal::SIZE_LARGE,
+        'header' => '<span class="modal-title"></span>',
+        'footer' => implode('', [
+            Html::button(Yii::t('app', 'Save'), [
+                'id'    => 'relationSave',
+                'class' => 'btn btn-primary',
+            ]),
+            Html::button(Yii::t('app', 'Cancel'), [
+                'class'        => 'btn btn-default',
+                'data-dismiss' => 'modal',
+                'aria-hidden'  => 'true',
+            ]),
         ]),
-        Html::button(Yii::t('app', 'Cancel'), [
-            'class' => 'btn btn-default',
-            'data-dismiss' => 'modal',
-            'aria-hidden' => 'true',
-        ]),
-    ]),
-]);
+    ]);
 
-\netis\utils\assets\RelationsAsset::register($this);
-$options = Json::htmlEncode([
-    'i18n' => [
-        'loadingText' => Yii::t('app', 'Loading, please wait.'),
-    ],
-    'keysSeparator' => \netis\utils\crud\Action::KEYS_SEPARATOR,
-    'compositeKeySeparator' => \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR,
-]);
-$this->registerJs("netis.init($options)");
+    \netis\utils\assets\RelationsAsset::register($this);
+    $options = Json::htmlEncode([
+        'i18n'                  => [
+            'loadingText' => Yii::t('app', 'Loading, please wait.'),
+        ],
+        'keysSeparator'         => \netis\utils\crud\Action::KEYS_SEPARATOR,
+        'compositeKeySeparator' => \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR,
+    ]);
+    $this->registerJs("netis.init($options)");
+}
 ?>
 
 <div class="ar-form">
@@ -77,7 +79,7 @@ $this->registerJs("netis.init($options)");
         'form' => $form,
     ]) ?>
 
-    <div class="form-group">
+    <div class="form-group form-buttons">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), [
             'class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary',
         ]) ?>

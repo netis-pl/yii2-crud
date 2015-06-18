@@ -14,8 +14,6 @@ use yii\widgets\Pjax;
 /* @var $controller netis\utils\crud\ActiveController */
 
 $relation = $relations[$relationName];
-/** @var ActiveRecord $model */
-$model = $relation['model'];
 
 $layout = <<<HTML
 <div class="row">

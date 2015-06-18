@@ -53,6 +53,8 @@ class UpdateAction extends Action
 
         $wasNew = $model->isNewRecord;
 
+        $model->load(Yii::$app->getRequest()->getQueryParams());
+
         if ($model->load(Yii::$app->getRequest()->getBodyParams())) {
             if (Yii::$app->request->isAjax && !Yii::$app->request->isPjax) {
                 $response = clone Yii::$app->response;
@@ -78,12 +80,15 @@ class UpdateAction extends Action
                 $response = Yii::$app->getResponse();
                 $response->setStatusCode(201);
                 $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
+                $response->getHeaders()->set('X-Primary-key', $id);
             }
         }
 
+        $hiddenAttributes = array_filter(explode(',', Yii::$app->getRequest()->getQueryParam('hide', '')));
+
         return [
             'model' => $model,
-            'fields' => FormBuilder::getFormFields($model, $this->getFields($model, 'form')),
+            'fields' => FormBuilder::getFormFields($model, $this->getFields($model, 'form'), false, $hiddenAttributes),
             'relations' => $this->getModelRelations($model, $this->getExtraFields($model)),
         ];
     }

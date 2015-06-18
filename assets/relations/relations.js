@@ -57,7 +57,7 @@
         $(document).on('submit', container + ' form[data-pjax]', function(event) {
             $.pjax.submit(event, container, options);
         });
-        $(document).on('pjax:success', _settings.modalId, function(event) {
+        $(document).on('pjax:success', _settings.modalId, function(event, data, status, xhr, options) {
             var saveButton = $(_settings.saveButtonId),
                 selectionFields = $('#' + button.data('relation') + 'Pjax').data('selectionFields'),
                 added = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.add).val()),
@@ -66,24 +66,33 @@
 
             saveButton.data('relation', button.data('relation'));
 
-            grid.find("input[name='selection[]']").each(function() {
-                var key = $(this).parent().closest('tr').data('key');
-                if ($.inArray(key, added) !== -1) {
-                    $(this).prop('disabled', true).prop('checked', true);
-                } else if ($.inArray(key, removed) !== -1) {
-                    $(this).prop('disabled', false).prop('checked', false);
-                }
-            });
-            //$(document).off('pjax:success', settings.modalId);
-            grid.yiiGridView({
-                'filterUrl': button.data('pjax-url'),
-                'filterSelector': '#relationGrid-quickSearch'
-            });
-            grid.yiiGridView('setSelectionColumn', {
-                'name': 'selection[]',
-                'multiple': true,
-                'checkAll': 'selection_all'
-            });
+            if (grid.length) {
+                grid.find("input[name='selection[]']").each(function() {
+                    var key = $(this).parent().closest('tr').data('key');
+                    if ($.inArray(key, added) !== -1) {
+                        $(this).prop('disabled', true).prop('checked', true);
+                    } else if ($.inArray(key, removed) !== -1) {
+                        $(this).prop('disabled', false).prop('checked', false);
+                    }
+                });
+                //$(document).off('pjax:success', settings.modalId);
+                /* the following should not be necessary after changing renderPartial to renderAjax in ActiveController.afterAction
+                grid.yiiGridView({
+                    'filterUrl': button.data('pjax-url'),
+                    'filterSelector': '#relationGrid-quickSearch'
+                });
+                grid.yiiGridView('setSelectionColumn', {
+                    'name': 'selection[]',
+                    'multiple': true,
+                    'checkAll': 'selection_all'
+                });*/
+            } else if (xhr.getResponseHeader('Location')) {
+                saveButton.data('primaryKey', xhr.getResponseHeader('X-Primary-key'));
+                netis.saveRelation(event);
+            } else {
+                $(_settings.modalId + ' h1').remove();
+                $(_settings.modalId + ' .form-buttons').remove();
+            }
         });
         $.pjax.reload(container, {
             'url': button.data('pjax-url'),
@@ -99,15 +108,19 @@
             add = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').add).val()),
             remove = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').remove).val());
 
-        grid.find("input[name='selection[]']:checked").not(':disabled').each(function() {
-            var key = $(this).parent().closest('tr').data('key'),
-                idx = $.inArray(key, remove);
-            if (idx !== -1) {
-                remove.splice(idx, 1);
-            } else {
-                add.push(key);
-            }
-        });
+        if (grid.length) {
+            grid.find("input[name='selection[]']:checked").not(':disabled').each(function () {
+                var key = $(this).parent().closest('tr').data('key'),
+                    idx = $.inArray(key, remove);
+                if (idx !== -1) {
+                    remove.splice(idx, 1);
+                } else {
+                    add.push(key);
+                }
+            });
+        } else {
+            add.push(saveButton.data('primaryKey'));
+        }
 
 
         $(container.data('selectionFields').add).val(netis.implodeEscaped(_settings.keysSeparator, add));
