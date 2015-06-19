@@ -346,11 +346,12 @@ DESC;
                         $type = '8';
                         break;
                 }
-                $name = 'int_'.($isUnsigned ? 'u' : '').$type;
+                // commented out null detection as this is included in the required rule
+                $name = 'int_'.($isUnsigned ? 'u' : '').$type;//.($column->allowNull ? '_null' : '');
                 if (!isset($rules[$name])) {
                     $rules[$name] = array_merge($range, [
                         'validator' => 'integer',
-                        'skipOnEmpty' => $column->allowNull ? 'true' : 'false',
+                        //'skipOnEmpty' => $column->allowNull ? 'true' : 'false',
                     ]);
                 }
                 $rules[$name]['attributes'][] = $column->name;

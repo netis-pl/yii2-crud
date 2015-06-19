@@ -64,7 +64,7 @@ class ViewAction extends Action
                 if (in_array($field, $keys) || in_array($field, $blameableAttributes)) {
                     continue;
                 }
-                $result[] = [
+                $result[$field] = [
                     'attribute' => $field,
                     'format' => $formats[$field],
                 ];
@@ -81,7 +81,7 @@ class ViewAction extends Action
             if (!Yii::$app->user->can($relation->modelClass . '.read')) {
                 continue;
             }
-            $result[] = [
+            $result[$field] = [
                 'attribute' => $field,
                 'format'    => 'crudLink',
                 'visible'   => true,

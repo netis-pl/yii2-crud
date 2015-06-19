@@ -65,10 +65,10 @@ class ActiveController extends \yii\rest\ActiveController
             'contentNegotiator' => [
                 'class' => ContentNegotiator::className(),
                 'formats' => [
-                    'text/csv' => 'csv',
+                    'text/html' => Response::FORMAT_HTML,
                     'application/json' => Response::FORMAT_JSON,
                     'application/xml' => Response::FORMAT_XML,
-                    'text/html' => Response::FORMAT_HTML,
+                    'text/csv' => 'csv',
                 ],
             ],
             'access' => [
@@ -112,13 +112,14 @@ class ActiveController extends \yii\rest\ActiveController
                 'class' => 'yii\rest\OptionsAction',
             ],
         ];
-        foreach ($actions as $id => $action) {
-            if (isset($this->actionsClassMap[$id])) {
-                if (is_string($this->actionsClassMap[$id])) {
-                    $actions[$id]['class'] = $this->actionsClassMap[$id];
-                } else {
-                    $actions[$id] = array_merge($actions[$id], $this->actionsClassMap[$id]);
-                }
+        foreach ($this->actionsClassMap as $id => $action) {
+            if (!isset($actions[$id])) {
+                $actions[$id] = [];
+            }
+            if (is_string($action)) {
+                $actions[$id]['class'] = $action;
+            } else {
+                $actions[$id] = array_merge($actions[$id], $action);
             }
         }
         return $actions;
