@@ -201,15 +201,6 @@ JavaScript;
             }
             if (isset($hiddenAttributes[$right])) {
                 $formFields[$relation] = Html::activeHiddenInput($model, $right);
-                /*$formFields[$relation] = [
-                    'formMethod' => 'hiddenInput',
-                    'attribute' => $right,
-                    'arguments' => [
-                        [
-                            'value' => $model->{$right},
-                        ],
-                    ]
-                ];*/
                 unset($hiddenAttributes[$right]);
                 $isHidden = true;
             }
@@ -243,19 +234,24 @@ JavaScript;
      * @param \yii\db\ActiveRecord $model
      * @param string $attribute
      * @param array $dbColumns
+     * @param array $hiddenAttributes
      * @param array $formats
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      * @throws InvalidConfigException
      */
-    protected static function addFormField($formFields, $model, $attribute, $dbColumns, $formats, $multiple = false)
+    protected static function addFormField($formFields, $model, $attribute, $dbColumns, $hiddenAttributes, $formats, $multiple = false)
     {
+        if (in_array($attribute, $hiddenAttributes)) {
+            $formFields[$attribute] = Html::activeHiddenInput($model, $attribute);
+            return $formFields;
+        }
         $field = [
             'attribute' => $attribute,
             'arguments' => [],
         ];
-
-        switch ($formats[$attribute]) {
+        $format = is_array($formats[$attribute]) ? $formats[$attribute][0] : $formats[$attribute];
+        switch ($format) {
             case 'boolean':
                 if ($multiple) {
                     $field['formMethod'] = function ($field, $arguments) {
@@ -286,15 +282,16 @@ JavaScript;
                     'options' => ['class' => 'form-control']
                 ];
                 break;
-            case 'set':
+            case 'enum':
                 //! @todo move to default case, check if enum with such name exists and add items to arguments
-                $field['formMethod'] = 'listBox';
+                $field['formMethod'] = 'dropDownList';
                 $field['arguments'] = [
-                    [], // first argument is the items array
+                    // first argument is the items array
+                    Yii::$app->formatter->getEnums()->get($formats[$attribute][1]),
                 ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
                     $field['arguments'][] = [
-                        'empty' => Yii::t('app', 'Any'),
+                        'empty' => Yii::$app->formatter->nullDisplay,
                     ];
                 }
                 break;
@@ -373,26 +370,11 @@ JavaScript;
             if (in_array($field, $relations)) {
                 $formFields = static::addRelationField($formFields, $model, $field, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple);
             } elseif (in_array($field, $attributes)) {
-                if (in_array($field, $keys) || (in_array($field, $behaviorAttributes))
-                    || isset($hiddenAttributes[$field])
-                ) {
+                if (in_array($field, $keys) || (in_array($field, $behaviorAttributes))) {
                     continue;
                 }
-                $formFields = static::addFormField($formFields, $model, $field, $dbColumns, $formats, $multiple);
+                $formFields = static::addFormField($formFields, $model, $field, $dbColumns, $hiddenAttributes, $formats, $multiple);
             }
-        }
-        // hidden attributes have to be hidden, not absent
-        foreach ($hiddenAttributes as $attribute => $_) {
-            $formFields[$attribute] = Html::activeHiddenInput($model, $attribute);
-            /*$formFields[$attribute] = [
-                'formMethod' => 'hiddenInput',
-                'attribute' => $attribute,
-                'arguments' => [
-                    [
-                        'value' => $model->getAttribute($attribute),
-                    ],
-                ],
-            ];*/
         }
 
         return $formFields;
@@ -492,12 +474,14 @@ JavaScript;
                 'relation' => $inverseOf,
                 'id' => Action::exportKey($model->getPrimaryKey()),
             ]);
+            //! @todo enable this route only if current record is not new or related model can have null fk
             $createRoute = Url::toRoute([
                 $route . '/update',
-                'hide' => $inverseOf,
-                $relatedModel->formName() => [
-                    $inverseOf => Action::exportKey($model->getPrimaryKey()),
-                ],
+                'hide' => implode(',', array_keys($data['dataProvider']->query->link)),
+                $relatedModel->formName() => array_combine(
+                    array_keys($data['dataProvider']->query->link),
+                    $model->getPrimaryKey(true)
+                ),
             ]);
         }
         $parts = explode('\\', $relatedModel::className());

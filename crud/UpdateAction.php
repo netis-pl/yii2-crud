@@ -10,6 +10,7 @@ use netis\utils\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
 use yii\helpers\Url;
+use yii\web\Request;
 use yii\web\Response;
 use yii\web\ServerErrorHttpException;
 use yii\widgets\ActiveForm;
@@ -30,7 +31,6 @@ class UpdateAction extends Action
      */
     public $viewAction = 'view';
 
-
     /**
      * Updates an existing model or creates a new one if $id is null.
      * @param string $id the primary key of the model.
@@ -38,6 +38,36 @@ class UpdateAction extends Action
      * @throws ServerErrorHttpException if there is any error when updating the model
      */
     public function run($id = null)
+    {
+        $model = $this->initModel($id);
+
+        $wasNew = $model->isNewRecord;
+
+        if ($this->load($model, Yii::$app->getRequest())) {
+            if (($response = $this->validateAjax($model)) !== false) {
+                return $response;
+            }
+            if ($this->beforeSave($model)) {
+                $trx = $model->getDb()->beginTransaction();
+                if (!$this->save($model)) {
+                    throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
+                }
+                $trx->commit();
+
+                $this->afterSave($model, $wasNew);
+            }
+        }
+
+        return $this->getResponse($model);
+    }
+
+    /**
+     * Loads the model and performs authorization check.
+     * @param string $id
+     * @return ActiveRecord
+     * @throws \yii\web\NotFoundHttpException
+     */
+    protected function initModel($id)
     {
         /* @var $model ActiveRecord */
         if ($id === null) {
@@ -50,40 +80,90 @@ class UpdateAction extends Action
         if ($this->checkAccess) {
             call_user_func($this->checkAccess, $this->id, $model);
         }
+        return $model;
+    }
 
-        $wasNew = $model->isNewRecord;
+    /**
+     * Loads query and post params into the model.
+     * @param ActiveRecord $model
+     * @param Request $request
+     * @return bool true if post params were loaded.
+     */
+    protected function load($model, $request)
+    {
+        $model->load($request->getQueryParams());
 
-        $model->load(Yii::$app->getRequest()->getQueryParams());
+        return $model->load($request->getBodyParams());
+    }
 
-        if ($model->load(Yii::$app->getRequest()->getBodyParams())) {
-            if (Yii::$app->request->isAjax && !Yii::$app->request->isPjax) {
-                $response = clone Yii::$app->response;
-                $response->format = Response::FORMAT_JSON;
-                $response->content = json_encode(ActiveForm::validate($model));
-                return $response;
-            }
-            if ($model->validate()) {
-                $trx = $model->getDb()->beginTransaction();
-                if (!$model->save(false) || !$model->saveRelations(Yii::$app->getRequest()->getBodyParams())) {
-                    throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
-                }
-                $trx->commit();
-
-                if ($wasNew) {
-                    $message = Yii::t('app', 'A new has been successfully created.');
-                } else {
-                    $message = Yii::t('app', 'Record has been successfully updated.');
-                }
-                $this->setFlash('success', $message);
-
-                $id = $this->exportKey($model->getPrimaryKey(true));
-                $response = Yii::$app->getResponse();
-                $response->setStatusCode(201);
-                $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
-                $response->getHeaders()->set('X-Primary-key', $id);
-            }
+    /**
+     * Calls ActiveForm::validate() on the model if current request is ajax and not pjax.
+     * @param ActiveRecord|array $model
+     * @return Response returns boolean false if current request is not ajax or is pjax
+     */
+    protected function validateAjax($model)
+    {
+        if (!Yii::$app->request->isAjax || Yii::$app->request->isPjax) {
+            return false;
         }
+        $response = clone Yii::$app->response;
+        $response->format = Response::FORMAT_JSON;
+        if (!is_array($model)) {
+            $model = [$model];
+        }
+        $response->content = json_encode(call_user_func_array('\yii\widgets\ActiveForm::validate', $model));
+        return $response;
+    }
 
+    /**
+     * Preliminary check if model can be saved.
+     * @param ActiveRecord $model
+     * @return bool
+     */
+    protected function beforeSave($model)
+    {
+        return $model->validate();
+    }
+
+    /**
+     * Saves the model and its relations.
+     * @param ActiveRecord $model
+     * @return bool
+     * @throws \yii\base\InvalidConfigException
+     */
+    protected function save($model)
+    {
+        return $model->save(false) && $model->saveRelations(Yii::$app->getRequest()->getBodyParams());
+    }
+
+    /**
+     * Sets a flash message and configures response headers.
+     * @param ActiveRecord $model
+     * @param bool $wasNew
+     */
+    protected function afterSave($model, $wasNew)
+    {
+        if ($wasNew) {
+            $message = Yii::t('app', 'A new has been successfully created.');
+        } else {
+            $message = Yii::t('app', 'Record has been successfully updated.');
+        }
+        $this->setFlash('success', $message);
+
+        $id = $this->exportKey($model->getPrimaryKey(true));
+        $response = Yii::$app->getResponse();
+        $response->setStatusCode(201);
+        $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
+        $response->getHeaders()->set('X-Primary-key', $id);
+    }
+
+    /**
+     * Prepares response params, like fields and relations.
+     * @param ActiveRecord $model
+     * @return array
+     */
+    protected function getResponse($model)
+    {
         $hiddenAttributes = array_filter(explode(',', Yii::$app->getRequest()->getQueryParam('hide', '')));
 
         return [

@@ -38,5 +38,5 @@ $this->params['menu'] = $controller->getMenu($controller->action, $model);
     'model' => $model,
     'fields' => $fields,
     'relations' => $relations,
-]) ?>
+], $this->context) ?>
 

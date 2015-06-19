@@ -54,7 +54,7 @@ if (!empty($relations)) {
 
 <div class="ar-form">
     <?php $form = ActiveForm::begin([
-        'enableAjaxValidation' => true,
+        'enableAjaxValidation' => !Yii::$app->request->getIsAjax(),
         'validateOnSubmit' => true,
         'options' => [
             'enctype' => 'multipart/form-data',
