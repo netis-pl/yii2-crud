@@ -25,6 +25,8 @@ class ViewAction extends Action
         if ($this->checkAccess) {
             call_user_func($this->checkAccess, $this->id, $model);
         }
+        // this headers is used in a modal dialog when getting a redirect after saving a form
+        Yii::$app->getResponse()->getHeaders()->set('X-Primary-Key', $id);
         return [
             'model'      => $model,
             'attributes' => $this->getDetailAttributes($model, $this->getFields($model, 'detail')),

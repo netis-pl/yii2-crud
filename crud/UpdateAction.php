@@ -154,7 +154,7 @@ class UpdateAction extends Action
         $response = Yii::$app->getResponse();
         $response->setStatusCode(201);
         $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
-        $response->getHeaders()->set('X-Primary-key', $id);
+        $response->getHeaders()->set('X-Primary-Key', $id);
     }
 
     /**

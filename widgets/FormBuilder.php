@@ -242,7 +242,7 @@ JavaScript;
      */
     protected static function addFormField($formFields, $model, $attribute, $dbColumns, $hiddenAttributes, $formats, $multiple = false)
     {
-        if (in_array($attribute, $hiddenAttributes)) {
+        if (isset($hiddenAttributes[$attribute])) {
             $formFields[$attribute] = Html::activeHiddenInput($model, $attribute);
             return $formFields;
         }

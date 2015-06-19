@@ -54,7 +54,7 @@
         $(document).off('submit', container + ' form[data-pjax]');
 
         $(document).pjax(container + ' a', container, options);
-        $(document).on('submit', container + ' form[data-pjax]', function(event) {
+        $(document).on('submit', container + ' form', function(event) {
             $.pjax.submit(event, container, options);
         });
         $(document).on('pjax:success', _settings.modalId, function(event, data, status, xhr, options) {
@@ -86,10 +86,12 @@
                     'multiple': true,
                     'checkAll': 'selection_all'
                 });*/
-            } else if (xhr.getResponseHeader('Location')) {
-                saveButton.data('primaryKey', xhr.getResponseHeader('X-Primary-key'));
-                netis.saveRelation(event);
             } else {
+                if (xhr.getResponseHeader('X-Primary-Key')) {
+                    saveButton.data('primaryKey', xhr.getResponseHeader('X-Primary-Key'));
+                    netis.saveRelation(event);
+                    return;
+                }
                 $(_settings.modalId + ' h1').remove();
                 $(_settings.modalId + ' .form-buttons').remove();
             }
@@ -119,6 +121,10 @@
                 }
             });
         } else {
+            if (saveButton.data('primaryKey') === undefined) {
+                $(_settings.modalId + ' form').submit();
+                return;
+            }
             add.push(saveButton.data('primaryKey'));
         }
 
