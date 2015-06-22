@@ -421,12 +421,21 @@ class Action extends \yii\rest\Action
                     )) {
                         $relatedFields = $map['actionsClassMap']['index']['fields'];
                         if (is_callable($this->fields)) {
-                            $relatedFields = call_user_func($relatedFields, $this, $relatedModel);
+                            $relatedFields = call_user_func($relatedFields, $this, 'grid', $relatedModel);
                         }
                     }
                 }
             }
-            $relatedFields = array_diff($relatedFields, [$relation->inverseOf]);
+            foreach ($relatedFields as $relKey => $relField) {
+                if (is_array($relField) || (!is_string($relField) && is_callable($relField))) {
+                    $relAttribute = $relKey;
+                } else {
+                    $relAttribute = $relField;
+                }
+                if ($relAttribute === $relation->inverseOf) {
+                    unset($relatedFields[$relKey]);
+                }
+            }
 
             $result[$field] = [
                 'model' => $relatedModel,
