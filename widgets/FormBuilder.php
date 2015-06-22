@@ -363,7 +363,7 @@ JavaScript;
             if (is_array($field)) {
                 $formFields[$key] = $field;
                 continue;
-            } elseif (is_callable($field)) {
+            } elseif (!is_string($field) && is_callable($field)) {
                 $formFields[$key] = call_user_func($field, $model);
                 continue;
             }

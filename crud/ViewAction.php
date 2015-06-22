@@ -55,7 +55,7 @@ class ViewAction extends Action
             if (is_array($field)) {
                 $result[$key] = $field;
                 continue;
-            } elseif (is_callable($field)) {
+            } elseif (!is_string($field) && is_callable($field)) {
                 $result[$key] = call_user_func($field, $model);
                 continue;
             }
