@@ -12,7 +12,6 @@ use yii\base\Model;
 
 class ViewAction extends Action
 {
-
     /**
      * Displays a model.
      * @param string $id the primary key of the model.

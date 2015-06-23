@@ -13,6 +13,7 @@ use yii\base\Model;
 use yii\data\DataProviderInterface;
 use yii\filters\AccessControl;
 use yii\filters\ContentNegotiator;
+use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
 /**
@@ -36,6 +37,16 @@ use yii\web\Response;
 class ActiveController extends \yii\rest\ActiveController
 {
     const SERIALIZATION_LIMIT = 1000;
+    /**
+     * @var string the scenario used for creating a model.
+     * @see ActiveRecord::scenarios()
+     */
+    public $createScenario = ActiveRecord::SCENARIO_CREATE;
+    /**
+     * @var string the scenario used for updating a model.
+     * @see ActiveRecord::scenarios()
+     */
+    public $updateScenario = ActiveRecord::SCENARIO_UPDATE;
     /**
      * @var string|array the configuration for creating the serializer that formats the response data.
      */
@@ -103,7 +114,8 @@ class ActiveController extends \yii\rest\ActiveController
             ],
             'update' => [
                 'class' => 'netis\utils\crud\UpdateAction',
-                'scenario' => $this->updateScenario,
+                'createScenario' => $this->createScenario,
+                'updateScenario' => $this->updateScenario,
             ],
             'delete' => [
                 'class' => 'netis\utils\crud\DeleteAction',
@@ -310,7 +322,9 @@ class ActiveController extends \yii\rest\ActiveController
      */
     public function checkAccess($action, $model = null, $params = [])
     {
-        return Yii::$app->user->can($this->modelClass.'.'.$action, $model === null ? null : ['model' => $model]);
+        if (!Yii::$app->user->can($this->modelClass.'.'.$action, $model === null ? null : ['model' => $model])) {
+            throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
+        }
     }
 
     /**

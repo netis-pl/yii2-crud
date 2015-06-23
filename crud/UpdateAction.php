@@ -22,9 +22,13 @@ use yii\widgets\ActiveForm;
 class UpdateAction extends Action
 {
     /**
-     * @var string the scenario to be assigned to the model before it is validated and updated.
+     * @var string the scenario to be assigned to a new model before it is validated and updated.
      */
-    public $scenario = Model::SCENARIO_DEFAULT;
+    public $createScenario = Model::SCENARIO_DEFAULT;
+    /**
+     * @var string the scenario to be assigned to the existing model before it is validated and updated.
+     */
+    public $updateScenario = Model::SCENARIO_DEFAULT;
     /**
      * @var string the name of the view action. This property is need to create the URL
      * when the model is successfully created.
@@ -71,10 +75,10 @@ class UpdateAction extends Action
     {
         /* @var $model ActiveRecord */
         if ($id === null) {
-            $model = new $this->modelClass(['scenario' => $this->scenario]);
+            $model = new $this->modelClass(['scenario' => $this->createScenario]);
         } else {
             $model = $this->findModel($id);
-            $model->scenario = $this->scenario;
+            $model->scenario = $this->updateScenario;
         }
 
         if ($this->checkAccess) {

@@ -13,10 +13,24 @@ use netis\utils\widgets\FormBuilder;
 /* @var $controller netis\utils\crud\ActiveController */
 /* @var $action netis\utils\crud\UpdateAction */
 /* @var $view \netis\utils\web\View */
+/* @var $formAction string */
+/* @var $buttons array */
 
 $controller = $this->context;
 $action = $controller->action;
 $view = $this;
+
+if (!isset($formAction)) {
+    $formAction = '';
+}
+if (!isset($buttons)) {
+    $buttons = [
+        Html::submitButton(
+            $model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'),
+            ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']
+        ),
+    ];
+}
 
 FormBuilder::registerSelect($this);
 
@@ -80,9 +94,7 @@ if (!empty($relations)) {
     ]) ?>
 
     <div class="form-group form-buttons">
-        <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), [
-            'class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary',
-        ]) ?>
+        <?= implode("\n        ", $buttons); ?>
     </div>
 
     <?php ActiveForm::end(); ?>

@@ -186,17 +186,17 @@ JavaScript;
      * @param string $relation
      * @param array $dbColumns
      * @param array $hiddenAttributes
-     * @param array $blameableAttributes
+     * @param array $safeAttributes
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      * @throws InvalidConfigException
      */
-    protected static function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple = false)
+    protected static function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $safeAttributes, $multiple = false)
     {
         $activeRelation = $model->getRelation($relation);
         $isHidden = false;
         foreach ($activeRelation->link as $left => $right) {
-            if (in_array($right, $blameableAttributes)) {
+            if (!in_array($right, $safeAttributes)) {
                 return $formFields;
             }
             if (isset($hiddenAttributes[$right])) {
@@ -368,12 +368,18 @@ JavaScript;
                 continue;
             }
             if (in_array($field, $relations)) {
-                $formFields = static::addRelationField($formFields, $model, $field, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple);
+                $formFields = static::addRelationField(
+                    $formFields, $model, $field, $dbColumns,
+                    $hiddenAttributes, $attributes, $multiple
+                );
             } elseif (in_array($field, $attributes)) {
                 if (in_array($field, $keys) || (in_array($field, $behaviorAttributes))) {
                     continue;
                 }
-                $formFields = static::addFormField($formFields, $model, $field, $dbColumns, $hiddenAttributes, $formats, $multiple);
+                $formFields = static::addFormField(
+                    $formFields, $model, $field, $dbColumns,
+                    $hiddenAttributes, $formats, $multiple
+                );
             }
         }
 

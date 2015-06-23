@@ -176,6 +176,19 @@ class ActiveNavigation extends Behavior
                 'linkOptions' => $enabled ? ['confirm' => $confirms['disable']] : [],
             ];
         }
+        if (class_exists('netis\fsm\components\StateAction') && $model instanceof netis\fsm\components\IStateful
+            && $privs['current']['state']
+        ) {
+            $transitions = $model->getTransitionsGroupedByTarget();
+            $stateAttribute = $model->getStateAttributeName();
+            $menu['state'] = netis\fsm\components\StateAction::getContextMenuItem(
+                'state',
+                $transitions,
+                $model,
+                $model->$stateAttribute,
+                [$this->owner, 'checkAccess']
+            );
+        }
         foreach ($menu as $key => $item) {
             if ($model->isNewRecord) {
                 $menu[$key]['disabled'] = true;
@@ -204,7 +217,7 @@ class ActiveNavigation extends Behavior
         // set default indexes to avoid many isset() calls later
         $defaultActions = array_merge([
             'index'  => false, 'view' => false, 'update' => false, 'delete' => false,
-            'toggle' => false, 'history' => false, 'help' => false,
+            'toggle' => false, 'history' => false, 'help' => false, 'state' => false,
         ], $defaultActions);
 
         $privs = [
@@ -217,6 +230,7 @@ class ActiveNavigation extends Behavior
                 'update' => !$readOnly && $defaultActions['update'] && $this->owner->checkAccess('update', $model),
                 'delete' => !$readOnly && $defaultActions['delete'] && $this->owner->checkAccess('delete', $model),
                 'toggle' => !$readOnly && $defaultActions['toggle'] && $this->owner->checkAccess('toggle', $model),
+                'state' => !$readOnly && $defaultActions['state'] && $this->owner->checkAccess('state', $model),
             ],
         ];
         $confirms = [

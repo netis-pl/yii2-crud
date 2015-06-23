@@ -29,6 +29,14 @@ use yii\db\Schema;
  */
 class ActiveRecord extends \yii\db\ActiveRecord
 {
+    /**
+     * The name of the create scenario.
+     */
+    const SCENARIO_CREATE = 'create';
+    /**
+     * The name of the update scenario.
+     */
+    const SCENARIO_UPDATE = 'update';
 
     /**
      * @inheritdoc
@@ -47,6 +55,20 @@ class ActiveRecord extends \yii\db\ActiveRecord
                 'auditTableName' => 'audits.'.$this->getTableSchema()->name,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        foreach ([self::SCENARIO_CREATE, self::SCENARIO_UPDATE] as $scenario) {
+            if (!isset($scenarios[$scenario])) {
+                $scenarios[$scenario] = $scenarios[self::SCENARIO_DEFAULT];
+            }
+        }
+        return $scenarios;
     }
 
     public function __toString()
