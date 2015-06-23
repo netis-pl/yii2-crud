@@ -272,7 +272,7 @@ class UpdateAction extends Action
                 'data-target'   => '#relationModal',
                 'data-relation' => $relationName,
                 'data-title'    => $relatedModel->getCrudLabel('index'),
-                'data-pjax-url' => $relation['searchRoute'],
+                'data-pjax-url' => $searchRoute,
                 'class'         => 'btn btn-default',
             ]);
         }
@@ -281,7 +281,8 @@ class UpdateAction extends Action
     }
 
     /**
-     * When the request is pjax, use the selection query param.
+     * Adds query conditions to include related models selection.
+     * Adds buttons definition to relation data.
      * @inheritdoc
      */
     public function getModelRelations($model, $extraFields)

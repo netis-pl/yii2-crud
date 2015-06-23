@@ -54,8 +54,11 @@ class GridView extends \yii\grid\GridView
      */
     public function renderLengthPicker()
     {
-        $this->dataProvider->getPagination()->totalCount = $this->dataProvider->getTotalCount();
         $pagination = $this->dataProvider->getPagination();
+        if ($pagination === false || $this->dataProvider->getCount() <= 0) {
+            return '';
+        }
+        $pagination->totalCount = $this->dataProvider->getTotalCount();
         $choices = [];
         foreach ([10, 25, 50] as $value) {
             $cssClass = $value === $pagination->pageSize ? 'active' : '';
@@ -63,7 +66,7 @@ class GridView extends \yii\grid\GridView
             $choices[] = '<li class="'.$cssClass.'"><a href="' . $url . '">' . $value . '</a></li>';
         }
         return Html::tag('ul', implode("\n", $choices), ['class' => 'pagination pull-right'])
-            . '<div class="pagination page-length-label pull-right">' . Yii::t('app', 'Items per page') . '</div>';
+        . '<div class="pagination page-length-label pull-right">' . Yii::t('app', 'Items per page') . '</div>';
     }
 
     /**

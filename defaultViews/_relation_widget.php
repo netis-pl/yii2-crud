@@ -13,6 +13,7 @@ use yii\widgets\Pjax;
 /* @var $controller netis\utils\crud\ActiveController */
 
 $relation = $relations[$relationName];
+$pjax = null;
 
 $layout = <<<HTML
 <div class="row">
@@ -32,7 +33,11 @@ HTML;
      class="tab-pane fade<?= $isActive ? ' in active' : '' ?>"
      id="tab_<?= $relationName ?>">
 
-    <?php $pjax = Pjax::begin(['id' => $relationName.'Pjax', 'linkSelector' => false]); ?>
+<?php if (!isset($relation['pjax']) || $relation['pjax']): ?>
+    <?php $pjax = Pjax::begin([
+        'id' => $relationName.'Pjax',
+        'linkSelector' => false,
+    ]); ?>
 
     <?php $fieldId = \yii\helpers\Html::getInputId($model, $relationName); ?>
     <?php $script = <<<JavaScript
@@ -46,13 +51,15 @@ $(document).on('pjax:beforeSend', '#{$relationName}Pjax', function(event, xhr, o
 JavaScript;
     ?>
     <?php $this->registerJs($script); ?>
+<?php endif; ?>
+
     <?= GridView::widget([
         'id'           => $relationName.'Grid',
         'dataProvider' => $relation['dataProvider'],
         'filterSelector' => "#{$relationName}Grid-quickSearch",
         'columns'      => $relation['columns'],
-        'layout'       => $layout,
+        'layout'       => isset($relation['layout']) ? $relation['layout'] : $layout,
         'buttons'      => $relation['buttons'],
     ]); ?>
-    <?php Pjax::end(); ?>
+    <?php $pjax !== null && Pjax::end(); ?>
 </div>
