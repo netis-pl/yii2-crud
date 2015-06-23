@@ -178,6 +178,109 @@ class UpdateAction extends Action
     }
 
     /**
+     * @param array $relation an item obtained from getModelRelations() result array,
+     * @param array $selection must contain 'add' and 'remove' keys with array of keys (single or composite)
+     * @return array relation with modified query in the dataProvider object
+     */
+    private function addRelationSelection($relation, $selection)
+    {
+        /** @var ActiveRecord $relatedModel */
+        $relatedModel = $relation['model'];
+        /** @var \yii\db\ActiveQuery $query */
+        $query = $relation['dataProvider']->query;
+
+        $conditions = ['or'];
+        $fkCondition = [
+            'in',
+            array_keys($query->link),
+            array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
+        ];
+        if (!empty($selection['add'])) {
+            $conditions[] = ['in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['add'])];
+        }
+        if (!empty($selection['remove'])) {
+            $conditions[] = [
+                'and',
+                $fkCondition,
+                ['not in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['remove'])]
+            ];
+        } else {
+            $conditions[] = $fkCondition;
+        }
+        if ($conditions !== ['or']) {
+            $query->andWhere($conditions);
+            $query->primaryModel = null;
+        }
+        return $relation;
+    }
+
+    /**
+     * @param string $relationName
+     * @param array $relation an item obtained from getModelRelations() result array,
+     * @param ActiveRecord $model
+     * @return array
+     */
+    private function getRelationButtons($relationName, $relation, $model)
+    {
+        /** @var \yii\db\ActiveRecord $relatedModel */
+        $relatedModel = $relation['model'];
+        if (($route = Yii::$app->crudModelsMap[$relatedModel::className()]) === null) {
+            return [];
+        }
+        $dataProvider = $relation['dataProvider'];
+
+        //! @todo enable this route only if current record is not new or related model can have null fk
+        $createRoute = Url::toRoute([
+            $route . '/update',
+            'hide' => implode(',', array_keys($dataProvider->query->link)),
+            $relatedModel->formName() => array_combine(
+                array_keys($dataProvider->query->link),
+                $model->getPrimaryKey(true)
+            ),
+        ]);
+
+        $parts = explode('\\', $relatedModel::className());
+        $relatedModelClass = array_pop($parts);
+        $relatedSearchModelClass = implode('\\', $parts) . '\\search\\' . $relatedModelClass;
+        $searchRoute = !class_exists($relatedSearchModelClass) ? null : Url::toRoute([
+            $route . '/relation',
+            'per-page' => 10,
+            'relation' => $dataProvider->query->inverseOf,
+            'id'       => Action::exportKey($model->getPrimaryKey()),
+        ]);
+
+        $result = [
+            \yii\helpers\Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
+                'title'         => Yii::t('app', 'Create new'),
+                'aria-label'    => Yii::t('app', 'Create new'),
+                'data-pjax'     => '0',
+                'data-toggle'   => 'modal',
+                'data-target'   => '#relationModal',
+                'data-relation' => $relationName,
+                'data-title'    => $relatedModel->getCrudLabel('create'),
+                'data-pjax-url' => $createRoute,
+                'class'         => 'btn btn-default',
+            ]),
+        ];
+
+        if ($searchRoute !== null) {
+            $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+                'title'         => Yii::t('app', 'Add existing'),
+                'aria-label'    => Yii::t('app', 'Add existing'),
+                'data-pjax'     => '0',
+                'data-toggle'   => 'modal',
+                'data-target'   => '#relationModal',
+                'data-relation' => $relationName,
+                'data-title'    => $relatedModel->getCrudLabel('index'),
+                'data-pjax-url' => $relation['searchRoute'],
+                'class'         => 'btn btn-default',
+            ]);
+        }
+
+        return $result;
+    }
+
+    /**
      * When the request is pjax, use the selection query param.
      * @inheritdoc
      */
@@ -193,33 +296,13 @@ class UpdateAction extends Action
                 'add' => self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-add')),
                 'remove' => self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-remove')),
             ];
-            /** @var ActiveRecord $relatedModel */
-            $relatedModel = $relations[$relationName]['model'];
-            /** @var \yii\db\ActiveQuery $query */
-            $query = $relations[$relationName]['dataProvider']->query;
-
-            $conditions = ['or'];
-            $fkCondition = [
-                'in',
-                array_keys($query->link),
-                array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
-            ];
-            if (!empty($selection['add'])) {
-                $conditions[] = ['in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['add'])];
-            }
-            if (!empty($selection['remove'])) {
-                $conditions[] = [
-                    'and',
-                    $fkCondition,
-                    ['not in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['remove'])]
-                ];
-            } else {
-                $conditions[] = $fkCondition;
-            }
-            if ($conditions !== ['or']) {
-                $query->andWhere($conditions);
-                $query->primaryModel = null;
-            }
+            $relations[$relationName] = $this->addRelationSelection(
+                $relations[$relationName],
+                $selection
+            );
+        }
+        foreach ($relations as $relationName => &$relation) {
+            $relation['buttons'] = $this->getRelationButtons($relationName, $relation, $model);
         }
         return $relations;
     }

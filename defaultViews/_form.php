@@ -91,7 +91,7 @@ if (!empty($relations)) {
         'model' => $model,
         'relations' => $relations,
         'form' => $form,
-    ]) ?>
+    ], $this->context) ?>
 
     <div class="form-group form-buttons">
         <?= implode("\n        ", $buttons); ?>
