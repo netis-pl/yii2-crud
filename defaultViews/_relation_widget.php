@@ -59,7 +59,7 @@ JavaScript;
         'filterSelector' => "#{$relationName}Grid-quickSearch",
         'columns'      => $relation['columns'],
         'layout'       => isset($relation['layout']) ? $relation['layout'] : $layout,
-        'buttons'      => $relation['buttons'],
+        'buttons'      => isset($relation['buttons']) ? $relation['buttons'] : [],
     ]); ?>
     <?php $pjax !== null && Pjax::end(); ?>
 </div>

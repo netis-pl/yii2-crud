@@ -176,12 +176,12 @@ class ActiveNavigation extends Behavior
                 'linkOptions' => $enabled ? ['confirm' => $confirms['disable']] : [],
             ];
         }
-        if (class_exists('netis\fsm\components\StateAction') && $model instanceof netis\fsm\components\IStateful
+        if (class_exists('netis\fsm\components\StateAction') && $model instanceof \netis\fsm\components\IStateful
             && $privs['current']['state']
         ) {
             $transitions = $model->getTransitionsGroupedByTarget();
             $stateAttribute = $model->getStateAttributeName();
-            $menu['state'] = netis\fsm\components\StateAction::getContextMenuItem(
+            $menu['state'] = \netis\fsm\components\StateAction::getContextMenuItem(
                 'state',
                 $transitions,
                 $model,
@@ -222,15 +222,15 @@ class ActiveNavigation extends Behavior
 
         $privs = [
             'common' => [
-                'create' => !$readOnly && $defaultActions['update'] && $this->owner->checkAccess('create'),
-                'read' => ($defaultActions['index'] || $defaultActions['history']) && $this->owner->checkAccess('index'),
+                'create' => !$readOnly && $defaultActions['update'] && $this->owner->hasAccess('create'),
+                'read' => ($defaultActions['index'] || $defaultActions['history']) && $this->owner->hasAccess('index'),
             ],
             'current' => [
-                'read' => ($defaultActions['view'] || $defaultActions['history']) && $this->owner->checkAccess('read', $model),
-                'update' => !$readOnly && $defaultActions['update'] && $this->owner->checkAccess('update', $model),
-                'delete' => !$readOnly && $defaultActions['delete'] && $this->owner->checkAccess('delete', $model),
-                'toggle' => !$readOnly && $defaultActions['toggle'] && $this->owner->checkAccess('toggle', $model),
-                'state' => !$readOnly && $defaultActions['state'] && $this->owner->checkAccess('state', $model),
+                'read' => ($defaultActions['view'] || $defaultActions['history']) && $this->owner->hasAccess('read', $model),
+                'update' => !$readOnly && $defaultActions['update'] && $this->owner->hasAccess('update', $model),
+                'delete' => !$readOnly && $defaultActions['delete'] && $this->owner->hasAccess('delete', $model),
+                'toggle' => !$readOnly && $defaultActions['toggle'] && $this->owner->hasAccess('toggle', $model),
+                'state' => !$readOnly && $defaultActions['state'] && $this->owner->hasAccess('state', $model),
             ],
         ];
         $confirms = [

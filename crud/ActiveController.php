@@ -142,13 +142,18 @@ class ActiveController extends \yii\rest\ActiveController
      */
     protected function verbs()
     {
-        return [
-            'index' => ['GET', 'HEAD'],
-            'view' => ['GET', 'HEAD'],
-            'create' => ['GET', 'POST'], // added GET, which returns an empty model
-            'update' => ['GET', 'POST', 'PUT', 'PATCH'], // added GET and POST for compatibility
-            'delete' => ['POST', 'DELETE'], // added POST for compatibility
-        ];
+        $actions = $this->actions();
+        return array_merge(
+            // by default allow GET for each action
+            array_fill_keys(array_keys($actions), ['GET']),
+            [
+                'index' => ['GET', 'HEAD'],
+                'view' => ['GET', 'HEAD'],
+                'create' => ['GET', 'POST'], // added GET, which returns an empty model
+                'update' => ['GET', 'POST', 'PUT', 'PATCH'], // added GET and POST for compatibility
+                'delete' => ['POST', 'DELETE'], // added POST for compatibility
+            ]
+        );
     }
 
     /**
@@ -322,9 +327,28 @@ class ActiveController extends \yii\rest\ActiveController
      */
     public function checkAccess($action, $model = null, $params = [])
     {
-        if (!Yii::$app->user->can($this->modelClass.'.'.$action, $model === null ? null : ['model' => $model])) {
+        if (!$this->hasAccess($action, $model, $params)) {
             throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
         }
+    }
+
+    /**
+     * Checks the privilege of the current user.
+     *
+     * This method should be overridden to check whether the current user has the privilege
+     * to run the specified action against the specified data model.
+     *
+     * @param string $action the ID of the action to be executed
+     * @param object $model the model to be accessed. If null, it means no specific model is being accessed.
+     * @param array $params additional parameters
+     * @return bool
+     */
+    public function hasAccess($action, $model = null, $params = [])
+    {
+        return Yii::$app->user->can(
+            $this->modelClass.'.'.$action,
+            array_merge($params, $model === null ? [] : ['model' => $model])
+        );
     }
 
     /**
