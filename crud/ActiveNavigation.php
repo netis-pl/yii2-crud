@@ -280,6 +280,12 @@ class ActiveNavigation extends Behavior
                         unset($item['linkOptions']['confirm']);
                     }
                 }
+                if (isset($item['icon'])) {
+                    $item['label'] = '<i class="glyphicon glyphicon-'.$item['icon'].'"></i> '
+                        . \yii\helpers\Html::encode($item['label']);
+                    $item['encode'] = false;
+                    unset($item['icon']);
+                }
                 $result[$section . '-' . $key] = $item;
             }
         }
