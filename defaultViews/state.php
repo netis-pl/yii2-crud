@@ -7,24 +7,34 @@ use yii\helpers\Url;
 /* @var $model netis\utils\crud\ActiveRecord */
 /* @var $fields array */
 /* @var $relations array */
+/* @var array $stateChange contains state and targets keys */
 /* @var mixed $sourceState */
 /* @var mixed $targetState */
 /* @var array $states */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
-$this->title = $model->getCrudLabel('update').': '.$model->__toString();
-$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
+$id = \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true));
+
+$this->title = $stateChange['state']->label . ': ' . $model->__toString();
+$this->params['breadcrumbs'] = [
+    [
+        'label' => $model->getCrudLabel('index'),
+        'url' => ['index'],
+    ],
+    [
+        'label' => $model->__toString(),
+        'url' => ['view', 'id' => $id],
+    ],
+    $stateChange['state']->label,
+];
 $this->params['menu'] = $controller->getMenu($controller->action, $model);
 
 $format = $model->getAttributeFormat($model->getStateAttributeName());
 
 ?>
 
-<?= Yii::t('netis/fsm/app', 'Change status from {source} to {target}', [
-    'source' => '<span class="badge badge-default">' . Yii::$app->formatter->format($sourceState, $format) . '</span>',
-    'target' => '<span class="badge badge-primary">' . Yii::$app->formatter->format($targetState, $format) . '</span>',
-]); ?>
+<h1><span><?= Html::encode($this->title) ?></span></h1>
 
 <?= netis\utils\web\Alerts::widget() ?>
 
@@ -47,10 +57,10 @@ foreach ($states as $state) {
 <?= $this->render('_form', [
     'model' => $model,
     'fields' => $fields,
-    'relations' => [],
+    'relations' => $relations,
     'formAction' => Url::toRoute([
-        $action->id,
-        'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true)),
+        $controller->action->id,
+        'id' => $id,
         'targetState' => $targetState,
         'confirmed' => 1,
     ]),
@@ -59,7 +69,7 @@ foreach ($states as $state) {
             'class' => 'btn btn-success',
         ]),
         Html::a(Yii::t('netis/fsm/app', 'Cancel'), Url::toRoute([
-            (isset($_GET['return'])) ? $_GET['return'] : $controller->action->viewAction,
+            Yii::$app->request->getQueryParam('return', $controller->action->viewAction),
             'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true)),
         ])),
     ],

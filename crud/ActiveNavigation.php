@@ -188,6 +188,9 @@ class ActiveNavigation extends Behavior
                 $model->$stateAttribute,
                 [$this->owner, 'checkAccess']
             );
+            if ($action->id === 'state') {
+                $menu['state']['active'] = true;
+            }
         }
         foreach ($menu as $key => $item) {
             if ($model->isNewRecord) {

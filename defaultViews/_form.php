@@ -68,6 +68,7 @@ if (!empty($relations)) {
 
 <div class="ar-form">
     <?php $form = ActiveForm::begin([
+        'action' => $formAction,
         'enableAjaxValidation' => !Yii::$app->request->getIsAjax(),
         'validateOnSubmit' => true,
         'options' => [
