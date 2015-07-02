@@ -279,7 +279,8 @@ JavaScript;
                 $field['options'] = [
                     'model' => $model,
                     'attribute' => $attribute,
-                    'options' => ['class' => 'form-control']
+                    'options' => ['class' => 'form-control'],
+                    'dateFormat' => 'yyyy-MM-dd',
                 ];
                 break;
             case 'enum':
