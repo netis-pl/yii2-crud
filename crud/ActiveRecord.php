@@ -115,6 +115,9 @@ class ActiveRecord extends \yii\db\ActiveRecord
             $models = [$models];
         }
         foreach ($models as $model) {
+            if (isset($params['scenario'])) {
+                $model->scenario = $params['scenario'];
+            }
             $valid = $model->validate($attributes) && $valid;
         }
         $this->populateRelation($attribute, $relation->multiple ? $models : $models[0]);

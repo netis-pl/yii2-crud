@@ -13,16 +13,13 @@ use netis\utils\widgets\FormBuilder;
 /* @var $controller netis\utils\crud\ActiveController */
 /* @var $action netis\utils\crud\UpdateAction */
 /* @var $view \netis\utils\web\View */
-/* @var $formAction string */
+/* @var $formOptions array form options, will be merged with defaults */
 /* @var $buttons array */
 
 $controller = $this->context;
 $action = $controller->action;
 $view = $this;
 
-if (!isset($formAction)) {
-    $formAction = '';
-}
 if (!isset($buttons)) {
     $buttons = [
         Html::submitButton(
@@ -67,14 +64,13 @@ if (!empty($relations)) {
 ?>
 
 <div class="ar-form">
-    <?php $form = ActiveForm::begin([
-        'action' => $formAction,
+    <?php $form = ActiveForm::begin(array_merge([
         'enableAjaxValidation' => !Yii::$app->request->getIsAjax(),
         'validateOnSubmit' => true,
         'options' => [
             'enctype' => 'multipart/form-data',
         ],
-    ]); ?>
+    ], isset($formOptions) ? $formOptions : [])); ?>
 
     <p class="note">
         <?= Yii::t('app', 'Fields with {asterisk} are required.', [

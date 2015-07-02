@@ -64,6 +64,7 @@ class ActiveController extends \yii\rest\ActiveController
     public $searchModelClass;
     /**
      * @var array Maps action id to class name.
+     * An extra 'verbs' property is recognized and used only for the @see verbs() method.
      */
     public $actionsClassMap = [];
 
@@ -131,6 +132,7 @@ class ActiveController extends \yii\rest\ActiveController
             if (is_string($action)) {
                 $actions[$id]['class'] = $action;
             } else {
+                unset($action['verbs']);
                 $actions[$id] = array_merge($actions[$id], $action);
             }
         }
@@ -142,18 +144,17 @@ class ActiveController extends \yii\rest\ActiveController
      */
     protected function verbs()
     {
-        $actions = $this->actions();
-        return array_merge(
-            // by default allow GET for each action
-            array_fill_keys(array_keys($actions), ['GET']),
-            [
-                'index' => ['GET', 'HEAD'],
-                'view' => ['GET', 'HEAD'],
-                'create' => ['GET', 'POST'], // added GET, which returns an empty model
-                'update' => ['GET', 'POST', 'PUT', 'PATCH'], // added GET and POST for compatibility
-                'delete' => ['POST', 'DELETE'], // added POST for compatibility
-            ]
-        );
+        $verbs = [
+            'index' => ['GET', 'HEAD'],
+            'view' => ['GET', 'HEAD'],
+            'create' => ['GET', 'POST'], // added GET, which returns an empty model
+            'update' => ['GET', 'POST', 'PUT', 'PATCH'], // added GET and POST for compatibility
+            'delete' => ['POST', 'DELETE'], // added POST for compatibility
+        ];
+        foreach ($this->actionsClassMap as $id => $action) {
+            $verbs[$id] = is_array($action) && isset($action['verbs']) ? $action['verbs'] : ['GET'];
+        }
+        return $verbs;
     }
 
     /**

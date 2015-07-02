@@ -58,12 +58,15 @@ foreach ($states as $state) {
     'model' => $model,
     'fields' => $fields,
     'relations' => $relations,
-    'formAction' => Url::toRoute([
-        $controller->action->id,
-        'id' => $id,
-        'targetState' => $targetState,
-        'confirmed' => 1,
-    ]),
+    'formOptions' => [
+        'action' => Url::toRoute([
+            $controller->action->id,
+            'id' => $id,
+            'targetState' => $targetState,
+            'confirmed' => 1,
+        ]),
+        'enableAjaxValidation' => false,
+    ],
     'buttons' => [
         Html::submitButton('<i class="fa fa-save"></i>' . Yii::t('netis/fsm/app', 'Confirm'), [
             'class' => 'btn btn-success',
