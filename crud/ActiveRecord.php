@@ -50,10 +50,6 @@ class ActiveRecord extends \yii\db\ActiveRecord
             'labels' => [
                 'class' => 'netis\utils\db\LabelsBehavior',
             ],
-            'trackable' => [
-                'class' => 'nineinchnick\audit\behaviors\TrackableBehavior',
-                'auditTableName' => 'audits.'.$this->getTableSchema()->name,
-            ],
         ];
     }
 
