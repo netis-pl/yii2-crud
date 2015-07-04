@@ -137,7 +137,15 @@ class UpdateAction extends Action
      */
     protected function save($model)
     {
-        return $model->save(false) && $model->saveRelations(Yii::$app->getRequest()->getBodyParams());
+        /** @var \nineinchnick\audit\behaviors\TrackableBehavior $trackable */
+        if (($trackable = $model->getBehavior('trackable')) !== null) {
+            $trackable->beginChangeset();
+        }
+        $result = $model->save(false) && $model->saveRelations(Yii::$app->getRequest()->getBodyParams());
+        if ($trackable !== null) {
+            $trackable->endChangeset();
+        }
+        return $result;
     }
 
     /**

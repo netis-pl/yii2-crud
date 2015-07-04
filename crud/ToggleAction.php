@@ -36,8 +36,13 @@ class ToggleAction extends Action
         if ($enable !== null) {
             $enable = (bool)$enable;
         }
-        if (($behavior = $model->getBehavior('toggle')) !== null) {
-            $model->toggle($enable);
+        /** @var \nineinchnick\audit\behaviors\TrackableBehavior $trackable */
+        if (($trackable = $model->getBehavior('trackable')) !== null) {
+            $trackable->beginChangeset();
+        }
+        $model->toggle($enable);
+        if ($trackable !== null) {
+            $trackable->endChangeset();
         }
 
         $response = Yii::$app->getResponse();

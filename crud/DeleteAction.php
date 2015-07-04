@@ -31,8 +31,15 @@ class DeleteAction extends Action
             call_user_func($this->checkAccess, $this->id, $model);
         }
 
+        /** @var \nineinchnick\audit\behaviors\TrackableBehavior $trackable */
+        if (($trackable = $model->getBehavior('trackable')) !== null) {
+            $trackable->beginChangeset();
+        }
         if ($model->delete() === false) {
             throw new ServerErrorHttpException('Failed to delete the object for unknown reason.');
+        }
+        if ($trackable !== null) {
+            $trackable->endChangeset();
         }
 
         $response = Yii::$app->getResponse();
