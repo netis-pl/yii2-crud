@@ -16,7 +16,13 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) !== null) {
     } else {
         // optimization: render only the relation widget instead of the whole form
         $relationName = substr($pjax, 1, -4);
-        \netis\utils\widgets\FormBuilder::renderRelation($this, $model, $relations, $relationName, $relationName);
+
+        echo $view->render('_relation_widget', [
+            'model' => $model,
+            'relations' => $relations,
+            'relationName' => $relationName,
+            'isActive' => true,
+        ], $view->context);
 
         return;
     }

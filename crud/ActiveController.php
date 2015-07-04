@@ -13,6 +13,7 @@ use yii\base\Model;
 use yii\data\DataProviderInterface;
 use yii\filters\AccessControl;
 use yii\filters\ContentNegotiator;
+use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
 /**
@@ -37,6 +38,16 @@ class ActiveController extends \yii\rest\ActiveController
 {
     const SERIALIZATION_LIMIT = 1000;
     /**
+     * @var string the scenario used for creating a model.
+     * @see ActiveRecord::scenarios()
+     */
+    public $createScenario = ActiveRecord::SCENARIO_CREATE;
+    /**
+     * @var string the scenario used for updating a model.
+     * @see ActiveRecord::scenarios()
+     */
+    public $updateScenario = ActiveRecord::SCENARIO_UPDATE;
+    /**
      * @var string|array the configuration for creating the serializer that formats the response data.
      */
     public $serializer = [
@@ -53,6 +64,7 @@ class ActiveController extends \yii\rest\ActiveController
     public $searchModelClass;
     /**
      * @var array Maps action id to class name.
+     * An extra 'verbs' property is recognized and used only for the @see verbs() method.
      */
     public $actionsClassMap = [];
 
@@ -103,7 +115,8 @@ class ActiveController extends \yii\rest\ActiveController
             ],
             'update' => [
                 'class' => 'netis\utils\crud\UpdateAction',
-                'scenario' => $this->updateScenario,
+                'createScenario' => $this->createScenario,
+                'updateScenario' => $this->updateScenario,
             ],
             'delete' => [
                 'class' => 'netis\utils\crud\DeleteAction',
@@ -119,6 +132,7 @@ class ActiveController extends \yii\rest\ActiveController
             if (is_string($action)) {
                 $actions[$id]['class'] = $action;
             } else {
+                unset($action['verbs']);
                 $actions[$id] = array_merge($actions[$id], $action);
             }
         }
@@ -130,13 +144,17 @@ class ActiveController extends \yii\rest\ActiveController
      */
     protected function verbs()
     {
-        return [
+        $verbs = [
             'index' => ['GET', 'HEAD'],
             'view' => ['GET', 'HEAD'],
             'create' => ['GET', 'POST'], // added GET, which returns an empty model
             'update' => ['GET', 'POST', 'PUT', 'PATCH'], // added GET and POST for compatibility
             'delete' => ['POST', 'DELETE'], // added POST for compatibility
         ];
+        foreach ($this->actionsClassMap as $id => $action) {
+            $verbs[$id] = is_array($action) && isset($action['verbs']) ? $action['verbs'] : ['GET'];
+        }
+        return $verbs;
     }
 
     /**
@@ -310,7 +328,28 @@ class ActiveController extends \yii\rest\ActiveController
      */
     public function checkAccess($action, $model = null, $params = [])
     {
-        return Yii::$app->user->can($this->modelClass.'.'.$action, $model === null ? null : ['model' => $model]);
+        if (!$this->hasAccess($action, $model, $params)) {
+            throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
+        }
+    }
+
+    /**
+     * Checks the privilege of the current user.
+     *
+     * This method should be overridden to check whether the current user has the privilege
+     * to run the specified action against the specified data model.
+     *
+     * @param string $action the ID of the action to be executed
+     * @param object $model the model to be accessed. If null, it means no specific model is being accessed.
+     * @param array $params additional parameters
+     * @return bool
+     */
+    public function hasAccess($action, $model = null, $params = [])
+    {
+        return Yii::$app->user->can(
+            $this->modelClass.'.'.$action,
+            array_merge($params, $model === null ? [] : ['model' => $model])
+        );
     }
 
     /**

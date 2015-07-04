@@ -186,17 +186,17 @@ JavaScript;
      * @param string $relation
      * @param array $dbColumns
      * @param array $hiddenAttributes
-     * @param array $blameableAttributes
+     * @param array $safeAttributes
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      * @throws InvalidConfigException
      */
-    protected static function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple = false)
+    protected static function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $safeAttributes, $multiple = false)
     {
         $activeRelation = $model->getRelation($relation);
         $isHidden = false;
         foreach ($activeRelation->link as $left => $right) {
-            if (in_array($right, $blameableAttributes)) {
+            if (!in_array($right, $safeAttributes)) {
                 return $formFields;
             }
             if (isset($hiddenAttributes[$right])) {
@@ -279,7 +279,8 @@ JavaScript;
                 $field['options'] = [
                     'model' => $model,
                     'attribute' => $attribute,
-                    'options' => ['class' => 'form-control']
+                    'options' => ['class' => 'form-control'],
+                    'dateFormat' => 'yyyy-MM-dd',
                 ];
                 break;
             case 'enum':
@@ -368,12 +369,18 @@ JavaScript;
                 continue;
             }
             if (in_array($field, $relations)) {
-                $formFields = static::addRelationField($formFields, $model, $field, $dbColumns, $hiddenAttributes, $blameableAttributes, $multiple);
+                $formFields = static::addRelationField(
+                    $formFields, $model, $field, $dbColumns,
+                    $hiddenAttributes, $attributes, $multiple
+                );
             } elseif (in_array($field, $attributes)) {
                 if (in_array($field, $keys) || (in_array($field, $behaviorAttributes))) {
                     continue;
                 }
-                $formFields = static::addFormField($formFields, $model, $field, $dbColumns, $hiddenAttributes, $formats, $multiple);
+                $formFields = static::addFormField(
+                    $formFields, $model, $field, $dbColumns,
+                    $hiddenAttributes, $formats, $multiple
+                );
             }
         }
 
@@ -450,78 +457,5 @@ JavaScript;
             echo $oneColumn ? '' : '</div>';
         }
         echo $oneColumn ? '' : '</div>';
-    }
-
-    /**
-     * @param \yii\web\View $view
-     * @param \yii\db\ActiveRecord $model
-     * @param array $relations
-     * @param string $relationName
-     * @param string $activeRelation name of currently active relation (first one)
-     */
-    public static function renderRelation($view, $model, $relations, $relationName, $activeRelation)
-    {
-        $data = $relations[$relationName];
-        /** @var \yii\db\ActiveRecord $relatedModel */
-        $relatedModel = $data['model'];
-        $createRoute = null;
-        $searchRoute = null;
-        if (($route = Yii::$app->crudModelsMap[$relatedModel::className()]) !== null) {
-            $inverseOf = $data['dataProvider']->query->inverseOf;
-            $searchRoute = Url::toRoute([
-                $route . '/relation',
-                'per-page' => 10,
-                'relation' => $inverseOf,
-                'id' => Action::exportKey($model->getPrimaryKey()),
-            ]);
-            //! @todo enable this route only if current record is not new or related model can have null fk
-            $createRoute = Url::toRoute([
-                $route . '/update',
-                'hide' => implode(',', array_keys($data['dataProvider']->query->link)),
-                $relatedModel->formName() => array_combine(
-                    array_keys($data['dataProvider']->query->link),
-                    $model->getPrimaryKey(true)
-                ),
-            ]);
-        }
-        $parts = explode('\\', $relatedModel::className());
-        $relatedModelClass = array_pop($parts);
-        $relatedSearchModelClass = implode('\\', $parts) . '\\search\\' . $relatedModelClass;
-        echo Html::activeHiddenInput($model, $relationName.'[add]');
-        echo Html::activeHiddenInput($model, $relationName.'[remove]');
-        echo $view->render('_relation_widget', [
-            'model' => $model,
-            'relations' => $relations,
-            'relationName' => $relationName,
-            'isActive' => $relationName === $activeRelation,
-            'buttons' => array_merge(
-                $createRoute === null ? [] : [
-                    Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
-                        'title'         => Yii::t('app', 'Create new'),
-                        'aria-label'    => Yii::t('app', 'Create new'),
-                        'data-pjax'     => '0',
-                        'data-toggle'   => 'modal',
-                        'data-target'   => '#relationModal',
-                        'data-relation' => $relationName,
-                        'data-title'    => $relatedModel->getCrudLabel('create'),
-                        'data-pjax-url' => $createRoute,
-                        'class'         => 'btn btn-default',
-                    ]),
-                ],
-                $searchRoute === null || !class_exists($relatedSearchModelClass) ? [] : [
-                    Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
-                        'title'         => Yii::t('app', 'Add existing'),
-                        'aria-label'    => Yii::t('app', 'Add existing'),
-                        'data-pjax'     => '0',
-                        'data-toggle'   => 'modal',
-                        'data-target'   => '#relationModal',
-                        'data-relation' => $relationName,
-                        'data-title'    => $relatedModel->getCrudLabel('index'),
-                        'data-pjax-url' => $searchRoute,
-                        'class'         => 'btn btn-default',
-                    ]),
-                ]
-            ),
-        ]);
     }
 }

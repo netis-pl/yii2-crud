@@ -9,6 +9,7 @@ use yii\helpers\Inflector;
 /* @var $generator netis\utils\generators\model\Generator */
 /* @var $className string class name */
 /* @var $modelClassName string related model class name */
+/* @var $queryClassName string query model class name */
 /* @var $labels string[] list of attribute labels (name => label) */
 /* @var $rules string[] list of validation rules */
 
@@ -28,6 +29,7 @@ namespace <?= $generator->searchNs ?>;
 use Yii;
 use yii\base\Model;
 use <?= ltrim($modelFullClassName, '\\') . (isset($modelAlias) ? " as $modelAlias" : "") ?>;
+use <?= ($queryClassName === 'ActiveQuery' ? 'yii\db' : $generator->queryNs) . '\\' . $queryClassName ?>;
 
 /**
  * <?= $className ?> represents the model behind the search form about `<?= $modelFullClassName ?>`.
@@ -54,5 +56,14 @@ class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelCla
     {
         // bypass scenarios() implementation in the parent class
         return Model::scenarios();
+    }
+
+    /**
+     * @inheritdoc
+     * @return <?= $queryClassName ?> the active query used by this AR class.
+     */
+    public static function find()
+    {
+        return new <?= $queryClassName ?>('<?= ltrim($modelFullClassName, '\\') ?>');
     }
 }

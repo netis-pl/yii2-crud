@@ -154,6 +154,7 @@ DESC;
                 $params = [
                     'className' => $searchClassName,
                     'modelClassName' => $modelClassName,
+                    'queryClassName' => $queryClassName ? $queryClassName : 'ActiveQuery',
                     'labels' => $this->generateLabels($tableSchema),
                     'rules' => $this->generateRules($tableSchema, true),
                 ];

@@ -29,6 +29,14 @@ use yii\db\Schema;
  */
 class ActiveRecord extends \yii\db\ActiveRecord
 {
+    /**
+     * The name of the create scenario.
+     */
+    const SCENARIO_CREATE = 'create';
+    /**
+     * The name of the update scenario.
+     */
+    const SCENARIO_UPDATE = 'update';
 
     /**
      * @inheritdoc
@@ -42,11 +50,21 @@ class ActiveRecord extends \yii\db\ActiveRecord
             'labels' => [
                 'class' => 'netis\utils\db\LabelsBehavior',
             ],
-            'trackable' => [
-                'class' => 'nineinchnick\audit\behaviors\TrackableBehavior',
-                'auditTableName' => 'audits.'.$this->getTableSchema()->name,
-            ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        foreach ([self::SCENARIO_CREATE, self::SCENARIO_UPDATE] as $scenario) {
+            if (!isset($scenarios[$scenario])) {
+                $scenarios[$scenario] = $scenarios[self::SCENARIO_DEFAULT];
+            }
+        }
+        return $scenarios;
     }
 
     public function __toString()
@@ -66,6 +84,46 @@ class ActiveRecord extends \yii\db\ActiveRecord
     public static function relations()
     {
         return [];
+    }
+
+    /**
+     * @inheritdoc
+     * Relations are never safe, even if they have validation rules.
+     * @see validateRelation()
+     */
+    public function safeAttributes()
+    {
+        return array_diff(parent::safeAttributes(), $this->relations());
+    }
+
+    /**
+     * Validates related models.
+     * @param string $attribute the attribute currently being validated
+     * @param mixed $params the value of the "params" given in the rule
+     */
+    public function validateRelation($attribute, $params)
+    {
+        $relation = $this->getRelation($attribute);
+        $attributes = isset($params['attributes']) ? $params['attributes'] : null;
+        $valid = true;
+        $models = $this->$attribute;
+        if (!$relation->multiple) {
+            $models = [$models];
+        }
+        foreach ($models as $model) {
+            if (isset($params['scenario'])) {
+                $model->scenario = $params['scenario'];
+            }
+            $valid = $model->validate($attributes) && $valid;
+        }
+        $this->populateRelation($attribute, $relation->multiple ? $models : $models[0]);
+        if (!$valid) {
+            $placeholders = ['attribute' => $this->getRelationLabel($relation, $attribute)];
+            $message = $relation->multiple
+                ? \Yii::t('app', '{attribute} have invalid items.', $placeholders)
+                : \Yii::t('app', '{attribute} is invalid.', $placeholders);
+            $this->addError($attribute, $message);
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-use netis\utils\widgets\FormBuilder;
+use yii\helpers\Html;
 
 /* @var $this yii\web\View */
 /* @var $model yii\db\ActiveRecord */
@@ -36,7 +36,14 @@ foreach ($relations as $relationName => $data) {
     </ul>
     <div class="tab-content">
         <?php foreach ($relations as $relationName => $data): ?>
-            <?php FormBuilder::renderRelation($this, $model, $relations, $relationName, $activeRelation); ?>
+            <?= Html::activeHiddenInput($model, $relationName.'[add]') ?>
+            <?= Html::activeHiddenInput($model, $relationName.'[remove]') ?>
+            <?= $this->render('_relation_widget', [
+                'model' => $model,
+                'relations' => $relations,
+                'relationName' => $relationName,
+                'isActive' => $relationName === $activeRelation,
+            ], $this->context) ?>
         <?php endforeach; ?>
     </div>
 </div>

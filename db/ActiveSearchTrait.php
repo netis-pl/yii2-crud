@@ -85,6 +85,10 @@ trait ActiveSearchTrait
         $columnName = $tablePrefix . '.' . $this->getDb()->getSchema()->quoteSimpleColumnName($attribute);
         switch ($formats[$attribute]) {
             default:
+                if ((($op = substr($value, 0, 1)) !== false && in_array($op, ['<', '>']))
+                    || (($op = substr($value, 0, 2)) !== false && in_array($op, ['<=', '>=']))) {
+                    return [$op, $columnName, $value];
+                }
                 return [$columnName => $value];
                 break;
             case 'string':
