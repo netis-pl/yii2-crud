@@ -36,7 +36,7 @@ class ToggleAction extends Action
         if ($enable !== null) {
             $enable = (bool)$enable;
         }
-        if (($behavior = $model->getBehavior('toggle')) !== null) {
+        if (($behavior = $model->getBehavior('toggable')) !== null) {
             $model->toggle($enable);
         }
 
