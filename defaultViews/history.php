@@ -53,7 +53,10 @@ HTML;
     'dataProvider'   => $dataProvider,
 //    'filterModel'    => $searchModel,
     'filterSelector' => '#historyGrid-quickSearch',
-    'columns'        => [],
+    'columns'        => [
+        'key_type',
+        'id',
+    ],
     'layout'         => $layout,
 ]); ?>
 <?php Pjax::end(); ?>
