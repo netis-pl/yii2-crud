@@ -190,7 +190,7 @@ class ActiveController extends \yii\rest\ActiveController
     public function afterAction($action, $result)
     {
         $params = [];
-        if ($result instanceof Response) {
+        if ($result instanceof Response || is_string($result)) {
             return parent::afterAction($action, $result);
         } elseif ($result instanceof Model) {
             $params['model'] = $result;
@@ -230,8 +230,8 @@ class ActiveController extends \yii\rest\ActiveController
             return $this->redirect($location);
         }
         $content = Yii::$app->request->isAjax
-            ? $this->renderAjax($action->id, $params)
-            : $this->render($action->id, $params);
+            ? $this->renderAjax($action->viewName, $params)
+            : $this->render($action->viewName, $params);
         return parent::afterAction($action, $content);
     }
 

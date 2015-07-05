@@ -59,6 +59,10 @@ class Action extends \yii\rest\Action
      * @see [[$fields]]
      */
     public $extraFields;
+    /**
+     * @var string view name used when rendering a HTML response, defaults to current action id
+     */
+    public $viewName;
 
     /**
      * @inheritdoc
@@ -72,6 +76,9 @@ class Action extends \yii\rest\Action
             if ($this->checkAccess === null) {
                 $this->checkAccess = [$this->controller, 'checkAccess'];
             }
+        }
+        if ($this->viewName === null) {
+            $this->viewName = $this->id;
         }
         parent::init();
     }

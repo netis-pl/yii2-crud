@@ -102,7 +102,7 @@ class ActiveNavigation extends Behavior
         // draw the history button at the end of common section,
         //because it will be replaced in current depending on action
         if ($privs['common']['read'] && $defaultActions['history'] && ($action->id === 'index')
-            && $model->hasTrigger()
+            && $model->getBehavior('trackable') !== null
         ) {
             // drawn only in index action
             $menu['history'] = [
@@ -131,7 +131,7 @@ class ActiveNavigation extends Behavior
 
         if ($privs['current']['read'] && $defaultActions['history']
             && (!$model->isNewRecord || $action->id === 'update')
-            && $model->hasTrigger()
+            && $model->getBehavior('trackable') !== null
         ) {
             $menu['history'] = [
                 'label' => Yii::t('app', 'History of changes'),
