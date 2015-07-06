@@ -216,9 +216,6 @@ class LinkableBehavior extends Behavior
         if ($scope !== '') {
             $data = isset($data[$scope]) ? $data[$scope] : [];
         }
-        if (empty($data)) {
-            return true;
-        }
         foreach ($data as $relationName => $keys) {
             if (($relation = $owner->getRelation($relationName, false)) === null) {
                 continue;

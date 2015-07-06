@@ -76,6 +76,7 @@ class UpdateAction extends Action
         /* @var $model ActiveRecord */
         if ($id === null) {
             $model = new $this->modelClass(['scenario' => $this->createScenario]);
+            $model->loadDefaultValues();
         } else {
             $model = $this->findModel($id);
             $model->scenario = $this->updateScenario;
