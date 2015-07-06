@@ -152,7 +152,12 @@ class ActiveController extends \yii\rest\ActiveController
             'delete' => ['POST', 'DELETE'], // added POST for compatibility
         ];
         foreach ($this->actionsClassMap as $id => $action) {
-            $verbs[$id] = is_array($action) && isset($action['verbs']) ? $action['verbs'] : ['GET'];
+            if (is_array($action) && isset($action['verbs'])) {
+                $verbs[$id] = $action['verbs'];
+            }
+            if (!isset($verbs[$id])) {
+                $verbs[$id] = ['GET'];
+            }
         }
         return $verbs;
     }
