@@ -234,33 +234,17 @@ class UpdateAction extends Action
     {
         /** @var \yii\db\ActiveRecord $relatedModel */
         $relatedModel = $relation['model'];
-        if (($route = Yii::$app->crudModelsMap[$relatedModel::className()]) === null) {
-            return [];
-        }
         $dataProvider = $relation['dataProvider'];
 
-        //! @todo enable this route only if current record is not new or related model can have null fk
-        $createRoute = Url::toRoute([
-            $route . '/update',
-            'hide' => implode(',', array_keys($dataProvider->query->link)),
-            $relatedModel->formName() => array_combine(
-                array_keys($dataProvider->query->link),
-                $model->getPrimaryKey(true)
-            ),
-        ]);
+        list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
+            $model,
+            $relatedModel,
+            $dataProvider->query
+        );
 
-        $parts = explode('\\', $relatedModel::className());
-        $relatedModelClass = array_pop($parts);
-        $relatedSearchModelClass = implode('\\', $parts) . '\\search\\' . $relatedModelClass;
-        $searchRoute = !class_exists($relatedSearchModelClass) ? null : Url::toRoute([
-            $route . '/relation',
-            'per-page' => 10,
-            'relation' => $dataProvider->query->inverseOf,
-            'id'       => Action::exportKey($model->getPrimaryKey()),
-        ]);
-
-        $result = [
-            \yii\helpers\Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
+        $result = [];
+        if ($createRoute !== null) {
+            $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
                 'title'         => Yii::t('app', 'Create new'),
                 'aria-label'    => Yii::t('app', 'Create new'),
                 'data-pjax'     => '0',
@@ -268,10 +252,10 @@ class UpdateAction extends Action
                 'data-target'   => '#relationModal',
                 'data-relation' => $relationName,
                 'data-title'    => $relatedModel->getCrudLabel('create'),
-                'data-pjax-url' => $createRoute,
+                'data-pjax-url' => Url::toRoute($createRoute),
                 'class'         => 'btn btn-default',
-            ]),
-        ];
+            ]);
+        }
 
         if ($searchRoute !== null) {
             $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
@@ -282,7 +266,7 @@ class UpdateAction extends Action
                 'data-target'   => '#relationModal',
                 'data-relation' => $relationName,
                 'data-title'    => $relatedModel->getCrudLabel('index'),
-                'data-pjax-url' => $searchRoute,
+                'data-pjax-url' => Url::toRoute($searchRoute),
                 'class'         => 'btn btn-default',
             ]);
         }

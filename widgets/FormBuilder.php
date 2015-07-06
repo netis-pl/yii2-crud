@@ -10,6 +10,7 @@ use netis\utils\crud\Action;
 use netis\utils\db\ActiveQuery;
 use Yii;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\JsExpression;
@@ -88,6 +89,54 @@ JavaScript;
 
     /**
      * @param \yii\db\ActiveRecord $model
+     * @param \yii\db\ActiveRecord $relatedModel
+     * @param \yii\db\ActiveQuery $relation
+     * @return array array with three arrays: create, search and index routes
+     */
+    public static function getRelationRoutes($model, $relatedModel, $relation)
+    {
+        if (($route = Yii::$app->crudModelsMap[$relatedModel::className()]) === null) {
+            return [null, null, null];
+        }
+
+        $allowCreate = true;
+        if ($model->isNewRecord) {
+            foreach ($relation->link as $foreignKey) {
+                if (!$relatedModel->getTableSchema()->getColumn($foreignKey)->allowNull) {
+                    $allowCreate = false;
+                    break;
+                }
+            }
+        }
+
+        $createRoute = !$allowCreate ? null : [
+            $route . '/update',
+            'hide'                    => implode(',', array_keys($relation->link)),
+            $relatedModel->formName() => array_combine(
+                array_keys($relation->link),
+                $model->getPrimaryKey(true)
+            ),
+        ];
+
+        $parts = explode('\\', $relatedModel::className());
+        $relatedModelClass = array_pop($parts);
+        $relatedSearchModelClass = implode('\\', $parts) . '\\search\\' . $relatedModelClass;
+        $searchRoute = !class_exists($relatedSearchModelClass) ? null : [
+            $route . '/relation',
+            'per-page' => 10,
+            'relation' => $relation->inverseOf,
+            'id'       => Action::exportKey($model->getPrimaryKey()),
+        ];
+
+        $indexRoute = [
+            $route . '/index',
+        ];
+
+        return [$createRoute, $searchRoute, $indexRoute];
+    }
+
+    /**
+     * @param \yii\db\ActiveRecord $model
      * @param string $relation
      * @param array $dbColumns
      * @param \yii\db\ActiveQuery $activeRelation
@@ -99,7 +148,6 @@ JavaScript;
         $isMany = $activeRelation->multiple;
         $foreignKeys = array_values($activeRelation->link);
         $foreignKey = reset($foreignKeys);
-        $route = Yii::$app->crudModelsMap[$activeRelation->modelClass];
         /** @var \yii\db\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
         $primaryKey = $relModel->getTableSchema()->primaryKey;
@@ -121,13 +169,18 @@ JavaScript;
         } else {
             $value = Action::exportKey($model->getAttributes($foreignKeys));
         }
+        list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
+            $model,
+            $relModel,
+            $activeRelation
+        );
         $items = null;
-        if ($route === null) {
+        if ($indexRoute === null) {
             $relQuery = $relModel::find();
             if ($relQuery instanceof ActiveQuery) {
                 $relQuery->defaultOrder();
             }
-            $items = $relQuery->all();
+            $items = ArrayHelper::map($relQuery->all(), $relModel->getPrimaryKey(), $labelField);
         }
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
@@ -140,25 +193,25 @@ JavaScript;
                 'label' => $label,
                 'items' => $items,
                 'clientOptions' => array_merge(
-                    [
+                    $indexRoute === null ? [] : [
                         'formatResult' => new JsExpression('function (result, container, query, escapeMarkup, depth) {
     return s2helper.formatResult(result.'.$labelField.', container, query, escapeMarkup, depth);
     }'),
                         'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
-
+                    ],
+                    [
                         'width' => '100%',
                         'allowClear' => $multiple || $isMany
                             ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
                         'closeOnSelect' => true,
                     ],
                     $multiple && $items === null ? ['multiple' => true] : [],
-                    $route === null ? [] : [
+                    $indexRoute === null ? [] : [
                         'ajax' => [
-                            'url' => Url::toRoute([
-                                $route . '/index',
+                            'url' => Url::toRoute(array_merge($indexRoute, [
                                 '_format' => 'json',
                                 'fields' => implode(',', $fields),
-                            ]),
+                            ])),
                             'dataFormat' => 'json',
                             'quietMillis' => 300,
                             'data' => new JsExpression('s2helper.data'),
