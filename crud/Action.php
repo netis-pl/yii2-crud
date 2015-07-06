@@ -262,7 +262,7 @@ class Action extends \yii\rest\Action
         } elseif (is_callable($this->fields)) {
             return call_user_func($this->fields, $this, $context, $model);
         }
-        return self::getDefaultFields($model);
+        return static::getDefaultFields($model);
     }
 
     /**
@@ -278,7 +278,7 @@ class Action extends \yii\rest\Action
         } elseif (is_callable($this->extraFields)) {
             return call_user_func($this->extraFields, $this, $context, $model);
         }
-        return self::getDefaultFields($model, true);
+        return static::getDefaultFields($model, true);
     }
 
     /**

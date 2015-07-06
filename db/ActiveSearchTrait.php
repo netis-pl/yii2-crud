@@ -229,13 +229,14 @@ trait ActiveSearchTrait
             $searchPhrase = [trim($query->quickSearchPhrase)];
         }
         // skip foreign keys, relations are search in other way
-        $allAttributes = array_diff(
+        $foreignKeys = array_map(function ($foreignKey) {
+            array_shift($foreignKey);
+            return array_keys($foreignKey);
+        }, $this->getTableSchema()->foreignKeys);
+        $allAttributes = !empty($foreignKeys) ? array_diff(
             $this->safeAttributes(),
-            call_user_func_array('array_merge', array_map(function ($foreignKey) {
-                array_shift($foreignKey);
-                return array_keys($foreignKey);
-            }, $this->getTableSchema()->foreignKeys))
-        );
+            call_user_func_array('array_merge', $foreignKeys)
+        ) : $this->safeAttributes();
         $safeAttributes = [];
         $relationAttributes = [];
 

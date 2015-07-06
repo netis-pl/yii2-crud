@@ -79,16 +79,11 @@ JavaScript;
      * @param string $relation
      * @param array $dbColumns
      * @param \yii\db\ActiveQuery $activeRelation
-     * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      */
-    protected static function getHasManyRelationField($model, $relation, $dbColumns, $activeRelation, $multiple = false)
+    protected static function getHasManyRelationField($model, $relation, $dbColumns, $activeRelation)
     {
-        // disabled because it's not yet implemented in ActiveSearchTrait
-        if (false && $multiple) {
-            return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple);
-        }
-        return null;
+        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, true);
     }
 
     /**
@@ -194,19 +189,22 @@ JavaScript;
     protected static function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $safeAttributes, $multiple = false)
     {
         $activeRelation = $model->getRelation($relation);
-        $isHidden = false;
-        foreach ($activeRelation->link as $left => $right) {
-            if (!in_array($right, $safeAttributes)) {
+        if (!$activeRelation->multiple) {
+            // validate foreign keys only for hasOne relations
+            $isHidden = false;
+            foreach ($activeRelation->link as $left => $right) {
+                if (!in_array($right, $safeAttributes)) {
+                    return $formFields;
+                }
+                if (isset($hiddenAttributes[$right])) {
+                    $formFields[$relation] = Html::activeHiddenInput($model, $right);
+                    unset($hiddenAttributes[$right]);
+                    $isHidden = true;
+                }
+            }
+            if ($isHidden) {
                 return $formFields;
             }
-            if (isset($hiddenAttributes[$right])) {
-                $formFields[$relation] = Html::activeHiddenInput($model, $right);
-                unset($hiddenAttributes[$right]);
-                $isHidden = true;
-            }
-        }
-        if ($isHidden) {
-            return $formFields;
         }
 
         if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
@@ -214,11 +212,11 @@ JavaScript;
         }
 
         if (count($activeRelation->link) > 1) {
-            throw new InvalidConfigException('Composite hasOne relations are not supported by '.get_called_class());
+            throw new InvalidConfigException('Composite key relations are not supported by '.get_called_class());
         }
 
         if ($activeRelation->multiple) {
-            if (($field = static::getHasManyRelationField($model, $relation, $dbColumns, $activeRelation, $multiple)) !== null) {
+            if (($field = static::getHasManyRelationField($model, $relation, $dbColumns, $activeRelation)) !== null) {
                 $formFields[$relation] = $field;
             }
         } else {
