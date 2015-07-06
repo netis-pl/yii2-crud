@@ -81,7 +81,7 @@ if (!empty($relations)) {
     <?= $form->errorSummary($model); ?>
 
     <fieldset>
-    <?php FormBuilder::renderRow($this, $model, $form, [$fields], Yii::$app->request->getIsAjax() ? 12 : 6); ?>
+    <?php FormBuilder::renderRow($this, $model, $form, $fields, Yii::$app->request->getIsAjax() ? 12 : 6); ?>
     </fieldset>
 
     <?= $this->render('_relations', [

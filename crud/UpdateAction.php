@@ -177,10 +177,11 @@ class UpdateAction extends Action
     protected function getResponse($model)
     {
         $hiddenAttributes = array_filter(explode(',', Yii::$app->getRequest()->getQueryParam('hide', '')));
+        $fields = FormBuilder::getFormFields($model, $this->getFields($model, 'form'), false, $hiddenAttributes);
 
         return [
             'model' => $model,
-            'fields' => FormBuilder::getFormFields($model, $this->getFields($model, 'form'), false, $hiddenAttributes),
+            'fields' => [$fields],
             'relations' => $this->getModelRelations($model, $this->getExtraFields($model)),
         ];
     }
