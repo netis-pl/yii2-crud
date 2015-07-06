@@ -10,6 +10,9 @@ namespace netis\utils\crud;
 use Yii;
 use yii\base\Model;
 
+/**
+ * @package netis\utils\crud
+ */
 class ViewAction extends Action
 {
     /**
@@ -71,9 +74,12 @@ class ViewAction extends Action
             }
 
             $relation = $model->getRelation($field);
-            foreach ($relation->link as $left => $right) {
-                if (in_array($left, $blameableAttributes)) {
-                    continue;
+            if (!$relation->multiple) {
+                // validate foreign keys only for hasOne relations
+                foreach ($relation->link as $left => $right) {
+                    if (in_array($left, $blameableAttributes)) {
+                        continue;
+                    }
                 }
             }
 

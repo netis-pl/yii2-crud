@@ -11,7 +11,7 @@ use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
 use yii\base\Model;
-use yii\db\ActiveRecord;
+use \netis\utils\crud\ActiveRecord;
 use yii\helpers\Html;
 
 class Formatter extends \yii\i18n\Formatter
@@ -177,19 +177,30 @@ class Formatter extends \yii\i18n\Formatter
         if ($value === null) {
             return $this->nullDisplay;
         }
-        $result = Html::encode((string)$value);
-        /** @var ActiveRecord $value */
-        if (!$value instanceof ActiveRecord) {
-            return $result;
+        $values = is_array($value) ? $value : [$value];
+
+        $route = false;
+        $result = [];
+        foreach ($values as $value) {
+            $label = Html::encode((string)$value);
+            if (!$value instanceof ActiveRecord) {
+                $result[] = $label;
+                continue;
+            }
+            if ($route === false) {
+                $route = Yii::$app->crudModelsMap[$value::className()];
+            }
+            if ($route === null || !Yii::$app->user->can($value::className().'.read', ['model' => $value])) {
+                $result[] = $label;
+                continue;
+            }
+
+            $result[] = Html::a($label, [
+                $route . '/view',
+                'id' => Action::exportKey($value->getPrimaryKey()),
+            ], $options);
         }
-        $route = Yii::$app->crudModelsMap[$value::className()];
-
-
-        if ($route === null || !Yii::$app->user->can($value::className().'.read', ['model' => $value])) {
-            return $result;
-        }
-
-        return Html::a($result, [$route . '/view', 'id' => Action::exportKey($value->getPrimaryKey())], $options);
+        return implode(', ', $result);
     }
 
     /**
