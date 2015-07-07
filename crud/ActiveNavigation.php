@@ -44,7 +44,7 @@ class ActiveNavigation extends Behavior
                 $breadcrumbs[] = $model->getCrudLabel('create');
             }
         }
-        if ($action->id == 'view') {
+        if ($action->id == 'view' || $action->id == 'print') {
             $breadcrumbs[] = [
                 'label' => $model->getCrudLabel('index'),
                 'url' => ['index'],
@@ -159,6 +159,15 @@ class ActiveNavigation extends Behavior
                 'active'      => $action->id === 'view',
             ];
         }
+        if ($privs['current']['read'] && $defaultActions['print'] && ($horizontal || $action->id !== 'print')) {
+            $menu['print'] = [
+                'label'       => Yii::t('app', 'Print'),
+                'icon'        => 'print',
+                'url'         => ['print', 'id' => $id, '_format' => 'pdf'],
+                'linkOptions' => $action->id === 'print' ? [] : ['confirm' => $confirms['leave']],
+                'active'      => $action->id === 'print',
+            ];
+        }
         if ($privs['current']['delete']) {
             $menu['delete'] = [
                 'label'       => Yii::t('app', 'Delete'),
@@ -219,7 +228,7 @@ class ActiveNavigation extends Behavior
         $defaultActions = $this->owner->actions();
         // set default indexes to avoid many isset() calls later
         $defaultActions = array_merge([
-            'index'  => false, 'view' => false, 'update' => false, 'delete' => false,
+            'index'  => false, 'view' => false, 'print' => false, 'update' => false, 'delete' => false,
             'toggle' => false, 'history' => false, 'help' => false, 'state' => false,
         ], $defaultActions);
 
@@ -229,7 +238,7 @@ class ActiveNavigation extends Behavior
                 'read' => ($defaultActions['index'] || $defaultActions['history']) && $this->owner->hasAccess('index'),
             ],
             'current' => [
-                'read' => ($defaultActions['view'] || $defaultActions['history']) && $this->owner->hasAccess('read', $model),
+                'read' => ($defaultActions['view'] || $defaultActions['print'] || $defaultActions['history']) && $this->owner->hasAccess('read', $model),
                 'update' => !$readOnly && $defaultActions['update'] && $this->owner->hasAccess('update', $model),
                 'delete' => !$readOnly && $defaultActions['delete'] && $this->owner->hasAccess('delete', $model),
                 'toggle' => !$readOnly && $defaultActions['toggle'] && $this->owner->hasAccess('toggle', $model),

@@ -80,7 +80,8 @@ class ActiveController extends \yii\rest\ActiveController
                     'text/html' => Response::FORMAT_HTML,
                     'application/json' => Response::FORMAT_JSON,
                     'application/xml' => Response::FORMAT_XML,
-                    'text/csv' => 'csv',
+                    'text/csv' => \netis\utils\web\Response::FORMAT_CSV,
+                    'application/pdf' => \netis\utils\web\Response::FORMAT_PDF,
                 ],
             ],
             'access' => [
@@ -209,6 +210,10 @@ class ActiveController extends \yii\rest\ActiveController
             return $response;
         }
 
+        if (($response = $this->getPdfResponse($action, $result, $params)) !== false) {
+            return $response;
+        }
+
         if (($response = $this->getSerializedResponse($action, $result, $params)) !== false) {
             return $response;
         }
@@ -238,6 +243,52 @@ class ActiveController extends \yii\rest\ActiveController
             ? $this->renderAjax($action->viewName, $params)
             : $this->render($action->viewName, $params);
         return parent::afterAction($action, $content);
+    }
+
+    /**
+     * Returns a PDF file with rendered view if response format is PDF, boolean false otherwise.
+     * Name of the view is the same as the action id.
+     * @param Action $action the action just executed.
+     * @param mixed $result  the action return result.
+     * @param array $params
+     * @return string rendered view or boolean false if response format is not HTML.
+     */
+    protected function getPdfResponse($action, $result, $params)
+    {
+        if (Yii::$app->response->format !== \netis\utils\web\Response::FORMAT_PDF) {
+            return false;
+        }
+        $headers = Yii::$app->response->getHeaders();
+        if (($location = $headers->get('Location')) !== null) {
+            return $this->redirect($location);
+        }
+        $content = Yii::$app->request->isAjax
+            ? $this->renderAjax($action->viewName, $params)
+            : $this->render($action->viewName, $params);
+        parent::afterAction($action, $content);
+
+        $renderer = new \mPDF(
+            'pl-x', // mode
+            'A4', // format
+            0, // font-size
+            '', // font
+            12, // margin-left
+            12, // margin-right
+            5, // margin-top
+            5, // margin-bottom
+            2, // margin-header
+            2, // margin-footer
+            'P' // orientation
+        );
+        $renderer->useSubstitutions = true;
+        $renderer->simpleTables = false;
+        @$renderer->WriteHTML($content);
+
+        $response = new Response();
+        $response->setDownloadHeaders($action->id.'.pdf', 'application/pdf', true);
+        $response->format = Response::FORMAT_RAW;
+        $response->content = $renderer->Output('print', 'S');
+        return $response;
     }
 
     /**
@@ -288,8 +339,9 @@ class ActiveController extends \yii\rest\ActiveController
     protected function getLargeResponse($action, $result, $params)
     {
         parent::afterAction($action, $result);
-        switch (Yii::$app->response->format) {
-            case 'csv':
+        $format = Yii::$app->response->format;
+        switch ($format) {
+            case \netis\utils\web\Response::FORMAT_CSV:
                 $rendererClass = 'netis\\utils\\crud\\CsvRendererStream';
                 break;
             case Response::FORMAT_JSON:
@@ -299,18 +351,18 @@ class ActiveController extends \yii\rest\ActiveController
                 $rendererClass = 'netis\\utils\\crud\\XmlRendererStream';
                 break;
             default:
-                throw new \HttpInvalidParamException('Unsupported format requested: '.Yii::$app->response->format);
+                throw new \HttpInvalidParamException('Unsupported format requested: '.$format);
         }
-        $streamName = Yii::$app->response->format.'View';
+        $streamName = $format.'View';
         if (!stream_wrapper_register($streamName, $rendererClass)) {
             throw new Exception('Failed to register the RenderStream wrapper.');
         }
         $rendererClass::$params = $params;
         $response = new Response();
-        $response->setDownloadHeaders($action->id.'.'.Yii::$app->response->format, Yii::$app->response->acceptMimeType);
+        $response->setDownloadHeaders($action->id.'.'.$format, Yii::$app->response->acceptMimeType);
         $response->format = Response::FORMAT_RAW;
         $streamParams = [
-            'format' => Yii::$app->response->format,
+            'format' => $format,
             'serializer' => $this->serializer,
         ];
         $response->stream = fopen("$streamName://{$action->id}?".\http_build_query($streamParams), "r");
