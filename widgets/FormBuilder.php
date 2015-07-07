@@ -101,8 +101,8 @@ JavaScript;
 
         $allowCreate = true;
         if ($model->isNewRecord) {
-            foreach ($relation->link as $foreignKey) {
-                if (!$relatedModel->getTableSchema()->getColumn($foreignKey)->allowNull) {
+            foreach ($relation->link as $left => $right) {
+                if (!$relatedModel->getTableSchema()->getColumn($left)->allowNull) {
                     $allowCreate = false;
                     break;
                 }
