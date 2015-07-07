@@ -10,7 +10,6 @@ use netis\utils\crud\Action;
 use netis\utils\db\ActiveQuery;
 use Yii;
 use yii\base\InvalidConfigException;
-use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\JsExpression;
@@ -58,7 +57,44 @@ class FormBuilder
     };
 }( window.s2helper = window.s2helper || {}, jQuery ));
 JavaScript;
-        $view->registerJs($script, \yii\web\View::POS_END);
+        $view->registerJs($script, \yii\web\View::POS_END, 'netis.s2helper');
+    }
+
+    /**
+     * Registers JS code for handling relations.
+     * @param \yii\web\View $view
+     * @return string modal widget to be embedded in a view
+     */
+    public static function registerRelations($view)
+    {
+        \netis\utils\assets\RelationsAsset::register($view);
+        $options = \yii\helpers\Json::htmlEncode([
+            'i18n'                  => [
+                'loadingText' => Yii::t('app', 'Loading, please wait.'),
+            ],
+            'keysSeparator'         => \netis\utils\crud\Action::KEYS_SEPARATOR,
+            'compositeKeySeparator' => \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR,
+        ]);
+        $view->registerJs("netis.init($options)", \yii\web\View::POS_READY, 'netis.init');
+
+        // init relation tools used in _relations subview
+        // relations modal may contain a form and must be rendered outside ActiveForm
+        return \yii\bootstrap\Modal::widget([
+            'id'     => 'relationModal',
+            'size'   => \yii\bootstrap\Modal::SIZE_LARGE,
+            'header' => '<span class="modal-title"></span>',
+            'footer' => implode('', [
+                Html::button(Yii::t('app', 'Save'), [
+                    'id'    => 'relationSave',
+                    'class' => 'btn btn-primary',
+                ]),
+                Html::button(Yii::t('app', 'Cancel'), [
+                    'class'        => 'btn btn-default',
+                    'data-dismiss' => 'modal',
+                    'aria-hidden'  => 'true',
+                ]),
+            ]),
+        ]);
     }
 
     /**
@@ -100,7 +136,7 @@ JavaScript;
         }
 
         $allowCreate = true;
-        if ($model->isNewRecord) {
+        if ($model->isNewRecord && $relation->multiple) {
             foreach ($relation->link as $left => $right) {
                 if (!$relatedModel->getTableSchema()->getColumn($left)->allowNull) {
                     $allowCreate = false;
@@ -126,6 +162,7 @@ JavaScript;
             'per-page' => 10,
             'relation' => $relation->inverseOf,
             'id'       => Action::exportKey($model->getPrimaryKey()),
+            'multiple' => $relation->multiple ? 'true' : 'false',
         ];
 
         $indexRoute = [
@@ -158,6 +195,17 @@ JavaScript;
             $fields = $primaryKey;
             $labelField = reset($primaryKey);
         }
+        $jsPrimaryKey = json_encode($primaryKey);
+        $jsSeparator = \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR;
+        $jsId = <<<JavaScript
+function(object){
+    var keys = $jsPrimaryKey, values = [];
+    for (var i = 0; i < keys.length; i++) {
+         values.push(object[keys[i]]);
+    }
+    return netis.implodeEscaped('$jsSeparator', values);
+}
+JavaScript;
         if ($isMany) {
             $value = Action::implodeEscaped(
                 Action::KEYS_SEPARATOR,
@@ -180,11 +228,73 @@ JavaScript;
             if ($relQuery instanceof ActiveQuery) {
                 $relQuery->defaultOrder();
             }
-            $items = ArrayHelper::map($relQuery->all(), $relModel->getPrimaryKey(), $labelField);
+            $items = $relQuery->select($fields)->asArray()->all();
         }
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, $relation);
+        }
+        //! @todo add an 'change' event that detects them and opens up a modal dialog, same as in relations.js
+        $ajaxResults = new JsExpression('s2helper.results');
+        $clientEvents = null;
+        if ($searchRoute !== null || $createRoute !== null) {
+            $searchLabel = Yii::t('app', 'Advanced search');
+            $createLabel = Yii::t('app', 'Create new');
+            $searchUrl = $searchRoute === null ? null : Url::toRoute($searchRoute);
+            $createUrl = $createRoute === null ? null : Url::toRoute($createRoute);
+            if ($indexRoute === null) {
+                array_unshift($items, array_merge(array_fill_keys($primaryKey, -2), [$labelField => $createLabel]));
+                array_unshift($items, array_merge(array_fill_keys($primaryKey, -1), [$labelField => $searchLabel]));
+            } else {
+                $script = <<<JavaScript
+function (data, page) {
+    var keys = $jsPrimaryKey, values = [];
+    if ('$searchUrl') {
+        for (var i = 0; i < keys.length; i++) {
+            values[keys[i]] = -1;
+        }
+        values.$labelField = '-- $searchLabel --';
+        data.items.unshift(values);
+    }
+    if ('$createUrl') {
+        values = [];
+        for (var i = 0; i < keys.length; i++) {
+            values[keys[i]] = -2;
+        }
+        values.$labelField = '-- $createLabel --';
+        data.items.unshift(values);
+    }
+    return s2helper.results(data, page);
+}
+JavaScript;
+                $ajaxResults = new JsExpression($script);
+            }
+            //! @todo this should handle composite primary keys
+            $script = <<<JavaScript
+function (event) {
+    var isSearch = true, isCreate = true;
+    if (event.val != -1) {
+        isSearch = false;
+    }
+    if (event.val != -2) {
+        isCreate = false;
+    }
+    if (isSearch || isCreate) {
+        $(event.target).select2('close');
+        $('#relationModal').data('target', $(event.target).attr('id'));
+        $('#relationModal').data('title', '$label');
+        $('#relationModal').data('relation', '$relation');
+        $('#relationModal').data('pjax-url', isSearch ? '$searchUrl' : '$createUrl');
+        $('#relationModal').modal('show');
+        event.preventDefault();
+        return false;
+    }
+    return true;
+}
+JavaScript;
+            $clientEvents = [
+                'select2-selecting' => new JsExpression($script),
+            ];
         }
         return [
             'widgetClass' => 'maddoger\widgets\Select2',
@@ -200,6 +310,7 @@ JavaScript;
                         'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
                     ],
                     [
+                        'id' => new JsExpression($jsId),
                         'width' => '100%',
                         'allowClear' => $multiple || $isMany
                             ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
@@ -215,11 +326,12 @@ JavaScript;
                             'dataFormat' => 'json',
                             'quietMillis' => 300,
                             'data' => new JsExpression('s2helper.data'),
-                            'results' => new JsExpression('s2helper.results'),
+                            'results' => $ajaxResults,
                         ],
                         'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
                     ]
                 ),
+                'clientEvents' => $clientEvents,
                 'options' => array_merge([
                     'class' => 'select2',
                     'value' => $value,

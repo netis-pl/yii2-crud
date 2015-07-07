@@ -22,6 +22,7 @@ class RelationAction extends IndexAction
     {
         $id = Yii::$app->request->getQueryParam('id');
         $relation = Yii::$app->request->getQueryParam('relation');
+        $multiple = Yii::$app->request->getQueryParam('multiple', 'true') === 'true';
         foreach ($fields as $key => $field) {
             if (((is_array($field) || (!is_string($field) && is_callable($field))) && $key === $relation)
                 || $field === $relation
@@ -32,6 +33,7 @@ class RelationAction extends IndexAction
         return array_merge([
             [
                 'class'         => 'yii\grid\CheckboxColumn',
+                'multiple'      => $multiple,
                 'headerOptions' => ['class' => 'column-serial'],
                 'checkboxOptions' => function ($model, $key, $index, $column) use ($id, $relation) {
                     /** @var \yii\db\ActiveRecord $model */
@@ -40,7 +42,9 @@ class RelationAction extends IndexAction
                             ? json_encode($key, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
                             : $key,
                     ];
-                    if ($model->$relation !== null && Action::exportKey($model->$relation->getPrimaryKey()) === $id) {
+                    if (!empty($relation) && $model->$relation !== null
+                        && Action::exportKey($model->$relation->getPrimaryKey()) === $id
+                    ) {
                         $options['checked'] = true;
                         $options['disabled'] = true;
                     }
@@ -67,7 +71,9 @@ class RelationAction extends IndexAction
 
         // lazy load related models to mark checkboxes
         $relation = Yii::$app->request->getQueryParam('relation');
-        $query->with($relation);
+        if (!empty($relation)) {
+            $query->with($relation);
+        }
 
         return $dataProvider;
     }

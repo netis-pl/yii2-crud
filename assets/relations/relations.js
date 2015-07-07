@@ -39,15 +39,26 @@
     };
 
     netis.showModal = function(event) {
-        var button = $(event.relatedTarget),
-            modal = $(this),
+        var modal = $(this),
             container = _settings.modalId + ' .modal-body',
             options = {
                 'push': false,
                 'replace': false
-            };
+            },
+            target, title, relation, url;
+        if ($(event.relatedTarget).nodeName === 'BUTTON') {
+            target = '#' + relation + 'Pjax';
+            title = target.data('title');
+            relation = target.data('relation');
+            url = target.data('pjax-url');
+        } else {
+            target = '#' + modal.data('target');
+            title = modal.data('title');
+            relation = modal.data('relation');
+            url = modal.data('pjax-url');
+        }
 
-        modal.find('.modal-title').text(button.data('title'));
+        modal.find('.modal-title').text(title);
         modal.find('.modal-body').text(_settings.i18n.loadingText);
 
         $(document).off('click.pjax', container + ' a');
@@ -59,12 +70,17 @@
         });
         $(document).on('pjax:success', _settings.modalId, function(event, data, status, xhr, options) {
             var saveButton = $(_settings.saveButtonId),
-                selectionFields = $('#' + button.data('relation') + 'Pjax').data('selectionFields'),
-                added = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.add).val()),
-                removed = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.remove).val()),
+                selectionFields = $(target).data('selectionFields'),
+                added = [],
+                removed = [],
                 grid = $(_settings.modalId + ' .grid-view');
 
-            saveButton.data('relation', button.data('relation'));
+            saveButton.data('target', target);
+
+            if (selectionFields !== undefined) {
+                added = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.add).val());
+                removed = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.remove).val());
+            }
 
             if (grid.length) {
                 grid.find("input[name='selection[]']").each(function() {
@@ -78,7 +94,7 @@
                 //$(document).off('pjax:success', settings.modalId);
                 /* the following should not be necessary after changing renderPartial to renderAjax in ActiveController.afterAction
                 grid.yiiGridView({
-                    'filterUrl': button.data('pjax-url'),
+                    'filterUrl': url,
                     'filterSelector': '#relationGrid-quickSearch'
                 });
                 grid.yiiGridView('setSelectionColumn', {
@@ -97,7 +113,7 @@
             }
         });
         $.pjax.reload(container, {
-            'url': button.data('pjax-url'),
+            'url': url,
             'push': false,
             'replace': false
         });
@@ -105,10 +121,17 @@
 
     netis.saveRelation = function(event) {
         var saveButton = $(_settings.saveButtonId),
-            container = $('#' + saveButton.data('relation') + 'Pjax'),
+            target = saveButton.data('target'),
+            container = $(target),
+            selectionFields = container.data('selectionFields'),
             grid = $(_settings.modalId + ' .grid-view'),
-            add = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').add).val()),
-            remove = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').remove).val());
+            add = [],
+            remove = [];
+
+        if (selectionFields !== undefined) {
+            add = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.add).val());
+            remove = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.remove).val());
+        }
 
         if (grid.length) {
             grid.find("input[name='selection[]']:checked").not(':disabled').each(function () {
@@ -128,10 +151,13 @@
             add.push(saveButton.data('primaryKey'));
         }
 
-
-        $(container.data('selectionFields').add).val(netis.implodeEscaped(_settings.keysSeparator, add));
-        $(container.data('selectionFields').remove).val(netis.implodeEscaped(_settings.keysSeparator, remove));
-        $.pjax.reload(container);
+        if (selectionFields !== undefined) {
+            $(selectionFields.add).val(netis.implodeEscaped(_settings.keysSeparator, add));
+            $(selectionFields.remove).val(netis.implodeEscaped(_settings.keysSeparator, remove));
+            $.pjax.reload(container);
+        } else {
+            container.select2('val', add);
+        }
 
         $(_settings.modalId).modal('hide');
     };
