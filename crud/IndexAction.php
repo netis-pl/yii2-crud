@@ -116,8 +116,21 @@ class IndexAction extends Action
             'defaultPageSize' => 25,
         ];
 
+        $params = Yii::$app->request->queryParams;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
-            return $model->search(Yii::$app->request->queryParams, $query, $sort, $pagination);
+            if (isset($params['query']) && !isset($params['ids']) && $query instanceof \netis\utils\db\ActiveQuery) {
+                $availableQueries = $query->publicQueries();
+                if (!is_array($params['query'])) {
+                    $params['query'] = explode(',', $params['query']);
+                }
+                foreach ($params['query'] as $namedQuery) {
+                    if (($namedQuery = trim($namedQuery)) === '' || !in_array($namedQuery, $availableQueries)) {
+                        continue;
+                    }
+                    call_user_func([$query, $namedQuery]);
+                }
+            }
+            return $model->search($params, $query, $sort, $pagination);
         }
 
         return new ActiveDataProvider([

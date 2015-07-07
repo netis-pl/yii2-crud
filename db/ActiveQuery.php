@@ -61,6 +61,15 @@ class ActiveQuery extends \yii\db\ActiveQuery
     }
 
     /**
+     * Returns list of named queries safe for usage by end users.
+     * @return string[]
+     */
+    public function publicQueries()
+    {
+        return ['defaultOrder', 'enabled'];
+    }
+
+    /**
      * Sets default order using display order attribute, representing attributes and primary keys.
      * @return $this
      */
