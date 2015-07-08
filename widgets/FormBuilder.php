@@ -10,6 +10,7 @@ use netis\utils\crud\Action;
 use netis\utils\db\ActiveQuery;
 use Yii;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\JsExpression;
@@ -228,7 +229,10 @@ JavaScript;
             if ($relQuery instanceof ActiveQuery) {
                 $relQuery->defaultOrder();
             }
-            $items = $relQuery->select($fields)->asArray()->all();
+            $flippedPrimaryKey = array_flip($primaryKey);
+            $items = ArrayHelper::map($relQuery->select($fields)->asArray()->all(), function ($item) use ($flippedPrimaryKey) {
+                return Action::exportKey(array_intersect_key($item, $flippedPrimaryKey));
+            }, $labelField);
         }
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
@@ -269,14 +273,15 @@ function (data, page) {
 JavaScript;
                 $ajaxResults = new JsExpression($script);
             }
-            //! @todo this should handle composite primary keys
+            $createKey = Action::exportKey(array_fill_keys($primaryKey, -2));
+            $searchKey = Action::exportKey(array_fill_keys($primaryKey, -1));
             $script = <<<JavaScript
 function (event) {
     var isSearch = true, isCreate = true;
-    if (event.val != -1) {
+    if (event.val != '$searchKey') {
         isSearch = false;
     }
-    if (event.val != -2) {
+    if (event.val != '$createKey') {
         isCreate = false;
     }
     if (isSearch || isCreate) {
@@ -309,8 +314,8 @@ JavaScript;
     }'),
                         'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
                     ],
+                    $items === null ? ['id' => new JsExpression($jsId)] : [],
                     [
-                        'id' => new JsExpression($jsId),
                         'width' => '100%',
                         'allowClear' => $multiple || $isMany
                             ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
