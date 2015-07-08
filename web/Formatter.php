@@ -174,7 +174,7 @@ class Formatter extends \yii\i18n\Formatter
      */
     public function asCrudLink($value, $options = [])
     {
-        if ($value === null) {
+        if ($value === null || (is_array($value) && empty($value))) {
             return $this->nullDisplay;
         }
         $values = is_array($value) ? $value : [$value];

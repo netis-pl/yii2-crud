@@ -486,10 +486,10 @@ class Action extends \yii\rest\Action
                     },
                 ],
             ],
-            [
+            /*[
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
-            ],
+            ],*/
         ], self::getGridColumns($model, $fields));
     }
 
