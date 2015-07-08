@@ -40,17 +40,18 @@
 
     netis.showModal = function(event) {
         var modal = $(this),
+            clicked = $(event.relatedTarget),
             container = _settings.modalId + ' .modal-body',
             options = {
                 'push': false,
                 'replace': false
             },
             target, title, relation, url;
-        if ($(event.relatedTarget).nodeName === 'BUTTON') {
+        if (clicked.is('a')) {
             target = '#' + relation + 'Pjax';
-            title = target.data('title');
-            relation = target.data('relation');
-            url = target.data('pjax-url');
+            title = clicked.data('title');
+            relation = clicked.data('relation');
+            url = clicked.data('pjax-url');
         } else {
             target = '#' + modal.data('target');
             title = modal.data('title');

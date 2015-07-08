@@ -10,6 +10,7 @@ use yii\bootstrap\ActiveForm;
 /* @var $form yii\bootstrap\ActiveForm */
 
 FormBuilder::registerSelect($this);
+echo FormBuilder::registerRelations($this);
 
 // split fields into four columns
 $sourceFields = $fields;
