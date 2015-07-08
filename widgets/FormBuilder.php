@@ -340,6 +340,7 @@ JavaScript;
                 'options' => array_merge([
                     'class' => 'select2',
                     'value' => $value,
+                    'placeholder' => Yii::t('app', 'Choose...'),
                 ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
             ],
         ];
