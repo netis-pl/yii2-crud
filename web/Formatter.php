@@ -170,9 +170,11 @@ class Formatter extends \yii\i18n\Formatter
      * Formats the value as a link to a matching controller.
      * @param Model $value the value to be formatted.
      * @param array $options the tag options in terms of name-value pairs. See [[Html::a()]].
+     * @param string $action name of the action to link to
+     * @param string|callable $label if not null, will be used instead of casting the value to string, should be encoded
      * @return string the formatted result.
      */
-    public function asCrudLink($value, $options = [])
+    public function asCrudLink($value, $options = [], $action = 'view', $label = null)
     {
         if ($value === null || (is_array($value) && empty($value))) {
             return $this->nullDisplay;
@@ -182,21 +184,27 @@ class Formatter extends \yii\i18n\Formatter
         $route = false;
         $result = [];
         foreach ($values as $value) {
-            $label = Html::encode((string)$value);
+            if ($label === null) {
+                $labelString = Html::encode((string)$value);
+            } elseif (is_callable($label)) {
+                $labelString = call_user_func($label, $value);
+            } else {
+                $labelString = $label;
+            }
             if (!$value instanceof ActiveRecord) {
-                $result[] = $label;
+                $result[] = $labelString;
                 continue;
             }
             if ($route === false) {
                 $route = Yii::$app->crudModelsMap[$value::className()];
             }
             if ($route === null || !Yii::$app->user->can($value::className().'.read', ['model' => $value])) {
-                $result[] = $label;
+                $result[] = $labelString;
                 continue;
             }
 
-            $result[] = Html::a($label, [
-                $route . '/view',
+            $result[] = Html::a($labelString, [
+                $route . '/' . $action,
                 'id' => Action::exportKey($value->getPrimaryKey()),
             ], $options);
         }
