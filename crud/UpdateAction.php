@@ -83,7 +83,7 @@ class UpdateAction extends Action
         }
 
         if ($this->checkAccess) {
-            call_user_func($this->checkAccess, $this->id, $model);
+            call_user_func($this->checkAccess, $id === null ? 'create' : $this->id, $model);
         }
         return $model;
     }

@@ -16,7 +16,7 @@ class DbManager extends \yii\rbac\DbManager
         $assignments = $this->getAssignments($userId);
         $this->loadFromCache();
         if (YII_DEBUG && YII_ENV === 'dev') {
-            return true;
+            //return true;
         }
         if ($this->items !== null) {
             return $this->checkAccessFromCache($userId, $permissionName, $params, $assignments);
