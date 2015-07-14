@@ -59,4 +59,9 @@ HTML;
     ],
     'layout'         => $layout,
 ]); ?>
+<?= \yii\widgets\ListView::widget([
+    'id'             => 'historyGrid',
+    'dataProvider'   => $dataProvider,
+    'itemView'       => '_history_entry',
+]); ?>
 <?php Pjax::end(); ?>
