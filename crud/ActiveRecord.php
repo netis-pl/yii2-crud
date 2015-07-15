@@ -13,6 +13,7 @@ use yii\db\ActiveRecordInterface;
 use yii\db\Expression;
 use yii\db\Query;
 use yii\db\Schema;
+use yii\web\IdentityInterface;
 
 /**
  * ActiveRecord class extended with the following functionality:
@@ -21,6 +22,7 @@ use yii\db\Schema;
  * - added relations() method to return list of relations
  * - added attributeFormats() to return default attribute formats
  * @package netis\utils\crud
+ * @method bool isRelated(array $relations, IdentityInterface $user = null)
  * @method bool saveRelations(array $data, string $formName = null)
  * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
  * @method string getCrudLabel(string $operation = null)
@@ -44,6 +46,9 @@ class ActiveRecord extends \yii\db\ActiveRecord
     public function behaviors()
     {
         return [
+            'authorizer' => [
+                'class' => 'netis\utils\rbac\AuthorizerBehavior',
+            ],
             'linkable' => [
                 'class' => 'netis\utils\db\LinkableBehavior',
             ],

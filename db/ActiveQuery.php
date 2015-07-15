@@ -9,6 +9,11 @@ namespace netis\utils\db;
 use yii\base\InvalidConfigException;
 use yii\base\NotSupportedException;
 
+/**
+ * Provides queries to add default order and support the soft delete ToggableBehavior.
+ * @package netis\utils\db
+ * @method ActiveQuery authorized(array $relations)
+ */
 class ActiveQuery extends \yii\db\ActiveQuery
 {
     /**
@@ -16,6 +21,18 @@ class ActiveQuery extends \yii\db\ActiveQuery
      * Used only to pass its value to the grid.
      */
     public $quickSearchPhrase;
+
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            'authorizer' => [
+                'class' => 'netis\utils\rbac\AuthorizerQueryBehavior',
+            ],
+        ];
+    }
 
     /**
      * Returns an array with default order columns, indexed by column name and with direction as value.
