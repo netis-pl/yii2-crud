@@ -63,7 +63,8 @@ class AuthorizerBehavior extends Behavior
             return true;
         }
         $key = sha1(serialize($relations) . $user->getId());
-        $token = !YII_DEBUG ? '' : $this->modelClass.' ('.print_r($owner->getPrimaryKey(), true).') through '.$key;
+        $token = !YII_DEBUG ? '' : $this->modelClass . ' (' . print_r($owner->getPrimaryKey(), true) . ') through '
+            . json_encode($relations) . ' for ' . $user->getId();
         \Yii::trace('Checking access to '.$token, 'relationAuthorizer');
 
         if (array_key_exists($key, $this->isRelatedCache)) {
@@ -85,8 +86,11 @@ class AuthorizerBehavior extends Behavior
 
         $relationQuery = $owner->find()->getRelatedUserQuery($owner, $relations, $user, $pkConditions, $pkParams, $owner->primaryKey);
         if (!empty($relationQuery->where)) {
+            $query = 'SELECT '.$owner->getDb()
+                ->getQueryBuilder()
+                ->buildCondition($relationQuery->where, $relationQuery->params);
             $match = $owner->getDb()
-                ->createCommand('SELECT '.$relationQuery->where, $relationQuery->params)
+                ->createCommand($query, $relationQuery->params)
                 ->queryScalar();
             if ($match) {
                 \Yii::trace('Allowing access to '.$token, 'relationAuthorizer');
@@ -101,6 +105,23 @@ class AuthorizerBehavior extends Behavior
         // model and user has no direct or indirect relation spanning at least 1 model
         \Yii::trace('Denying access to ' . $token . ', no common relations found.', 'relationAuthorizer');
         return $this->isRelatedCache[$key] = null;
+    }
 
+    /**
+     * Returns values of the 'relations' data param stored in auth items
+     * traversed by last call to \netis\utils\rbac\DbManager::checkAccess().
+     * @return array
+     */
+    public function getCheckedRelations()
+    {
+        $authManager = \Yii::$app->getAuthManager();
+        $groups = array_map(
+            function ($name) use ($authManager) {
+                return ($authItem = $authManager->getPermission($name)) !== null
+                && isset($authItem->data['relations']) ? $authItem->data['relations'] : array();
+            },
+            $authManager->getCurrentPath()
+        );
+        return empty($groups) ? [] : call_user_func_array('array_merge', $groups);
     }
 }

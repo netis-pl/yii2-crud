@@ -7,6 +7,7 @@
 namespace netis\utils\rbac;
 
 use yii\base\Behavior;
+use yii\base\InvalidCallException;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\db\Query;
@@ -29,8 +30,7 @@ class AuthorizerQueryBehavior extends Behavior
         /** @var ActiveQuery $owner */
         $owner = $this->owner;
         $query = $this->getRelatedUserQuery($model, $relations, $user);
-        $owner->with = array_merge($owner->with, $query->with);
-        $owner->andWhere($query->conditions);
+        $owner->andWhere($query->where);
         $owner->addParams($query->params);
         return $owner;
     }
@@ -103,20 +103,20 @@ class AuthorizerQueryBehavior extends Behavior
 
         /** @var ActiveQuery[] $relationQueries */
         $relationQueries = $this->getCompositeRelatedUserQuery($model, $relations, $user, $baseConditions, $baseParams);
-        $conditions = [];
+        $conditions = ['OR'];
         foreach ($relationQueries as $relationQuery) {
             if (empty($relationQuery->where)
                 || (!empty($baseConditions) && $relationQuery->where === $baseConditions)
             ) {
                 continue;
             }
-            $relationQuery->select = $this->quoteColumn('t', $tableSchema->primaryKey, $model->getDb()->getSchema());
+            $relationQuery->select($this->quoteColumn('t', $tableSchema->primaryKey, $model->getDb()->getSchema()));
             $command = $relationQuery->createCommand($model->getDb());
             $conditions[] = $pkExpression.' IN ('.$command->getSql().')';
             $query->params = array_merge($query->params, $relationQuery->params);
         }
-        if (!empty($conditions)) {
-            $query->andWhere(['OR', $conditions]);
+        if ($conditions !== ['OR']) {
+            $query->where = $conditions;
         }
         return $query;
     }
@@ -135,10 +135,19 @@ class AuthorizerQueryBehavior extends Behavior
     public function getCompositeRelatedUserQuery($model, array $relations, $user, $baseConditions = [], $baseParams = [])
     {
         $schema = $model->getDb()->getSchema();
-        $userPk = $schema->quoteSimpleColumnName($user->tableSchema->primaryKey);
+        $userPk = array_map([$schema, 'quoteSimpleColumnName'], $user->tableSchema->primaryKey);
         $result = [];
 
+        if (count($userPk) > 1) {
+            throw new InvalidCallException('Composite primary key in User model is not supported.');
+        } else {
+            $userPk = reset($userPk);
+        }
+
         $mainQuery = $model->find();
+        if (empty($mainQuery->from)) {
+            $mainQuery->from = [$model->tableName().' t'];
+        }
         $mainQuery->distinct = true;
 
         foreach ($relations as $relationName) {
@@ -148,8 +157,15 @@ class AuthorizerQueryBehavior extends Behavior
                     $query = $mainQuery;
                 } else {
                     $query = $model->find();
+                    if (empty($query->from)) {
+                        $query->from = [$model->tableName().' t'];
+                    }
                 }
-                $query->innerJoinWith($relationName);
+                $query->innerJoinWith([$relationName => function ($query) use ($relation, $relationName) {
+                    /** @var ActiveRecord $modelClass */
+                    $modelClass = $relation->modelClass;
+                    return $query->from([$modelClass::tableName() . ' ' . $relationName]);
+                }]);
                 $column = $schema->quoteSimpleTableName($relationName).'.'.$userPk;
                 $query->orWhere($column. ' IS NOT NULL AND ' . $column . ' = :current_user_id');
                 $query->addParams([':current_user_id' => $user->getId()]);
@@ -163,22 +179,41 @@ class AuthorizerQueryBehavior extends Behavior
                 $relation = $model->getRelation($relationName);
                 /** @var ActiveRecord $relationModel */
                 $relationModel = new $relation->modelClass;
+                $userRelation = $relationModel->getRelation($userRelationName);
 
                 $userQuery = $relationModel->find();
-                $userQuery->distinct = true;
-                $userQuery->select = $this->quoteColumn('t', $relationModel->tableSchema->primaryKey, $schema);
-                $userQuery->innerJoinWith($userRelationName);
+                if (empty($userQuery->from)) {
+                    $userQuery->from = [$relationModel->tableName().' t'];
+                }
+                $userQuery->distinct();
+                $userQuery->select($this->quoteColumn('t', $relationModel->tableSchema->primaryKey, $schema));
+                //$userQuery->innerJoinWith($userRelationName);
+                $userQuery->innerJoinWith([$userRelationName => function ($query) use ($userRelation, $userRelationName) {
+                    /** @var ActiveRecord $modelClass */
+                    $modelClass = $userRelation->modelClass;
+                    return $query->from([$modelClass::tableName() . ' ' . $userRelationName]);
+                }]);
                 $userQuery->andWhere($schema->quoteSimpleTableName($userRelationName) . '.' . $userPk
                         . ' = :current_user_id');
                 $command = $userQuery->createCommand($model->getDb());
 
                 $query = $model->find();
-                $query->distinct = true;
-                $query->innerJoinWith($relationName);
+                if (empty($query->from)) {
+                    $query->from = [$model->tableName().' t'];
+                }
+                $query->distinct();
+                //$query->innerJoinWith($relationName);
+                $query->innerJoinWith([$relationName => function ($query) use ($relation, $relationName) {
+                    /** @var ActiveRecord $modelClass */
+                    $modelClass = $relation->modelClass;
+                    return $query->from([$modelClass::tableName() . ' ' . $relationName]);
+                }]);
                 $fk = $this->quoteColumn($relationName, $relationModel->tableSchema->primaryKey, $schema);
                 $query->orWhere('COALESCE(' . (is_array($relationModel->tableSchema->primaryKey)
                         ? 'ROW('.$fk.')' : $fk) .' IN ('.$command->getSql().'), false)');
                 $query->addParams([':current_user_id' => $user->getId()]);
+                $query->andWhere($baseConditions, $baseParams);
+                $result[] = $query;
             }
         }
 

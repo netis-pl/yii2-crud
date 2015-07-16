@@ -30,6 +30,6 @@ class RelationsRule extends \yii\rbac\Rule
         }
         $relations = isset($item->data['relations']) ? $item->data['relations'] : [];
         $allowEmpty = isset($item->data['allowEmpty']) ? $item->data['allowEmpty'] : false;
-        return ($allowEmpty && !isset($params['model'])) || $params['model']->isRelated($relations);
+        return ($allowEmpty && !isset($params['model'])) || $params['model']->isRelated($relations, \Yii::$app->user->getIdentity());
     }
 }

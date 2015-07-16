@@ -37,6 +37,8 @@ class IndexAction extends Action
     public function run()
     {
         if ($this->checkAccess) {
+            // additional authorization conditions are added in prepareDataProvider() method
+            // using the "authorized" query
             call_user_func($this->checkAccess, 'read');
         }
         $controller = $this->controller;
@@ -118,6 +120,9 @@ class IndexAction extends Action
 
         $params = Yii::$app->request->queryParams;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
+            // add extra authorization conditions
+            $query->authorized($model, $model->getCheckedRelations(), Yii::$app->user->getIdentity());
+
             if (isset($params['query']) && !isset($params['ids']) && $query instanceof \netis\utils\db\ActiveQuery) {
                 $availableQueries = $query->publicQueries();
                 if (!is_array($params['query'])) {

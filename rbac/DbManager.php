@@ -6,22 +6,49 @@
 
 namespace netis\utils\rbac;
 
+/**
+ * Class DbManager tracks traversed path in the auth item tree.
+ * @package netis\utils\rbac
+ */
 class DbManager extends \yii\rbac\DbManager
 {
     /**
+     * @var array a list of auth items between the one checked and the one assigned to the user,
+     * after a successful checkAccess() call.
+     */
+    protected $currentPath;
+
+    /**
+     * Returns a list of auth items between the one checked and the one assigned to the user,
+     * after a successful checkAccess() call.
+     * @return array
+     */
+    public function getCurrentPath()
+    {
+        return $this->currentPath;
+    }
+
+    /**
      * @inheritdoc
      */
-    /*public function checkAccess($userId, $permissionName, $params = [])
+    protected function checkAccessFromCache($user, $itemName, $params, $assignments)
     {
-        $assignments = $this->getAssignments($userId);
-        $this->loadFromCache();
-        if (YII_DEBUG && YII_ENV === 'dev') {
-            //return true;
+        if (parent::checkAccessFromCache($user, $itemName, $params, $assignments)) {
+            $this->currentPath[] = $itemName;
+            return true;
         }
-        if ($this->items !== null) {
-            return $this->checkAccessFromCache($userId, $permissionName, $params, $assignments);
-        } else {
-            return $this->checkAccessRecursive($userId, $permissionName, $params, $assignments);
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function checkAccessRecursive($user, $itemName, $params, $assignments)
+    {
+        if (parent::checkAccessRecursive($user, $itemName, $params, $assignments)) {
+            $this->currentPath[] = $itemName;
+            return true;
         }
-    }*/
+        return false;
+    }
 }
