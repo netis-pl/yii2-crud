@@ -50,8 +50,8 @@ echo FormBuilder::registerRelations($this);
 
     <?= $form->errorSummary($model); ?>
 
-    <fieldset>
-    <?php FormBuilder::renderRow($this, $model, $form, $fields, Yii::$app->request->getIsAjax() ? 12 : 6); ?>
+    <fieldset class="well">
+    <?php FormBuilder::renderRow($this, $model, $form, $fields, Yii::$app->request->getIsAjax() ? 12 : 4); ?>
     </fieldset>
 
     <?= $this->render('_relations', [

@@ -340,7 +340,7 @@ JavaScript;
                 'options' => array_merge([
                     'class' => 'select2',
                     'value' => $value,
-                    'placeholder' => Yii::$app->formatter->nullDisplay,
+                    'placeholder' => strip_tags(Yii::$app->formatter->nullDisplay),
                 ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
             ],
         ];
@@ -603,7 +603,7 @@ JavaScript;
         if (empty($fields)) {
             return;
         }
-        $oneColumn = count($fields) == 1;
+        $oneColumn = false; // optionally: count($fields) == 1;
         echo $oneColumn ? '' : '<div class="row">';
         $columnWidth = ceil($topColumnWidth / count($fields));
         foreach ($fields as $name => $column) {
