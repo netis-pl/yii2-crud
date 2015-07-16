@@ -11,7 +11,7 @@ class DbManager extends \yii\rbac\DbManager
     /**
      * @inheritdoc
      */
-    public function checkAccess($userId, $permissionName, $params = [])
+    /*public function checkAccess($userId, $permissionName, $params = [])
     {
         $assignments = $this->getAssignments($userId);
         $this->loadFromCache();
@@ -23,5 +23,5 @@ class DbManager extends \yii\rbac\DbManager
         } else {
             return $this->checkAccessRecursive($userId, $permissionName, $params, $assignments);
         }
-    }
+    }*/
 }

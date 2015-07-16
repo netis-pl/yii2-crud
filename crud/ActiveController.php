@@ -84,6 +84,17 @@ class ActiveController extends \yii\rest\ActiveController
                     'application/pdf' => \netis\utils\web\Response::FORMAT_PDF,
                 ],
             ],
+            'authenticator' => [
+                'class' => \yii\filters\auth\CompositeAuth::className(),
+                'authMethods' => !Yii::$app->user->getIsGuest() ? [] : [
+                    \yii\filters\auth\HttpBasicAuth::className(),
+                    \yii\filters\auth\QueryParamAuth::className(),
+                ],
+            ],
+            'rateLimiter' => [
+                'class' => \yii\filters\RateLimiter::className(),
+                'user' => Yii::$app->user->getIdentity(), // because the default doesn't autoRenew
+            ],
             'access' => [
                 'class' => AccessControl::className(),
                 'rules' => [

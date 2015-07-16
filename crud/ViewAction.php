@@ -25,7 +25,7 @@ class ViewAction extends Action
         /** @var ActiveRecord $model */
         $model = $this->findModel($id);
         if ($this->checkAccess) {
-            call_user_func($this->checkAccess, $this->id, $model);
+            call_user_func($this->checkAccess, 'read', $model);
         }
         // this headers is used in a modal dialog when getting a redirect after saving a form
         Yii::$app->getResponse()->getHeaders()->set('X-Primary-Key', $id);

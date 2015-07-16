@@ -37,7 +37,7 @@ class IndexAction extends Action
     public function run()
     {
         if ($this->checkAccess) {
-            call_user_func($this->checkAccess, $this->id);
+            call_user_func($this->checkAccess, 'read');
         }
         $controller = $this->controller;
         $model = $controller instanceof ActiveController ? $controller->getSearchModel() : new $this->modelClass();
