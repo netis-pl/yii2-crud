@@ -6,12 +6,8 @@
 
 namespace netis\utils\crud;
 
-use yii\base\InvalidCallException;
 use yii\base\InvalidParamException;
 use yii\db\ActiveQuery;
-use yii\db\ActiveRecordInterface;
-use yii\db\Expression;
-use yii\db\Query;
 use yii\db\Schema;
 use yii\web\IdentityInterface;
 
@@ -29,6 +25,7 @@ use yii\web\IdentityInterface;
  * @method string getCrudLabel(string $operation = null)
  * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, string $relation)
  * @method ActiveRecord loadVersion(integer $version_id)
+ * @method \netis\utils\db\ActiveQuery getRelation($name, $throwException = true)
  */
 class ActiveRecord extends \yii\db\ActiveRecord
 {

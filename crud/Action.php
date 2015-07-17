@@ -413,9 +413,12 @@ class Action extends \yii\rest\Action
             if (!Yii::$app->user->can($relation->modelClass . '.read')) {
                 continue;
             }
-
             /** @var ActiveRecord $relatedModel */
             $relatedModel = new $relation->modelClass;
+
+            // add extra authorization conditions
+            $relation->authorized($relatedModel, $relatedModel->getCheckedRelations(), Yii::$app->user->getIdentity());
+
             $relatedFields = self::getDefaultFields($relatedModel);
             if (isset(Yii::$app->crudModelsMap[$relatedModel::className()])) {
                 $relatedController = Yii::$app->crudModelsMap[$relatedModel::className()];

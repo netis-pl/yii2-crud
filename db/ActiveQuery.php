@@ -12,7 +12,7 @@ use yii\base\NotSupportedException;
 /**
  * Provides queries to add default order and support the soft delete ToggableBehavior.
  * @package netis\utils\db
- * @method ActiveQuery authorized(array $relations)
+ * @method ActiveQuery authorized(\yii\db\ActiveRecord $model, array $relations, \yii\web\IdentityInterface $user)
  */
 class ActiveQuery extends \yii\db\ActiveQuery
 {
