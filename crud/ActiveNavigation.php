@@ -16,6 +16,9 @@ use yii\base\Behavior;
  */
 class ActiveNavigation extends Behavior
 {
+    const SECT_COMMON = 'common';
+    const SECT_CURRENT = 'current';
+
     /**
      * @param Action $action
      * @param ActiveRecord $model
@@ -67,7 +70,7 @@ class ActiveNavigation extends Behavior
     {
         $menu = [];
 
-        if ($privs['common']['read'] && $defaultActions['index']) {
+        if ($privs['read'] && $defaultActions['index']) {
             if ($horizontal || $action->id != 'index') {
                 // drawn in horizontal menu or in update and view actions
                 $menu['index'] = [
@@ -79,7 +82,7 @@ class ActiveNavigation extends Behavior
                 ];
             }
         }
-        if ($privs['common']['create']) {
+        if ($privs['create']) {
             // drawn in all actions, that is: index, update, view
             $menu['update'] = [
                 'label'       => Yii::t('app', 'Create'),
@@ -89,7 +92,7 @@ class ActiveNavigation extends Behavior
                 'active'      => $action->id === 'update' && $model->isNewRecord,
             ];
         }
-        if ($privs['common']['read'] && $defaultActions['help']) {
+        if ($privs['read'] && $defaultActions['help']) {
             if ($horizontal || $action->id !== 'help') {
                 $menu['help'] = [
                     'label'  => Yii::t('app', 'Help'),
@@ -101,7 +104,7 @@ class ActiveNavigation extends Behavior
         }
         // draw the history button at the end of common section,
         //because it will be replaced in current depending on action
-        if ($privs['common']['read'] && $defaultActions['history'] && ($action->id === 'index')
+        if ($privs['read'] && $defaultActions['history'] && ($action->id === 'index')
             && $model->getBehavior('trackable') !== null
         ) {
             // drawn only in index action
@@ -129,7 +132,7 @@ class ActiveNavigation extends Behavior
         $menu = [];
         $id = $model->isNewRecord ? null : $action->exportKey($model->getPrimaryKey(true));
 
-        if ($privs['current']['read'] && $defaultActions['history']
+        if ($privs['read'] && $defaultActions['history']
             && (!$model->isNewRecord || $action->id === 'update')
             && $model->getBehavior('trackable') !== null
         ) {
@@ -142,7 +145,7 @@ class ActiveNavigation extends Behavior
         if (!$horizontal && $model->isNewRecord) {
             return $menu;
         }
-        if ($privs['current']['update'] && ($horizontal || $action->id !== 'update')) {
+        if ($privs['update'] && ($horizontal || $action->id !== 'update')) {
             $menu['update'] = [
                 'label'  => Yii::t('app', 'Update'),
                 'icon'   => 'pencil',
@@ -150,7 +153,7 @@ class ActiveNavigation extends Behavior
                 'active' => $action->id === 'update' && !$model->isNewRecord,
             ];
         }
-        if ($privs['current']['read'] && $defaultActions['view'] && ($horizontal || $action->id !== 'view')) {
+        if ($privs['read'] && $defaultActions['view'] && ($horizontal || $action->id !== 'view')) {
             $menu['view'] = [
                 'label'       => Yii::t('app', 'View'),
                 'icon'        => 'eye-open',
@@ -159,7 +162,7 @@ class ActiveNavigation extends Behavior
                 'active'      => $action->id === 'view',
             ];
         }
-        if ($privs['current']['read'] && $defaultActions['print'] && ($horizontal || $action->id !== 'print')) {
+        if ($privs['read'] && $defaultActions['print'] && ($horizontal || $action->id !== 'print')) {
             $menu['print'] = [
                 'label'       => Yii::t('app', 'Print'),
                 'icon'        => 'print',
@@ -168,7 +171,7 @@ class ActiveNavigation extends Behavior
                 'active'      => $action->id === 'print',
             ];
         }
-        if ($privs['current']['delete']) {
+        if ($privs['delete']) {
             $menu['delete'] = [
                 'label'       => Yii::t('app', 'Delete'),
                 'icon'        => 'trash',
@@ -176,7 +179,7 @@ class ActiveNavigation extends Behavior
                 'linkOptions' => ['confirm' => $confirms['delete'], 'method' => 'post'],
             ];
         }
-        if ($privs['current']['toggle']) {
+        if ($privs['toggle']) {
             $enabled = !$model->isNewRecord && $model->getIsEnabled();
             $menu['toggle'] = [
                 'label'       => $enabled ? Yii::t('app', 'Disable') : Yii::t('app', 'Enable'),
@@ -186,7 +189,7 @@ class ActiveNavigation extends Behavior
             ];
         }
         if (class_exists('netis\fsm\components\StateAction') && $model instanceof \netis\fsm\components\IStateful
-            && $privs['current']['state']
+            && $privs['state']
         ) {
             $transitions = $model->getTransitionsGroupedByTarget();
             $stateAttribute = $model->getStateAttributeName();
@@ -210,6 +213,63 @@ class ActiveNavigation extends Behavior
     }
 
     /**
+     * Array of common actions. Disabled ones are returned as boolean false.
+     * @return array
+     */
+    public function getDefaultActions()
+    {
+        /** @var ActiveController $owner */
+        $owner = $this->owner;
+
+        $defaultActions = $owner->actions();
+        // set default indexes to avoid many isset() calls later
+        return array_merge([
+            'index'  => false, 'view' => false, 'print' => false, 'update' => false, 'delete' => false,
+            'toggle' => false, 'history' => false, 'help' => false, 'state' => false,
+        ], $defaultActions);
+    }
+
+    /**
+     * @param array $defaultActions
+     * @param ActiveRecord $model
+     * @param array $sections   contains self::SECT_* constants, defaults to all available sections
+     * @param boolean $readOnly should the method generate links for create/update/delete actions
+     * @return array boolean privs for common actions grouped into sections
+     */
+    public function getMenuPrivileges($defaultActions, $model, $sections = null, $readOnly = false)
+    {
+        /** @var ActiveController $owner */
+        $owner = $this->owner;
+
+        if ($sections === null) {
+            $sections = [self::SECT_COMMON, self::SECT_CURRENT];
+        }
+
+        $privileges = [];
+        foreach ($sections as $section) {
+            switch ($section) {
+                case self::SECT_COMMON:
+                    $privileges[$section] = [
+                        'create' => !$readOnly && $defaultActions['update'] && $owner->hasAccess('create'),
+                        'read' => ($defaultActions['index'] || $defaultActions['history']) && $owner->hasAccess('read'),
+                    ];
+                    break;
+                case self::SECT_CURRENT:
+                    $privileges[$section] = [
+                        'read' => ($defaultActions['view'] || $defaultActions['print'] || $defaultActions['history'])
+                            && $owner->hasAccess('read', $model),
+                        'update' => !$readOnly && $defaultActions['update'] && $owner->hasAccess('update', $model),
+                        'delete' => !$readOnly && $defaultActions['delete'] && $owner->hasAccess('delete', $model),
+                        'toggle' => !$readOnly && $defaultActions['toggle'] && $owner->hasAccess('delete', $model),
+                        'state' => !$readOnly && $defaultActions['state'] && $owner->hasAccess('update', $model),
+                    ];
+                    break;
+            }
+        }
+        return $privileges;
+    }
+
+    /**
      * Builds navigation items like the sidebar menu.
      * @param Action       $action
      * @param ActiveRecord $model
@@ -223,38 +283,20 @@ class ActiveNavigation extends Behavior
         /** @var ActiveController $owner */
         $owner = $this->owner;
         $menu = [
-            'common' => [],
-            'current' => [],
+            self::SECT_COMMON => [],
+            self::SECT_CURRENT => [],
         ];
 
-        $defaultActions = $owner->actions();
-        // set default indexes to avoid many isset() calls later
-        $defaultActions = array_merge([
-            'index'  => false, 'view' => false, 'print' => false, 'update' => false, 'delete' => false,
-            'toggle' => false, 'history' => false, 'help' => false, 'state' => false,
-        ], $defaultActions);
-
-        $privs = [
-            'common' => [
-                'create' => !$readOnly && $defaultActions['update'] && $owner->hasAccess('create'),
-                'read' => ($defaultActions['index'] || $defaultActions['history']) && $owner->hasAccess('read'),
-            ],
-            'current' => [
-                'read' => ($defaultActions['view'] || $defaultActions['print'] || $defaultActions['history']) && $owner->hasAccess('read', $model),
-                'update' => !$readOnly && $defaultActions['update'] && $owner->hasAccess('update', $model),
-                'delete' => !$readOnly && $defaultActions['delete'] && $owner->hasAccess('delete', $model),
-                'toggle' => !$readOnly && $defaultActions['toggle'] && $owner->hasAccess('toggle', $model),
-                'state' => !$readOnly && $defaultActions['state'] && $owner->hasAccess('state', $model),
-            ],
-        ];
+        $defaultActions = $this->getDefaultActions();
+        $privs = $this->getMenuPrivileges($defaultActions, $model, array_keys($menu), $readOnly);
         $confirms = [
             'leave' => Yii::t('app', 'Are you sure you want to leave this page? Unsaved changes will be discarded.'),
             'delete' => Yii::t('app', 'Are you sure you want to delete this item?'),
             'disable' => Yii::t('app', 'Are you sure you want to disable this item?'),
         ];
 
-        $menu['common'] = $owner->getMenuCommon($action, $model, $horizontal, $privs, $defaultActions, $confirms);
-        $menu['current'] = $owner->getMenuCurrent($action, $model, $horizontal, $privs, $defaultActions, $confirms);
+        $menu[self::SECT_COMMON] = $owner->getMenuCommon($action, $model, $horizontal, $privs[self::SECT_COMMON], $defaultActions, $confirms);
+        $menu[self::SECT_CURRENT] = $owner->getMenuCurrent($action, $model, $horizontal, $privs[self::SECT_CURRENT], $defaultActions, $confirms);
 
 
         return $this->processMenu($menu, $horizontal);
@@ -273,10 +315,10 @@ class ActiveNavigation extends Behavior
             if (!$horizontal) {
                 switch ($section) {
                     default:
-                    case 'common':
+                    case self::SECT_COMMON:
                         $result[$section] = ['label' => Yii::t('app', 'Common')];
                         break;
-                    case 'current':
+                    case self::SECT_CURRENT:
                         $result[] = ['label' => Yii::t('app', 'Current')];
                         break;
                 }

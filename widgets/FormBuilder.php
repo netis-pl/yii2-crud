@@ -577,17 +577,13 @@ JavaScript;
             }
             return;
         }
-        if (isset($data['options']['label'])) {
-            $label = $data['options']['label'];
-            unset($data['options']['label']);
-        } else {
-            $label = $model->getAttributeLabel($name);
-        }
+        $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
         $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
-        echo $field
+        $field
             ->label($label, ['class' => 'control-label'])
             ->error(['class' => 'help-block'])
             ->widget($data['widgetClass'], $data['options']);
+        echo $field;
         return;
     }
 

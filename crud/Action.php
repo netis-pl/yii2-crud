@@ -535,6 +535,9 @@ class Action extends \yii\rest\Action
                     'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal',
                     'shortWeight', 'shortLength', 'money', 'currency', 'minorCurrency',
                 ]);
+                if ($formats[$field] === 'crudLink') {
+                    $formats[$field] = ['crudLink', ['data-pjax' => '0']];
+                }
                 $columns[] = [
                     'attribute' => $field,
                     'format' => $formats[$field],
@@ -560,7 +563,7 @@ class Action extends \yii\rest\Action
             $label = $model->getRelationLabel($relation, $field);
             $columns[] = [
                 'attribute' => $field,
-                'format'    => 'crudLink',
+                'format'    => ['crudLink', ['data-pjax' => '0']],
                 'visible'   => true,
                 'label'     => $label,
             ];

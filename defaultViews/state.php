@@ -16,7 +16,8 @@ use yii\helpers\Url;
 $controller = $this->context;
 $id = \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true));
 
-$this->title = $stateChange['state']->label . ': ' . $model->__toString();
+$this->title = ($targetState === null ? Yii::t('netis/fsm/app', 'State change') : $stateChange['state']->label);
+$this->title .= ': ' . $model->__toString();
 $this->params['breadcrumbs'] = [
     [
         'label' => $model->getCrudLabel('index'),
@@ -26,7 +27,7 @@ $this->params['breadcrumbs'] = [
         'label' => $model->__toString(),
         'url' => ['view', 'id' => $id],
     ],
-    $stateChange['state']->label,
+    $targetState === null ? Yii::t('netis/fsm/app', 'State change') : $stateChange['state']->label,
 ];
 $this->params['menu'] = $controller->getMenu($controller->action, $model);
 
