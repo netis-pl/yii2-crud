@@ -418,6 +418,9 @@ class Action extends \yii\rest\Action
 
             // add extra authorization conditions
             $relation->authorized($relatedModel, $relatedModel->getCheckedRelations(), Yii::$app->user->getIdentity());
+            if (empty($relation->from)) {
+                $relation->from = [$relatedModel::tableName().' t'];
+            }
 
             $relatedFields = self::getDefaultFields($relatedModel);
             if (isset(Yii::$app->crudModelsMap[$relatedModel::className()])) {

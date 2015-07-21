@@ -220,12 +220,14 @@ class ActiveNavigation extends Behavior
      */
     public function getMenu(Action $action, ActiveRecord $model, $readOnly = false, $horizontal = true)
     {
+        /** @var ActiveController $owner */
+        $owner = $this->owner;
         $menu = [
             'common' => [],
             'current' => [],
         ];
 
-        $defaultActions = $this->owner->actions();
+        $defaultActions = $owner->actions();
         // set default indexes to avoid many isset() calls later
         $defaultActions = array_merge([
             'index'  => false, 'view' => false, 'print' => false, 'update' => false, 'delete' => false,
@@ -234,15 +236,15 @@ class ActiveNavigation extends Behavior
 
         $privs = [
             'common' => [
-                'create' => !$readOnly && $defaultActions['update'] && $this->owner->hasAccess('create'),
-                'read' => ($defaultActions['index'] || $defaultActions['history']) && $this->owner->hasAccess('index'),
+                'create' => !$readOnly && $defaultActions['update'] && $owner->hasAccess('create'),
+                'read' => ($defaultActions['index'] || $defaultActions['history']) && $owner->hasAccess('read'),
             ],
             'current' => [
-                'read' => ($defaultActions['view'] || $defaultActions['print'] || $defaultActions['history']) && $this->owner->hasAccess('read', $model),
-                'update' => !$readOnly && $defaultActions['update'] && $this->owner->hasAccess('update', $model),
-                'delete' => !$readOnly && $defaultActions['delete'] && $this->owner->hasAccess('delete', $model),
-                'toggle' => !$readOnly && $defaultActions['toggle'] && $this->owner->hasAccess('toggle', $model),
-                'state' => !$readOnly && $defaultActions['state'] && $this->owner->hasAccess('state', $model),
+                'read' => ($defaultActions['view'] || $defaultActions['print'] || $defaultActions['history']) && $owner->hasAccess('read', $model),
+                'update' => !$readOnly && $defaultActions['update'] && $owner->hasAccess('update', $model),
+                'delete' => !$readOnly && $defaultActions['delete'] && $owner->hasAccess('delete', $model),
+                'toggle' => !$readOnly && $defaultActions['toggle'] && $owner->hasAccess('toggle', $model),
+                'state' => !$readOnly && $defaultActions['state'] && $owner->hasAccess('state', $model),
             ],
         ];
         $confirms = [
@@ -251,8 +253,8 @@ class ActiveNavigation extends Behavior
             'disable' => Yii::t('app', 'Are you sure you want to disable this item?'),
         ];
 
-        $menu['common'] = $this->owner->getMenuCommon($action, $model, $horizontal, $privs, $defaultActions, $confirms);
-        $menu['current'] = $this->owner->getMenuCurrent($action, $model, $horizontal, $privs, $defaultActions, $confirms);
+        $menu['common'] = $owner->getMenuCommon($action, $model, $horizontal, $privs, $defaultActions, $confirms);
+        $menu['current'] = $owner->getMenuCurrent($action, $model, $horizontal, $privs, $defaultActions, $confirms);
 
 
         return $this->processMenu($menu, $horizontal);
