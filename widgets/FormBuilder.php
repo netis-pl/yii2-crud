@@ -568,7 +568,9 @@ JavaScript;
         if (isset($data['model'])) {
             $model = $data['model'];
         }
+        $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
         $field = $form->field($model, $data['attribute']);
+        $field->label($label, ['class' => 'control-label']);
         if (isset($data['formMethod'])) {
             if (is_string($data['formMethod'])) {
                 echo call_user_func_array([$field, $data['formMethod']], $data['arguments']);
@@ -577,10 +579,8 @@ JavaScript;
             }
             return;
         }
-        $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
         $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
         $field
-            ->label($label, ['class' => 'control-label'])
             ->error(['class' => 'help-block'])
             ->widget($data['widgetClass'], $data['options']);
         echo $field;
