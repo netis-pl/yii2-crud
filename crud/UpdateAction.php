@@ -83,7 +83,8 @@ class UpdateAction extends Action
         }
 
         if ($this->checkAccess) {
-            call_user_func($this->checkAccess, $id === null ? 'create' : $this->id, $model);
+            // use only create and update auth item names because more actions are based on this one
+            call_user_func($this->checkAccess, $id === null ? 'create' : 'update', $model);
         }
         return $model;
     }

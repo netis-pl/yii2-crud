@@ -75,8 +75,8 @@ class AuthorizerQueryBehavior extends Behavior
         $tableSchema = $model->getTableSchema();
 
         if ($primaryKey === null) {
-            $pkExpression = $this->quoteColumn('t', $tableSchema->primaryKey, $model->getDb()->getSchema());
-            if (count($tableSchema->primaryKey) > 1) {
+            $pkExpression = $this->quoteColumn('t', $model::primaryKey(), $model->getDb()->getSchema());
+            if (count($model::primaryKey()) > 1) {
                 $pkExpression = "ROW($pkExpression)";
             }
         } elseif (!is_array($primaryKey)) {
@@ -84,8 +84,8 @@ class AuthorizerQueryBehavior extends Behavior
             $query->params[':relationAuthorizer_pk'] = $primaryKey;
         } else {
             if (($key = key($primaryKey)) !== null && !is_numeric($key)) {
-                // sort primaryKey by $tableSchema->primaryKey
-                $keys = array_flip($tableSchema->primaryKey);
+                // sort primaryKey by $model::primaryKey()
+                $keys = array_flip($model::primaryKey());
                 uksort(
                     $primaryKey,
                     function ($a, $b) use ($keys) {
@@ -110,7 +110,7 @@ class AuthorizerQueryBehavior extends Behavior
             ) {
                 continue;
             }
-            $relationQuery->select($this->quoteColumn('t', $tableSchema->primaryKey, $model->getDb()->getSchema()));
+            $relationQuery->select($this->quoteColumn('t', $model::primaryKey(), $model->getDb()->getSchema()));
             $command = $relationQuery->createCommand($model->getDb());
             $conditions[] = $pkExpression.' IN ('.$command->getSql().')';
             $query->params = array_merge($query->params, $relationQuery->params);
@@ -135,7 +135,7 @@ class AuthorizerQueryBehavior extends Behavior
     public function getCompositeRelatedUserQuery($model, array $relations, $user, $baseConditions = [], $baseParams = [])
     {
         $schema = $model->getDb()->getSchema();
-        $userPk = array_map([$schema, 'quoteSimpleColumnName'], $user->tableSchema->primaryKey);
+        $userPk = array_map([$schema, 'quoteSimpleColumnName'], $user::primaryKey());
         $result = [];
 
         if (count($userPk) > 1) {
@@ -186,7 +186,7 @@ class AuthorizerQueryBehavior extends Behavior
                     $userQuery->from = [$relationModel->tableName().' t'];
                 }
                 $userQuery->distinct();
-                $userQuery->select($this->quoteColumn('t', $relationModel->tableSchema->primaryKey, $schema));
+                $userQuery->select($this->quoteColumn('t', $relationModel::primaryKey(), $schema));
                 //$userQuery->innerJoinWith($userRelationName);
                 $userQuery->innerJoinWith([$userRelationName => function ($query) use ($userRelation, $userRelationName) {
                     /** @var ActiveRecord $modelClass */
@@ -208,8 +208,8 @@ class AuthorizerQueryBehavior extends Behavior
                     $modelClass = $relation->modelClass;
                     return $query->from([$modelClass::tableName() . ' ' . $relationName]);
                 }]);
-                $fk = $this->quoteColumn($relationName, $relationModel->tableSchema->primaryKey, $schema);
-                $query->orWhere('COALESCE(' . (is_array($relationModel->tableSchema->primaryKey)
+                $fk = $this->quoteColumn($relationName, $relationModel::primaryKey(), $schema);
+                $query->orWhere('COALESCE(' . (is_array($relationModel::primaryKey())
                         ? 'ROW('.$fk.')' : $fk) .' IN ('.$command->getSql().'), false)');
                 $query->addParams([':current_user_id' => $user->getId()]);
                 $query->andWhere($baseConditions, $baseParams);

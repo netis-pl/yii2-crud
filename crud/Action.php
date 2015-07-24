@@ -418,6 +418,9 @@ class Action extends \yii\rest\Action
 
             // add extra authorization conditions
             $relation->authorized($relatedModel, $relatedModel->getCheckedRelations(), Yii::$app->user->getIdentity());
+            if (empty($relation->from)) {
+                $relation->from = [$relatedModel::tableName().' t'];
+            }
 
             $relatedFields = self::getDefaultFields($relatedModel);
             if (isset(Yii::$app->crudModelsMap[$relatedModel::className()])) {
@@ -532,6 +535,9 @@ class Action extends \yii\rest\Action
                     'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal',
                     'shortWeight', 'shortLength', 'money', 'currency', 'minorCurrency',
                 ]);
+                if ($formats[$field] === 'crudLink') {
+                    $formats[$field] = ['crudLink', ['data-pjax' => '0']];
+                }
                 $columns[] = [
                     'attribute' => $field,
                     'format' => $formats[$field],
@@ -557,7 +563,7 @@ class Action extends \yii\rest\Action
             $label = $model->getRelationLabel($relation, $field);
             $columns[] = [
                 'attribute' => $field,
-                'format'    => 'crudLink',
+                'format'    => ['crudLink', ['data-pjax' => '0']],
                 'visible'   => true,
                 'label'     => $label,
             ];

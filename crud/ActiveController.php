@@ -7,6 +7,7 @@
 namespace netis\utils\crud;
 
 use netis\utils\db\ActiveSearchTrait;
+use netis\utils\web\Response;
 use Yii;
 use yii\base\Exception;
 use yii\base\Model;
@@ -14,7 +15,6 @@ use yii\data\DataProviderInterface;
 use yii\filters\AccessControl;
 use yii\filters\ContentNegotiator;
 use yii\web\ForbiddenHttpException;
-use yii\web\Response;
 
 /**
  * Modeled after yii\rest\ActiveController with the following changes:
@@ -80,16 +80,19 @@ class ActiveController extends \yii\rest\ActiveController
                     'text/html' => Response::FORMAT_HTML,
                     'application/json' => Response::FORMAT_JSON,
                     'application/xml' => Response::FORMAT_XML,
-                    'text/csv' => \netis\utils\web\Response::FORMAT_CSV,
-                    'application/pdf' => \netis\utils\web\Response::FORMAT_PDF,
+                    // custom formats
+                    'text/csv' => Response::FORMAT_CSV,
+                    'application/pdf' => Response::FORMAT_PDF,
                 ],
             ],
             'authenticator' => [
                 'class' => \yii\filters\auth\CompositeAuth::className(),
-                'authMethods' => !Yii::$app->user->getIsGuest() ? [] : [
-                    \yii\filters\auth\HttpBasicAuth::className(),
-                    \yii\filters\auth\QueryParamAuth::className(),
-                ],
+                'authMethods' => !Yii::$app->user->getIsGuest() || Yii::$app->response->format === Response::FORMAT_HTML
+                    ? []
+                    : [
+                        \yii\filters\auth\HttpBasicAuth::className(),
+                        \yii\filters\auth\QueryParamAuth::className(),
+                    ],
             ],
             'rateLimiter' => [
                 'class' => \yii\filters\RateLimiter::className(),
@@ -266,7 +269,7 @@ class ActiveController extends \yii\rest\ActiveController
      */
     protected function getPdfResponse($action, $result, $params)
     {
-        if (Yii::$app->response->format !== \netis\utils\web\Response::FORMAT_PDF) {
+        if (Yii::$app->response->format !== Response::FORMAT_PDF) {
             return false;
         }
         $headers = Yii::$app->response->getHeaders();
@@ -295,7 +298,7 @@ class ActiveController extends \yii\rest\ActiveController
         $renderer->simpleTables = false;
         @$renderer->WriteHTML($content);
 
-        $response = new Response();
+        $response = new \yii\web\Response();
         $response->setDownloadHeaders($action->id.'.pdf', 'application/pdf', true);
         $response->format = Response::FORMAT_RAW;
         $response->content = $renderer->Output('print', 'S');
@@ -352,7 +355,7 @@ class ActiveController extends \yii\rest\ActiveController
         parent::afterAction($action, $result);
         $format = Yii::$app->response->format;
         switch ($format) {
-            case \netis\utils\web\Response::FORMAT_CSV:
+            case Response::FORMAT_CSV:
                 $rendererClass = 'netis\\utils\\crud\\CsvRendererStream';
                 break;
             case Response::FORMAT_JSON:
@@ -369,7 +372,7 @@ class ActiveController extends \yii\rest\ActiveController
             throw new Exception('Failed to register the RenderStream wrapper.');
         }
         $rendererClass::$params = $params;
-        $response = new Response();
+        $response = new \yii\web\Response();
         $response->setDownloadHeaders($action->id.'.'.$format, Yii::$app->response->acceptMimeType);
         $response->format = Response::FORMAT_RAW;
         $streamParams = [

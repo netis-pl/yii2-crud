@@ -16,7 +16,7 @@ class DbManager extends \yii\rbac\DbManager
      * @var array a list of auth items between the one checked and the one assigned to the user,
      * after a successful checkAccess() call.
      */
-    protected $currentPath;
+    protected $currentPath = [];
 
     /**
      * Returns a list of auth items between the one checked and the one assigned to the user,
@@ -26,6 +26,15 @@ class DbManager extends \yii\rbac\DbManager
     public function getCurrentPath()
     {
         return $this->currentPath;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function checkAccess($userId, $permissionName, $params = [])
+    {
+        $this->currentPath = [];
+        return parent::checkAccess($userId, $permissionName, $params);
     }
 
     /**

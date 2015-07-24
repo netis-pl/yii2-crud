@@ -188,7 +188,7 @@ JavaScript;
         $foreignKey = reset($foreignKeys);
         /** @var \yii\db\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
-        $primaryKey = $relModel->getTableSchema()->primaryKey;
+        $primaryKey = $relModel::primaryKey();
         if (($labelAttributes = $relModel->getBehavior('labels')->attributes) !== null) {
             $fields = array_merge($primaryKey, $labelAttributes);
             $labelField = reset($labelAttributes);
@@ -568,7 +568,9 @@ JavaScript;
         if (isset($data['model'])) {
             $model = $data['model'];
         }
+        $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
         $field = $form->field($model, $data['attribute']);
+        $field->label($label, ['class' => 'control-label']);
         if (isset($data['formMethod'])) {
             if (is_string($data['formMethod'])) {
                 echo call_user_func_array([$field, $data['formMethod']], $data['arguments']);
@@ -577,17 +579,11 @@ JavaScript;
             }
             return;
         }
-        if (isset($data['options']['label'])) {
-            $label = $data['options']['label'];
-            unset($data['options']['label']);
-        } else {
-            $label = $model->getAttributeLabel($name);
-        }
         $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
-        echo $field
-            ->label($label, ['class' => 'control-label'])
+        $field
             ->error(['class' => 'help-block'])
             ->widget($data['widgetClass'], $data['options']);
+        echo $field;
         return;
     }
 

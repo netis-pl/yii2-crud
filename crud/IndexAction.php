@@ -68,6 +68,7 @@ class IndexAction extends Action
                 'class'         => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'column-action'],
                 'controller'    => Yii::$app->crudModelsMap[$model::className()],
+                'template'      => '{view} {update} {delete} {toggle}',
                 'buttons' => [
                     'view'   => function ($url, $model, $key) use ($actionColumn) {
                         if (!Yii::$app->user->can($model::className() . '.read', ['model' => $model])) {
@@ -89,6 +90,22 @@ class IndexAction extends Action
                         }
 
                         return $actionColumn->buttons['delete']($url, $model, $key);
+                    },
+                    'toggle' => function ($url, $model, $key) use ($actionColumn) {
+                        if (!Yii::$app->user->can($model::className() . '.delete', ['model' => $model])) {
+                            return null;
+                        }
+
+                        $enabled = $model->getIsEnabled();
+                        $icon    = $enabled ? 'ban' : 'reply';
+                        $options = array_merge([
+                            'title'       => $enabled ? Yii::t('app', 'Disable') : Yii::t('app', 'Enable'),
+                            'aria-label'  => $enabled ? Yii::t('app', 'Disable') : Yii::t('app', 'Enable'),
+                            'data-pjax'   => '0',
+                        ], $enabled ? [
+                            'data-confirm' => Yii::t('app', 'Are you sure you want to disable this item?'),
+                        ] : [], $actionColumn->buttonOptions);
+                        return \yii\helpers\Html::a('<span class="glyphicon glyphicon-'.$icon.'"></span>', $url, $options);
                     },
                 ],
             ],
