@@ -70,21 +70,21 @@ class IndexAction extends Action
                 'controller'    => Yii::$app->crudModelsMap[$model::className()],
                 'buttons' => [
                     'view'   => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.read')) {
+                        if (!Yii::$app->user->can($model::className() . '.read', ['model' => $model])) {
                             return null;
                         }
 
                         return $actionColumn->buttons['view']($url, $model, $key);
                     },
                     'update' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.update')) {
+                        if (!Yii::$app->user->can($model::className() . '.update', ['model' => $model])) {
                             return null;
                         }
 
                         return $actionColumn->buttons['update']($url, $model, $key);
                     },
                     'delete' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.delete')) {
+                        if (!Yii::$app->user->can($model::className() . '.delete', ['model' => $model])) {
                             return null;
                         }
 

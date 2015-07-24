@@ -2,7 +2,6 @@
 
 use yii\db\ActiveRecord;
 use yii\helpers\Html;
-use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
 
 /* @var $this yii\web\View */
@@ -30,35 +29,22 @@ if ($model instanceof \netis\utils\crud\ActiveRecord) {
     $this->title = Yii::t('app', 'History');
 }
 
-$layout = <<<HTML
-<div class="row">
-    <div class="col-md-3">{quickSearch}</div>
-</div>
-{items}
-<div class="row">
-    <div class="col-md-4">{pager}</div>
-    <div class="col-md-4 summary">{summary}</div>
-    <div class="col-md-4">{lengthPicker}</div>
-</div>
-HTML;
+$this->registerCss(file_get_contents(Yii::getAlias('@vendor/phpspec/php-diff/example/styles.css')));
+$styles = <<<CSS
+.changeset {
+    border: 1px solid gray;
+    padding: 0.5em 1em;
+    margin-bottom: 2em;
+}
+CSS;
 
+$this->registerCss($styles);
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?= netis\utils\web\Alerts::widget() ?>
 
 <?php Pjax::begin(['id' => 'historyPjax']); ?>
-<?= GridView::widget([
-    'id'             => 'historyGrid',
-    'dataProvider'   => $dataProvider,
-//    'filterModel'    => $searchModel,
-    'filterSelector' => '#historyGrid-quickSearch',
-    'columns'        => [
-        'key_type',
-        'id',
-    ],
-    'layout'         => $layout,
-]); ?>
 <?= \yii\widgets\ListView::widget([
     'id'             => 'historyGrid',
     'dataProvider'   => $dataProvider,

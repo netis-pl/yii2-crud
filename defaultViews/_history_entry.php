@@ -10,13 +10,21 @@ use yii\widgets\ListView;
 $firstAction = reset($model['actions']);
 ?>
 
-<h6><?= $firstAction['request_date'] . ' '
-. Yii::t('app', 'by') . ' ' . $firstAction['user'] . ' '
-. Yii::t('app', 'from') . ' ' . $firstAction['request_addr'] . ' '
-. '@ ' . $firstAction['request_url'] ?></h6>
+<div class="changeset">
+    <h5><?= $firstAction['request_date'] . ' '
+    . Yii::t('app', 'by') . ' ' . $firstAction['user'] . ' '
+    . ($firstAction['request_addr'] !== null ? Yii::t('app', 'from') . ' ' . $firstAction['request_addr'] : '') . ' '
+    . '@ ' . $firstAction['request_url'] ?></h5>
 
 <?php foreach ($model['actions'] as $action): ?>
-    <p><?= $action['action_type'] . ' ' . $action['model']->getCrudLabel() ?></p>
-    <p><?= (new Diff(array_values(array_intersect_key($action['row_data'], $action['changed_fields'])), array_values($action['changed_fields'])))
-        ->render(new Diff_Renderer_Html_Inline) ?></p>
+    <p>
+        <?= $action->actionTypeLabel . ' ' . $action->model->getCrudLabel() . ': ' . $action->model ?>
+    </p>
+    <p>
+        <?= (new Diff(
+            array_values(array_intersect_key($action['row_data'], $action['changed_fields'])),
+            array_values($action['changed_fields']))
+        )->render(new Diff_Renderer_Html_Inline()) ?>
+    </p>
 <?php endforeach; ?>
+</div>
