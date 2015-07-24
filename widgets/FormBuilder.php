@@ -188,7 +188,7 @@ JavaScript;
         $foreignKey = reset($foreignKeys);
         /** @var \yii\db\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
-        $primaryKey = $relModel->getTableSchema()->primaryKey;
+        $primaryKey = $relModel::primaryKey();
         if (($labelAttributes = $relModel->getBehavior('labels')->attributes) !== null) {
             $fields = array_merge($primaryKey, $labelAttributes);
             $labelField = reset($labelAttributes);
