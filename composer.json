@@ -20,7 +20,7 @@
     "maddoger/yii2-select2": "1.4.*",
     "omnilight/yii2-bootstrap-datepicker": "1.0.*",
     "nineinchnick/yii2-audit": "dev-master",
-    "phpspec/php-diff": "1.*"
+    "cogpowered/FineDiff": "0.3.*"
   },
   "autoload": {
     "psr-4": { "netis\\utils\\": "" }

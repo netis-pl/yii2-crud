@@ -29,16 +29,7 @@ if ($model instanceof \netis\utils\crud\ActiveRecord) {
     $this->title = Yii::t('app', 'History');
 }
 
-$this->registerCss(file_get_contents(Yii::getAlias('@vendor/phpspec/php-diff/example/styles.css')));
-$styles = <<<CSS
-.changeset {
-    border: 1px solid gray;
-    padding: 0.5em 1em;
-    margin-bottom: 2em;
-}
-CSS;
-
-$this->registerCss($styles);
+$diff = new cogpowered\FineDiff\Diff;
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
@@ -49,5 +40,6 @@ $this->registerCss($styles);
     'id'             => 'historyGrid',
     'dataProvider'   => $dataProvider,
     'itemView'       => '_history_entry',
+    'viewParams'     => ['diff' => $diff],
 ]); ?>
 <?php Pjax::end(); ?>
