@@ -1,5 +1,6 @@
 <?php
 
+use yii\bootstrap\ActiveForm;
 use yii\db\ActiveRecord;
 use yii\helpers\Html;
 use yii\widgets\Pjax;
@@ -8,6 +9,7 @@ use yii\widgets\Pjax;
 /* @var $model ActiveRecord */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $controller netis\utils\crud\ActiveController */
+/* @var $searchModel nineinchnick\audit\models\ActionSearch */
 
 $controller = $this->context;
 
@@ -29,11 +31,62 @@ if ($model instanceof \netis\utils\crud\ActiveRecord) {
     $this->title = Yii::t('app', 'History');
 }
 
-$diff = new cogpowered\FineDiff\Diff;
+$css = <<<CSS
+.diff-details del {
+    background-color: #e99;
+    color: #411;
+}
+.diff-details ins {
+    background-color: #9e9;
+    color: #131;
+}
+CSS;
+
+$this->registerCss($css);
+
+$diff = new cogpowered\FineDiff\Diff(new cogpowered\FineDiff\Granularity\Word);
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?= netis\utils\web\Alerts::widget() ?>
+
+
+<div class="history-search">
+    <?php $form = ActiveForm::begin(['method' => 'get']); ?>
+
+    <div class="row">
+        <div class="col-md-3">
+            <?= $form->field($searchModel, 'request_date_from'); ?>
+            <?= $form->field($searchModel, 'request_url'); ?>
+            <div class="form-group">
+                <?= Html::submitButton(Yii::t('app', 'Search'), ['class' => 'btn btn-primary']) ?>
+                <?= Html::resetButton(Yii::t('app', 'Reset'), ['class' => 'btn btn-default']) ?>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <?= $form->field($searchModel, 'request_date_to'); ?>
+            <?= $form->field($searchModel, 'user_ids'); ?>
+            <?= $form->field($searchModel, 'request_addr'); ?>
+        </div>
+        <div class="col-md-3">
+            <?= $form->field($searchModel, 'model_classes'); ?>
+            <?= $form->field($searchModel, 'action_types'); ?>
+        </div>
+        <div class="col-md-3">
+            <?= $form->field($searchModel, 'attributes'); ?>
+            <?= $form->field($searchModel, 'values'); ?>
+        </div>
+    </div>
+
+    <?php ActiveForm::end(); ?>
+</div>
+
+
+<a role="button" data-toggle="collapse" href=".change-details"
+   aria-expanded="false"
+   aria-controls="change-details">
+    <?= Yii::t('app', 'All details') ?>
+</a>
 
 <?php Pjax::begin(['id' => 'historyPjax']); ?>
 <?= \yii\widgets\ListView::widget([

@@ -16,16 +16,25 @@ $formatter = Yii::$app->formatter;
 ?>
 
 <div class="changeset">
-    <h5><?= $firstAction->request_date . ' '
+    <h4><?= $firstAction->request_date . ' '
     . Yii::t('app', 'by') . ' ' . $firstAction->user . ' '
     . ($firstAction->request_addr !== null ? Yii::t('app', 'from') . ' ' . $firstAction->request_addr : '') . ' '
-    . '@ ' . $firstAction->request_url ?></h5>
+    . '@ ' . $firstAction->request_url ?></h4>
 
 <?php foreach ($actions as $action): ?>
-    <p>
-        <?= $action->actionTypeLabel . ' ' . $action->model->getCrudLabel() . ': ' . $action->model ?>
-    </p>
-    <p>
+    <div>
+        <?= $action->actionTypeLabel . ' ' . $action->model->getCrudLabel() . ': ' . $action->model ?>,
+        <?= Yii::t('app', 'changed: ') . implode(', ', array_map(function ($attribute) use ($action) {
+            return $action->model->getAttributeLabel($attribute);
+        }, array_keys($action->changed_fields))) ?>,
+
+        <a role="button" data-toggle="collapse" href="#changeDetails_<?= $action->action_id ?>"
+           aria-expanded="false"
+           aria-controls="changeDetails<?= $action->id ?>">
+            <?= Yii::t('app', 'Details') ?>
+        </a>
+    </div>
+    <div class="collapse change-details" id="changeDetails_<?= $action->action_id ?>">
         <?= \yii\widgets\DetailView::widget([
             'model' => $action,
             'attributes' => array_map(function ($attribute, $value) use ($action, $diff, $formatter) {
@@ -33,13 +42,15 @@ $formatter = Yii::$app->formatter;
                 return [
                     'attribute' => $attribute,
                     'label' => $action->model->getAttributeLabel($attribute),
+                    'format' => 'raw',
                     'value' => $diff->render(
-                        $formatter->format($action->model->getAttribute($attribute), $format),
-                        $formatter->format($value, $format)
+                        strip_tags($formatter->format($action->model->getAttribute($attribute), $format)),
+                        strip_tags($formatter->format($value, $format))
                     ),
                 ];
             }, array_keys($action->changed_fields), $action->changed_fields),
+            'options' => ['class' => 'table table-striped table-bordered detail-view diff-details'],
         ]) ?>
-    </p>
+    </div>
 <?php endforeach; ?>
 </div>
