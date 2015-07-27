@@ -46,10 +46,17 @@ abstract class AuthMigration extends Migration
 
         /** @var \netis\utils\crud\ActiveRecord $model */
         $model = new $modelClass;
-        $createLabel = $model->getCrudLabel('create');
-        $readLabel = $model->getCrudLabel('read');
-        $updateLabel = $model->getCrudLabel('update');
-        $deleteLabel = $model->getCrudLabel('delete');
+        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+            $createLabel = $model->getCrudLabel('create');
+            $readLabel = $model->getCrudLabel('read');
+            $updateLabel = $model->getCrudLabel('update');
+            $deleteLabel = $model->getCrudLabel('delete');
+        } else {
+            $createLabel = 'Create ' . $modelClass;
+            $readLabel   = 'Read ' . $modelClass;
+            $updateLabel = 'Update ' . $modelClass;
+            $deleteLabel = 'Delete ' . $modelClass;
+        }
 
         return $this->labelsMap[$modelClass] = [
             'create' => $createLabel,
