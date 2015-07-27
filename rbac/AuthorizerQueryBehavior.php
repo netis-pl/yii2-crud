@@ -72,7 +72,10 @@ class AuthorizerQueryBehavior extends Behavior
         }
 
         $query = new Query;
-        $tableSchema = $model->getTableSchema();
+
+        if ($user === null) {
+            return $query->andWhere('1=0');
+        }
 
         if ($primaryKey === null) {
             $pkExpression = $this->quoteColumn('t', $model::primaryKey(), $model->getDb()->getSchema());
