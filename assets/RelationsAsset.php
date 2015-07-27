@@ -22,5 +22,6 @@ class RelationsAsset extends AssetBundle
     ];
     public $depends = [
         'yii\widgets\PjaxAsset',
+        'yii\grid\GridViewAsset',
     ];
 }

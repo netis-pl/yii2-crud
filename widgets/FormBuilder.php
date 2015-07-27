@@ -136,8 +136,8 @@ JavaScript;
             return [null, null, null];
         }
 
-        $allowCreate = true;
-        if ($model->isNewRecord && $relation->multiple) {
+        $allowCreate = Yii::$app->user->can($relatedModel::className().'.create');
+        if ($allowCreate && $model->isNewRecord && $relation->multiple) {
             foreach ($relation->link as $left => $right) {
                 if (!$relatedModel->getTableSchema()->getColumn($left)->allowNull) {
                     $allowCreate = false;
@@ -255,7 +255,7 @@ function (data, page) {
     var keys = $jsPrimaryKey, values = [];
     if ('$searchUrl') {
         for (var i = 0; i < keys.length; i++) {
-            values[keys[i]] = -1;
+            values[keys[i]] = '\\\\-1';
         }
         values.$labelField = '-- $searchLabel --';
         data.items.unshift(values);
@@ -263,7 +263,7 @@ function (data, page) {
     if ('$createUrl') {
         values = [];
         for (var i = 0; i < keys.length; i++) {
-            values[keys[i]] = -2;
+            values[keys[i]] = '\\\\-2';
         }
         values.$labelField = '-- $createLabel --';
         data.items.unshift(values);
