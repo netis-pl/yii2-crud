@@ -92,7 +92,10 @@ class IndexAction extends Action
                         return $actionColumn->buttons['delete']($url, $model, $key);
                     },
                     'toggle' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.delete', ['model' => $model])) {
+                        /** @var \yii\db\ActiveRecord $model */
+                        if ($model->getBehavior('toggable') === null
+                            || !Yii::$app->user->can($model::className() . '.delete', ['model' => $model])
+                        ) {
                             return null;
                         }
 
