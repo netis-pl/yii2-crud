@@ -8,6 +8,7 @@ namespace netis\utils\db;
 
 use yii\base\InvalidConfigException;
 use yii\base\NotSupportedException;
+use yii\db\ActiveRecord;
 
 /**
  * Provides queries to add default order and support the soft delete ToggableBehavior.
@@ -21,6 +22,10 @@ class ActiveQuery extends \yii\db\ActiveQuery
      * Used only to pass its value to the grid.
      */
     public $quickSearchPhrase;
+    /**
+     * @var array Holds values of record counts for various named queries.
+     */
+    private $counters = null;
 
     /**
      * @inheritdoc
@@ -84,6 +89,56 @@ class ActiveQuery extends \yii\db\ActiveQuery
     public function publicQueries()
     {
         return ['defaultOrder', 'enabled'];
+    }
+
+    /**
+     * Returns list of named queries that are countable.
+     * @return string[]
+     */
+    public function countableQueries()
+    {
+        return [];
+    }
+
+    public function getCounters($baseQuery = null)
+    {
+        if ($this->counters !== null) {
+            return $this->counters;
+        }
+        /** @var ActiveRecord $modelClass */
+        $modelClass   = $this->modelClass;
+        $queryBuilder = $modelClass::getDb()->getQueryBuilder();
+        if ($baseQuery === null) {
+            $baseQuery = $modelClass::find();
+        }
+        $params = [];
+        $select = [];
+        foreach ($this->countableQueries() as $queryName) {
+            $query     = clone $baseQuery;
+            $query->$queryName();
+            $params    = array_merge($params, $query->params);
+            $condition = $queryBuilder->buildCondition($query->where, $params);
+            $select[]  = "COUNT(id) FILTER (WHERE $condition) AS \"$queryName\"";
+        }
+        if (empty($select)) {
+            return $this->counters = [];
+        }
+
+        // allow to modify query before calling this method, for example add auth conditions
+        $baseQuery = clone $this;
+        return $this->counters = $baseQuery
+            ->select($select)
+            ->from($modelClass::tableName())
+            ->params($params)
+            ->createCommand($modelClass::getDb())
+            ->queryOne();
+    }
+
+    public function getCounter($queryName)
+    {
+        $counters = $this->getCounters();
+
+        return $counters[$queryName];
     }
 
     /**
