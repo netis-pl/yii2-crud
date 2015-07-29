@@ -18,8 +18,10 @@ $formatter = Yii::$app->formatter;
 <div class="changeset">
     <h4><?= $firstAction->request_date . ' '
     . Yii::t('app', 'by') . ' ' . $firstAction->user . ' '
-    . ($firstAction->request_addr !== null ? Yii::t('app', 'from') . ' ' . $firstAction->request_addr : '') . ' '
-    . '@ ' . $firstAction->request_url ?></h4>
+    . '<small>' . ($firstAction->request_addr !== null
+            ? Yii::t('app', 'from') . ' ' . $firstAction->request_addr
+            : '')
+    . ' @ ' . $firstAction->request_url . '</small>' ?></h4>
 
 <?php foreach ($actions as $action): ?>
     <div>
