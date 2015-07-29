@@ -7,6 +7,7 @@
 namespace netis\utils\log;
 
 use Yii;
+use yii\helpers\VarDumper;
 
 /**
  * DbTarget stores log messages in a database table.
@@ -25,6 +26,11 @@ use Yii;
  */
 class DbTarget extends \yii\log\DbTarget
 {
+    /**
+     * @var bool
+     */
+    public $useBatchInsert = true;
+
     public function getPrefixData()
     {
         $ip = null;
@@ -57,28 +63,49 @@ class DbTarget extends \yii\log\DbTarget
     public function export()
     {
         $tableName = $this->db->quoteTableName($this->logTable);
-        $sql = "INSERT INTO $tableName ([[level]], [[category]], [[log_time]], [[ip]], [[user_id]], [[session_id]],
+        if ($this->useBatchInsert) {
+            $sql = $this->db->getQueryBuilder()->batchInsert($this->logTable, [
+                'level', 'category', 'log_time', 'ip', 'user_id', 'session_id', 'prefix', 'message',
+            ], array_map('array_values', array_map([$this, 'messageToRow'], $this->messages)));
+        } else {
+            $sql = "INSERT INTO $tableName ([[level]], [[category]], [[log_time]], [[ip]], [[user_id]], [[session_id]],
                 [[prefix]], [[message]])
                 VALUES (:level, :category, :log_time, :ip, :user_id, :session_id, :prefix, :message)";
-        $command = $this->db->createCommand($sql);
-        foreach ($this->messages as $message) {
-            list($text, $level, $category, $timestamp) = $message;
-            if (!is_string($text)) {
-                $text = VarDumper::export($text);
-            }
-
-            list($ip, $userID, $sessionID) = $this->getPrefixData();
-
-            $command->bindValues([
-                ':level' => $level,
-                ':category' => $category,
-                ':log_time' => $timestamp,
-                ':ip' => $ip,
-                ':user_id' => $userID,
-                ':session_id' => $sessionID,
-                ':prefix' => $this->getMessagePrefix($message),
-                ':message' => $text,
-            ])->execute();
         }
+        $command = $this->db->createCommand($sql);
+        if ($this->db->getTransaction() === null) {
+            $trx = $this->db->beginTransaction();
+        }
+        if ($this->useBatchInsert) {
+            $command->execute();
+        } else {
+            foreach ($this->messages as $message) {
+                $command->bindValues($this->messageToRow($message))->execute();
+            }
+        }
+        if (isset($trx)) {
+            $trx->commit();
+        }
+    }
+
+    private function messageToRow($message)
+    {
+        list($text, $level, $category, $timestamp) = $message;
+        if (!is_string($text)) {
+            $text = VarDumper::export($text);
+        }
+
+        list($ip, $userID, $sessionID) = $this->getPrefixData();
+
+        return [
+            ':level' => $level,
+            ':category' => $category,
+            ':log_time' => $timestamp,
+            ':ip' => $ip,
+            ':user_id' => $userID,
+            ':session_id' => $sessionID,
+            ':prefix' => $this->getMessagePrefix($message),
+            ':message' => $text,
+        ];
     }
 }
