@@ -44,6 +44,10 @@ class RendererStream
      */
     public $serializer;
     /**
+     * @var int how many rows are rendered in a single chunk, set to -1 to render all rows
+     */
+    public $chunkRowsNumber = 100;
+    /**
      * @var string
      */
     private $actionId;
@@ -138,28 +142,8 @@ class RendererStream
      */
     public function stream_read($count)
     {
-        /** @var ActiveDataProvider $dataProvider */
-        $dataProvider = $this->grid->dataProvider;
-        /** @var \yii\db\ActiveQuery $query */
-        $query = $dataProvider->query;
-
         while (strlen($this->buffer) < $count && $this->dataReader !== null) {
-            if ($this->rowNumber === 0) {
-                $this->buffer .= $this->renderHeader();
-            }
-            $rowCount = $this->dataReader->getRowCount();
-            for ($i = 0; $i < 100; $i++) {
-                $row = $this->dataReader->read();
-                if ($row === false) {
-                    $this->dataReader = null;
-                    $this->buffer .= $this->renderFooter();
-                    break 2;
-                }
-                $models = $query->populate([$row]);
-                //$dataProvider->setmodels($models);
-
-                $this->buffer .= $this->renderRow(reset($models), $this->rowNumber++, $rowCount);
-            }
+            $this->buffer .= $this->renderChunk($this->chunkRowsNumber);
         }
         if ($this->buffer === '' && $this->dataReader === null) {
             return false;
@@ -277,6 +261,41 @@ class RendererStream
         return $values;
     }
 
+    /**
+     * Renders next batch of rows.
+     * @param integer $rowsNumber set to -1 to render all rows
+     * @return string
+     */
+    public function renderChunk($rowsNumber)
+    {
+        /** @var ActiveDataProvider $dataProvider */
+        $dataProvider = $this->grid->dataProvider;
+        /** @var \yii\db\ActiveQuery $query */
+        $query = $dataProvider->query;
+
+        $result = '';
+        if ($this->rowNumber === 0) {
+            $result .= $this->renderHeader();
+        }
+        $rowCount = $this->dataReader->getRowCount();
+        for ($i = 0; $i < $rowsNumber || $rowsNumber === -1; $i++) {
+            $row = $this->dataReader->read();
+            if ($row === false) {
+                $this->dataReader = null;
+                $result .= $this->renderFooter();
+                break;
+            }
+            $models = $query->populate([$row]);
+
+            $result .= $this->renderRow(reset($models), $this->rowNumber++, $rowCount);
+        }
+        return $result;
+    }
+
+    /**
+     * Renders the header part.
+     * @return string
+     */
     public function renderHeader()
     {
         /** @var \yii\rest\Serializer $serializer */
@@ -288,11 +307,22 @@ class RendererStream
         return "array(\n\"{$this->serializer->collectionEnvelope}\" => array(";
     }
 
+    /**
+     * Renders a single row.
+     * @param array $data
+     * @param integer $index
+     * @param integer $count
+     * @return string
+     */
     public function renderRow($data, $index, $count)
     {
         return var_export($this->serializeModel($data)).",\n";
     }
 
+    /**
+     * Renders the footer part.
+     * @return string
+     */
     public function renderFooter()
     {
         /** @var \yii\rest\Serializer $serializer */

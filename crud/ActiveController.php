@@ -366,6 +366,9 @@ class ActiveController extends \yii\rest\ActiveController
             case Response::FORMAT_XML:
                 $rendererClass = 'netis\\utils\\crud\\XmlRendererStream';
                 break;
+            case Response::FORMAT_XLS:
+                $rendererClass = 'netis\\utils\\crud\\XlsRendererStream';
+                break;
             default:
                 throw new \HttpInvalidParamException('Unsupported format requested: '.$format);
         }
