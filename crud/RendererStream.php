@@ -145,7 +145,7 @@ class RendererStream
         while (strlen($this->buffer) < $count && $this->dataReader !== null) {
             $this->buffer .= $this->renderChunk($this->chunkRowsNumber);
         }
-        if ($this->buffer === '' && $this->dataReader === null) {
+        if ($this->stream_eof()) {
             return false;
         }
         $result = substr($this->buffer, 0, $count);
@@ -169,7 +169,7 @@ class RendererStream
      */
     public function stream_eof()
     {
-        return $this->dataReader === null;
+        return $this->buffer === '' && $this->dataReader === null;
     }
 
     /**
