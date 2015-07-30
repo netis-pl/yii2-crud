@@ -23,12 +23,18 @@ if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
 }
 
 $searchLabel = Yii::t('app', 'Advanced search');
+/** @var \yii\filters\ContentNegotiator $negotiator */
+$negotiator = $controller->getBehavior('contentNegotiator');
+$excelUrl = \yii\helpers\Url::current([$negotiator->formatParam => \netis\utils\web\Response::FORMAT_XLS]);
+$csvUrl = \yii\helpers\Url::current([$negotiator->formatParam => \netis\utils\web\Response::FORMAT_CSV]);
 $layout = <<<HTML
 <div class="row">
     <div class="col-md-3">{quickSearch}</div>
     <div class="col-md-3">
         <a class="btn btn-default" data-toggle="collapse" href="#advancedSearch"
            aria-expanded="false" aria-controls="advancedSearch">$searchLabel</a>
+        <a class="btn btn-default" data-pjax="0" href="$excelUrl"><i class="glyphicon glyphicon-file"></i> XLS</a>
+        <a class="btn btn-default" data-pjax="0" href="$csvUrl"><i class="glyphicon glyphicon-file"></i> CSV</a>
     </div>
 </div>
 {items}

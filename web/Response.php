@@ -10,4 +10,5 @@ class Response extends \yii\web\Response
 {
     const FORMAT_CSV = 'csv';
     const FORMAT_PDF = 'pdf';
+    const FORMAT_XLS = 'xls';
 }

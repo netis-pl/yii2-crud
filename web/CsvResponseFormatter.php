@@ -27,14 +27,19 @@ class CsvResponseFormatter extends Component implements ResponseFormatterInterfa
         }
 
         $handle = fopen('php://memory', 'r+');
-        if (!isset($response->data['items'])) {
-            fputcsv($handle, array_keys($response->data));
-            fputcsv($handle, array_values($response->data));
+
+        /** @var array $data should be output of \yii\rest\Serializer configured in current controller */
+        $data = $response->data;
+        if (!isset($data['items'])) {
+            // single model
+            fputcsv($handle, array_keys($data));
+            fputcsv($handle, array_values($data));
         } else {
-            if (($firstRow = reset($response->data['items'])) !== false) {
+            // a collection of models
+            if (($firstRow = reset($data['items'])) !== false) {
                 fputcsv($handle, array_keys($firstRow));
             }
-            foreach ($response->data['items'] as $item) {
+            foreach ($data['items'] as $item) {
                 fputcsv($handle, $item);
             }
         }

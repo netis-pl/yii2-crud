@@ -83,6 +83,7 @@ class ActiveController extends \yii\rest\ActiveController
                     // custom formats
                     'text/csv' => Response::FORMAT_CSV,
                     'application/pdf' => Response::FORMAT_PDF,
+                    'application/vnd.ms-excel' => Response::FORMAT_XLS,
                 ],
             ],
             'authenticator' => [
@@ -354,6 +355,7 @@ class ActiveController extends \yii\rest\ActiveController
     {
         parent::afterAction($action, $result);
         $format = Yii::$app->response->format;
+        /** @var RendererStream $rendererClass */
         switch ($format) {
             case Response::FORMAT_CSV:
                 $rendererClass = 'netis\\utils\\crud\\CsvRendererStream';
