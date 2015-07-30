@@ -24,6 +24,7 @@ use yii\web\IdentityInterface;
  * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
  * @method string getCrudLabel(string $operation = null)
  * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, string $relation)
+ * @method string getLocalLabel($attribute, $language = null)
  * @method null beginChangeset()
  * @method null endChangeset()
  * @method ActiveRecord loadVersion(integer $version_id)

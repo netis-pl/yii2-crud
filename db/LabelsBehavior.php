@@ -31,13 +31,21 @@ class LabelsBehavior extends Behavior
      */
     public $relationLabels = [];
     /**
+     * @var callable a callable that returns localized labels
+     */
+    public $localLabels;
+    /**
+     * @var string class name of the owner model
+     */
+    private $modelClass;
+    /**
      * @var array cached relation labels
      */
     private $cachedRelationLabels = [];
     /**
-     * @var string name of method which translates label
+     * @var array cached localized labels
      */
-    public $translate = '';
+    private static $cachedLocalLabels;
 
     /**
      * @inheritdoc
@@ -58,12 +66,14 @@ class LabelsBehavior extends Behavior
         if ($this->attributes !== null) {
             return;
         }
-        // try to resolve attributes if they're not set and owner is an AR model
-        if (!($this->owner instanceof \yii\db\ActiveRecord)) {
-            return;
-        }
+
         /** @var \yii\db\ActiveRecord $model */
         $model = $this->owner;
+
+        // try to resolve attributes if they're not set and owner is an AR model
+        if (!($model instanceof \yii\db\ActiveRecord)) {
+            return;
+        }
         foreach ($model->getTableSchema()->columns as $name => $column) {
             if ($column->type == 'string' || $column->type == 'text') {
                 $this->attributes = [$name];
@@ -73,6 +83,16 @@ class LabelsBehavior extends Behavior
         if ($this->attributes === null) {
             $this->attributes = $model->primaryKey();
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attach($owner)
+    {
+        /** @var $owner \yii\db\ActiveRecord */
+        parent::attach($owner);
+        $this->modelClass = $owner::className();
     }
 
     /**
@@ -104,5 +124,28 @@ class LabelsBehavior extends Behavior
             $label = $relationModel->getCrudLabel($activeRelation->multiple ? 'relation' : 'default');
         }
         return $this->cachedRelationLabels[$modelClass][$relation] = $label;
+    }
+
+    private function getLocalLabels()
+    {
+        if (self::$cachedLocalLabels !== null && isset(self::$cachedLocalLabels[$this->modelClass])) {
+            return self::$cachedLocalLabels[$this->modelClass];
+        }
+        return self::$cachedLocalLabels[$this->modelClass] = call_user_func($this->localLabels, $this->owner);
+    }
+
+    /**
+     * Returnes a localized value of an attribute.
+     * @param string $attribute
+     * @param string $language if null, defaults to app language
+     * @return string
+     */
+    public function getLocalLabel($attribute, $language = null)
+    {
+        if ($language === null) {
+            $language = \Yii::$app->language;
+        }
+        $localLabels = $this->getLocalLabels();
+        return $localLabels[$language][$this->owner->getPrimaryKey()][$attribute];
     }
 }
