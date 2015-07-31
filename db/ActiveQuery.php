@@ -129,7 +129,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
         return $this->counters = $baseQuery
             ->select($select)
             ->from(['t' => $modelClass::tableName()])
-            ->params($params)
+            ->addParams($params)
             ->createCommand($modelClass::getDb())
             ->queryOne();
     }
