@@ -48,6 +48,7 @@
             },
             target, title, relation, url;
         if (clicked.is('a')) {
+            //
             target = '#' + relation + 'Pjax';
             title = clicked.data('title');
             relation = clicked.data('relation');

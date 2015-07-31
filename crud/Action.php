@@ -406,7 +406,7 @@ class Action extends \yii\rest\Action
         }
 
         $relatedFields = $controller->actionsClassMap['index']['fields'];
-        if (is_callable($this->fields)) {
+        if (is_callable($relatedFields)) {
             $relatedFields = call_user_func($relatedFields, $this, 'grid', $relatedModel);
         }
         return $relatedFields;
@@ -478,7 +478,7 @@ class Action extends \yii\rest\Action
                     ],
                     'sort' => ['sortParam' => "$field-sort"],
                 ]),
-                'columns' => static::getRelationGridColumns($relatedModel, $relatedFields),
+                'columns' => static::getRelationGridColumns($relatedModel, $relatedFields, $field, $relation),
             ];
         }
 
@@ -489,9 +489,11 @@ class Action extends \yii\rest\Action
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
      * @param array $fields
+     * @param string $relationName
+     * @param \yii\db\ActiveQuery $relation
      * @return array grid columns
      */
-    public static function getRelationGridColumns($model, $fields)
+    public static function getRelationGridColumns($model, $fields, $relationName, $relation)
     {
         $actionColumn = new ActionColumn();
         return array_merge([
@@ -502,7 +504,7 @@ class Action extends \yii\rest\Action
                 'template'      => '{view}',
                 'buttons' => [
                     'view' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.read')) {
+                        if (!Yii::$app->user->can($model::className() . '.read', ['model' => $model])) {
                             return null;
                         }
 

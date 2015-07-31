@@ -141,11 +141,11 @@ class UpdateAction extends Action
     {
         /** @var \nineinchnick\audit\behaviors\TrackableBehavior $trackable */
         if (($trackable = $model->getBehavior('trackable')) !== null) {
-            $trackable->beginChangeset();
+            $model->beginChangeset();
         }
         $result = $model->save(false) && $model->saveRelations(Yii::$app->getRequest()->getBodyParams());
         if ($trackable !== null) {
-            $trackable->endChangeset();
+            $model->endChangeset();
         }
         return $result;
     }
@@ -306,28 +306,61 @@ class UpdateAction extends Action
     /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
-     * @param string $inverseRelation
+     * @param string $fields
+     * @param string $relationName
+     * @param \yii\db\ActiveQuery $relation
      * @return array grid columns
      */
-    public static function getRelationGridColumns($model, $inverseRelation)
+    public static function getRelationGridColumns($model, $fields, $relationName, $relation)
     {
-        $columns = parent::getRelationGridColumns($model, $inverseRelation);
+        $columns = parent::getRelationGridColumns($model, $fields, $relationName, $relation);
+
         if (!isset($columns[0]) || !isset($columns[0]['class']) || $columns[0]['class'] !== 'yii\grid\ActionColumn') {
             return $columns;
         }
+
+        $controller = Yii::$app->crudModelsMap[$model::className()];
         $actionColumn = new \yii\grid\ActionColumn();
-        $columns[0]['template'] = '{view} {unlink}';
-        $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn) {
-            if (!Yii::$app->user->can($model::className() . '.read')) {
+        $columns[0]['template'] = '{update} {unlink}';
+        $columns[0]['urlCreator'] = function ($action, $model, $key, $index) use ($controller, $relation) {
+            $params = is_array($key) ? $key : ['id' => (string)$key];
+            if ($action === 'update') {
+                $params['hide'] = implode(',', array_keys($relation->link));
+            }
+            $params[0] = $controller . '/' . $action;
+
+            return Url::toRoute($params);
+        };
+        $columns[0]['buttons']['update'] = function ($url, $model, $key) use ($actionColumn, $relationName) {
+            if (!Yii::$app->user->can($model::className() . '.update', ['model' => $model])) {
                 return null;
             }
 
             $options = array_merge([
-                'title' => Yii::t('app', 'Unlink'),
+                'title'         => Yii::t('app', 'Update'),
+                'aria-label'    => Yii::t('app', 'Update'),
+                'data-pjax'     => '0',
+                // required for editing in a modal
+                'data-toggle'   => 'modal',
+                'data-target'   => '#relationModal',
+                'data-relation' => $relationName,
+                'data-title'    => $model->getCrudLabel('update'),
+                'data-pjax-url' => $url,
+                'class'         => 'btn btn-default btn-xs',
+            ], $actionColumn->buttonOptions);
+            return \yii\helpers\Html::a('<span class="glyphicon glyphicon-pencil"></span>', $url, $options);
+        };
+        $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn) {
+            if (!Yii::$app->user->can($model::className() . '.update', ['model' => $model])) {
+                return null;
+            }
+
+            $options = array_merge([
+                'title'      => Yii::t('app', 'Unlink'),
                 'aria-label' => Yii::t('app', 'Unlink'),
                 //'data-confirm' => Yii::t('app', 'Are you sure you want to unlink this item?'),
-                'data-pjax' => '0',
-                'class' => 'remove',
+                'data-pjax'  => '0',
+                'class'      => 'remove btn btn-default btn-xs',
             ], $actionColumn->buttonOptions);
             return \yii\helpers\Html::a('<span class="glyphicon glyphicon-remove"></span>', $url, $options);
         };
