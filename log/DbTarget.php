@@ -92,7 +92,8 @@ class DbTarget extends \yii\log\DbTarget
     {
         list($text, $level, $category, $timestamp) = $message;
         if (!is_string($text)) {
-            $text = VarDumper::export($text);
+            // don't use VarDumper::export($text) as it is not safe with references
+            $text = gettype($text);
         }
 
         list($ip, $userID, $sessionID) = $this->getPrefixData();

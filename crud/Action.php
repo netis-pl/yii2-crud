@@ -6,6 +6,7 @@
 
 namespace netis\utils\crud;
 
+use netis\utils\db\ActiveQuery;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -384,6 +385,33 @@ class Action extends \yii\rest\Action
         return [$behaviorAttributes, $blameableAttributes];
     }
 
+    private function getRelatedFields($relatedModel)
+    {
+        $relatedFields = self::getDefaultFields($relatedModel);
+        if (!isset(Yii::$app->crudModelsMap[$relatedModel::className()])) {
+            return $relatedFields;
+        }
+        $route = Yii::$app->crudModelsMap[$relatedModel::className()];
+
+        if (($controller = Yii::$app->createController($route)) === false) {
+            return $relatedFields;
+        }
+        list($controller, $route) = $controller;
+        if (!isset(
+            $controller->actionsClassMap,
+            $controller->actionsClassMap['index'],
+            $controller->actionsClassMap['index']['fields']
+        )) {
+            return $relatedFields;
+        }
+
+        $relatedFields = $controller->actionsClassMap['index']['fields'];
+        if (is_callable($this->fields)) {
+            $relatedFields = call_user_func($relatedFields, $this, 'grid', $relatedModel);
+        }
+        return $relatedFields;
+    }
+
     /**
      * @param Model $model
      * @param array $extraFields
@@ -417,28 +445,18 @@ class Action extends \yii\rest\Action
             $relatedModel = new $relation->modelClass;
 
             // add extra authorization conditions
-            $relation->authorized($relatedModel, $relatedModel->getCheckedRelations(), Yii::$app->user->getIdentity());
+            if ($relation->getBehavior('authorizer') !== null) {
+                $relation->authorized(
+                    $relatedModel,
+                    $relatedModel->getCheckedRelations(),
+                    Yii::$app->user->getIdentity()
+                );
+            }
             if (empty($relation->from)) {
                 $relation->from = [$relatedModel::tableName().' t'];
             }
 
-            $relatedFields = self::getDefaultFields($relatedModel);
-            if (isset(Yii::$app->crudModelsMap[$relatedModel::className()])) {
-                $relatedController = Yii::$app->crudModelsMap[$relatedModel::className()];
-                if (isset($this->controller->module->controllerMap[basename($relatedController)])) {
-                    $map = $this->controller->module->controllerMap[basename($relatedController)];
-                    if (isset(
-                        $map['actionsClassMap'],
-                        $map['actionsClassMap']['index'],
-                        $map['actionsClassMap']['index']['fields']
-                    )) {
-                        $relatedFields = $map['actionsClassMap']['index']['fields'];
-                        if (is_callable($this->fields)) {
-                            $relatedFields = call_user_func($relatedFields, $this, 'grid', $relatedModel);
-                        }
-                    }
-                }
-            }
+            $relatedFields = $this->getRelatedFields($relatedModel);
             foreach ($relatedFields as $relKey => $relField) {
                 if (is_array($relField) || (!is_string($relField) && is_callable($relField))) {
                     $relAttribute = $relKey;

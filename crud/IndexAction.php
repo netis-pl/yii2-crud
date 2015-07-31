@@ -48,7 +48,7 @@ class IndexAction extends Action
 
         return [
             'dataProvider' => $dataProvider,
-            'columns' => static::getIndexGridColumns($model, $this->getFields($model, 'grid')),
+            'columns' => $this->getIndexGridColumns($model, $this->getFields($model, 'grid')),
             'searchModel' => $model,
             'searchFields' => FormBuilder::getFormFields($model, $this->getFields($model, 'searchForm'), true),
         ];
@@ -60,8 +60,10 @@ class IndexAction extends Action
      * @param array $fields
      * @return array grid columns
      */
-    public static function getIndexGridColumns($model, $fields)
+    public function getIndexGridColumns($model, $fields)
     {
+        /** @var ActiveController $controller */
+        $controller = $this->controller;
         $actionColumn = new ActionColumn();
         return array_merge([
             [
@@ -70,37 +72,35 @@ class IndexAction extends Action
                 'controller'    => Yii::$app->crudModelsMap[$model::className()],
                 'template'      => '{view} {update} {delete} {toggle}',
                 'buttons' => [
-                    'view'   => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.read', ['model' => $model])) {
+                    'view'   => function ($url, $model, $key) use ($controller, $actionColumn) {
+                        if (!$controller->hasAccess('read', $model)) {
                             return null;
                         }
 
                         return $actionColumn->buttons['view']($url, $model, $key);
                     },
-                    'update' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.update', ['model' => $model])) {
+                    'update' => function ($url, $model, $key) use ($controller, $actionColumn) {
+                        if (!$controller->hasAccess('update', $model)) {
                             return null;
                         }
 
                         return $actionColumn->buttons['update']($url, $model, $key);
                     },
-                    'delete' => function ($url, $model, $key) use ($actionColumn) {
-                        if (!Yii::$app->user->can($model::className() . '.delete', ['model' => $model])) {
+                    'delete' => function ($url, $model, $key) use ($controller, $actionColumn) {
+                        if (!$controller->hasAccess('delete', $model)) {
                             return null;
                         }
 
                         return $actionColumn->buttons['delete']($url, $model, $key);
                     },
-                    'toggle' => function ($url, $model, $key) use ($actionColumn) {
+                    'toggle' => function ($url, $model, $key) use ($controller, $actionColumn) {
                         /** @var \yii\db\ActiveRecord $model */
-                        if ($model->getBehavior('toggable') === null
-                            || !Yii::$app->user->can($model::className() . '.delete', ['model' => $model])
-                        ) {
+                        if ($model->getBehavior('toggable') === null || !$controller->hasAccess('delete', $model)) {
                             return null;
                         }
 
-                        $enabled = $model->getIsEnabled();
-                        $icon    = $enabled ? 'ban' : 'reply';
+                        $enabled = $model->isEnabled();
+                        $icon    = '<span class="glyphicon glyphicon-'.($enabled ? 'ban' : 'reply').'"></span>';
                         $options = array_merge([
                             'title'       => $enabled ? Yii::t('app', 'Disable') : Yii::t('app', 'Enable'),
                             'aria-label'  => $enabled ? Yii::t('app', 'Disable') : Yii::t('app', 'Enable'),
@@ -108,7 +108,7 @@ class IndexAction extends Action
                         ], $enabled ? [
                             'data-confirm' => Yii::t('app', 'Are you sure you want to disable this item?'),
                         ] : [], $actionColumn->buttonOptions);
-                        return \yii\helpers\Html::a('<span class="glyphicon glyphicon-'.$icon.'"></span>', $url, $options);
+                        return \yii\helpers\Html::a($icon, $url, $options);
                     },
                 ],
             ],
