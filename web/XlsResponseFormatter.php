@@ -49,7 +49,8 @@ class XlsResponseFormatter extends Component implements ResponseFormatterInterfa
             // single model
             $this->addLine($sheet, $offset, array_keys($data));
             $this->addLine($sheet, $offset + 1, array_values($data));
-            $sheet->duplicateStyle($styles['header'], 'A'.$offset.':'.chr(65 + count($data) - 1).$offset);
+            for ($i = 1, $lastColumn = 'A'; $i < count($data); $i++, $lastColumn++);
+            $sheet->duplicateStyle($styles['header'], 'A'.$offset.':'.$lastColumn.$offset);
         } else {
             // a collection of models
             if (($firstRow = reset($data['items'])) !== false) {
@@ -60,10 +61,10 @@ class XlsResponseFormatter extends Component implements ResponseFormatterInterfa
             foreach ($data['items'] as $item) {
                 $this->addLine($sheet, $offset++, $item);
             }
-            $counter = 0;
+            $column = 'A';
             foreach ($item as $value) {
-                $rangeCoordinates = chr(65 + $counter) . $startOffset . ':' . chr(65 + $counter) . ($offset - 1);
-                $cellCoordinates = chr(65 + $counter) . $offset;
+                $rangeCoordinates = $column . $startOffset . ':' . $column . ($offset - 1);
+                $cellCoordinates = $column++ . $offset;
                 $formula = "=SUM($rangeCoordinates)";
                 $sheet->setCellValue($cellCoordinates, $formula, true);//->duplicateStyle($styles['summaryFloat']);
             }
@@ -84,9 +85,9 @@ class XlsResponseFormatter extends Component implements ResponseFormatterInterfa
      */
     public function addLine($sheet, $offset, $values)
     {
-        $counter = 0;
+        $column = 'A';
         foreach ($values as $value) {
-            $cellCoordinates = chr(65 + $counter++).(string)$offset;
+            $cellCoordinates = ($column++).(string)$offset;
             $sheet->setCellValue($cellCoordinates, $value);
         }
     }
