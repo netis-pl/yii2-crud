@@ -48,16 +48,17 @@
             },
             target, title, relation, url;
         if (clicked.is('a')) {
-            //
-            target = '#' + relation + 'Pjax';
-            title = clicked.data('title');
+            // clicked on a new/update link button for a hasMany relation
             relation = clicked.data('relation');
+            title = clicked.data('title');
             url = clicked.data('pjax-url');
+            target = '#' + relation + 'Pjax';
         } else {
-            target = '#' + modal.data('target');
-            title = modal.data('title');
+            // clicked on a select list option for a hasOne relation
             relation = modal.data('relation');
+            title = modal.data('title');
             url = modal.data('pjax-url');
+            target = '#' + modal.data('target');
         }
 
         modal.find('.modal-title').text(title);
