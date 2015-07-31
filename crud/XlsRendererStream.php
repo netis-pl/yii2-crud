@@ -43,9 +43,9 @@ class XlsRendererStream extends RendererStream
 
     public function render($data)
     {
-        $counter = 0;
+        $column = 'A';
         foreach ($data as $value) {
-            $cellCoordinates = chr(65 + $counter++) . $this->offset;
+            $cellCoordinates = $column++ . $this->offset;
             $this->sheet->setCellValue($cellCoordinates, $value);
         }
         $this->offset++;
