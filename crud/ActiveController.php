@@ -211,7 +211,7 @@ class ActiveController extends \yii\rest\ActiveController
     public function afterAction($action, $result)
     {
         $params = [];
-        if ($result instanceof Response || is_string($result)) {
+        if ($result instanceof \yii\web\Response || is_string($result)) {
             return parent::afterAction($action, $result);
         } elseif ($result instanceof Model) {
             $params['model'] = $result;
