@@ -128,7 +128,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
         $baseQuery = clone $this;
         return $this->counters = $baseQuery
             ->select($select)
-            ->from($modelClass::tableName())
+            ->from(['t' => $modelClass::tableName()])
             ->params($params)
             ->createCommand($modelClass::getDb())
             ->queryOne();

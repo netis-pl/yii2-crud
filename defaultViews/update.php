@@ -17,12 +17,12 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) !== null) {
         // optimization: render only the relation widget instead of the whole form
         $relationName = substr($pjax, 1, -4);
 
-        echo $view->render('_relation_widget', [
+        echo $this->render('_relation_widget', [
             'model' => $model,
             'relations' => $relations,
             'relationName' => $relationName,
             'isActive' => true,
-        ], $view->context);
+        ], $this->context);
 
         return;
     }
