@@ -18,7 +18,7 @@ class RelationAction extends IndexAction
      * @param array $fields
      * @return array grid columns
      */
-    public static function getIndexGridColumns($model, $fields)
+    public function getIndexGridColumns($model, $fields)
     {
         $id = Yii::$app->request->getQueryParam('id');
         $relation = Yii::$app->request->getQueryParam('relation');
