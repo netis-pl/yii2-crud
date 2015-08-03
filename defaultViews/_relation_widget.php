@@ -15,10 +15,27 @@ use yii\widgets\Pjax;
 $relation = $relations[$relationName];
 $pjax = null;
 
+/*
+ *
+FIXME quickSearch is disabled in relations because it doesn't work. Quick search input should have unique id
+      (with relation name) and this should be properly parsed in IndexAction to add filters to data provider
 $layout = <<<HTML
 <div class="row">
     <div class="col-md-2">{quickSearch}</div>
     <div class="col-md-10">{buttons}</div>
+</div>
+{items}
+<div class="row">
+    <div class="col-md-4">{pager}</div>
+    <div class="col-md-4 summary">{summary}</div>
+    <div class="col-md-4">{lengthPicker}</div>
+</div>
+HTML;
+
+ */
+$layout = <<<HTML
+<div class="row">
+    <div class="col-md-12">{buttons}</div>
 </div>
 {items}
 <div class="row">
