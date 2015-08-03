@@ -434,6 +434,14 @@ JavaScript;
                     $field['formMethod'] = 'checkbox';
                 }
                 break;
+            case 'integer':
+                $field['formMethod'] = 'textInput';
+                $field['arguments'] = [
+                    [
+                        'value' => $model->getAttribute($attribute),
+                    ],
+                ];
+                break;
             case 'time':
                 $field['formMethod'] = 'textInput';
                 $field['arguments'] = [
