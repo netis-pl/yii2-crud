@@ -29,6 +29,17 @@ class DbManager extends \yii\rbac\DbManager
     }
 
     /**
+     * This method is only used in \netis\utils\web\User.can() when loading cached results.
+     * @param array $path
+     * @return $this
+     */
+    public function setCurrentPath($path)
+    {
+        $this->currentPath = $path;
+        return $this;
+    }
+
+    /**
      * @inheritdoc
      */
     public function checkAccess($userId, $permissionName, $params = [])
