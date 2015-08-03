@@ -55,6 +55,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
             $unique = null;
         }
         $order = [];
+        $modelAttributes = array_flip($model->attributes());
         foreach ($model->getBehaviors() as $name => $behavior) {
             if ($behavior instanceof SortableBehavior) {
                 $attributes = [$behavior->attribute];
@@ -68,6 +69,9 @@ class ActiveQuery extends \yii\db\ActiveQuery
             }
 
             foreach ($attributes as $attribute) {
+                if (!isset($modelAttributes[$attribute])) {
+                    continue;
+                }
                 $order[$attribute] = SORT_ASC;
                 if ($unique !== null && isset($unique[$attribute]) && isset($columns[$attribute])
                     && !$columns[$attribute]->allowNull
