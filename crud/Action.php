@@ -535,7 +535,6 @@ class Action extends \yii\rest\Action
         list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
         $formats = $model->attributeFormats();
         $keys    = self::getModelKeys($model);
-        $attributes = $model->attributes();
 
         $columns = [];
         foreach ($fields as $key => $field) {
@@ -547,7 +546,7 @@ class Action extends \yii\rest\Action
                 continue;
             }
 
-            if (in_array($field, $attributes)) {
+            if (isset($formats[$field])) {
                 if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
                     continue;
                 }

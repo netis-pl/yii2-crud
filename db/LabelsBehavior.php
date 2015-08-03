@@ -145,6 +145,9 @@ class LabelsBehavior extends Behavior
         if ($language === null) {
             $language = \Yii::$app->language;
         }
+        if ($this->owner->isNewRecord) {
+            return $this->owner->getAttribute($attribute);
+        }
         $localLabels = $this->getLocalLabels();
         return $localLabels[$language][$this->owner->getPrimaryKey()][$attribute];
     }
