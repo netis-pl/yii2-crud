@@ -85,14 +85,11 @@ trait ActiveSearchTrait
         $columnName = $tablePrefix . '.' . $this->getDb()->getSchema()->quoteSimpleColumnName($attribute);
         switch ($formats[$attribute]) {
             default:
-                if (strpos($value, '>') !== 0 && strpos($value, '<') !== 0) {
-                    return [$columnName => $value];
-                }
-                if (strlen($value) < 2) {
+                if (strlen($value) < 2 || ($value{0} !== '>' && $value{0} !== '<')) {
                     return [$columnName => $value];
                 }
 
-                $op = substr($value, 0, strpos($value, '=') !== 1 ? 1 : 2);
+                $op = substr($value, 0, $value{1} !== '=' ? 1 : 2);
                 $value = substr($value, strlen($op));
                 if (trim($value) === '') {
                     return [];
