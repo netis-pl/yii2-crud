@@ -59,6 +59,7 @@ class FormBuilder
 }( window.s2helper = window.s2helper || {}, jQuery ));
 JavaScript;
         $view->registerJs($script, \yii\web\View::POS_END, 'netis.s2helper');
+        \maddoger\widgets\Select2BootstrapAsset::register($view);
     }
 
     /**

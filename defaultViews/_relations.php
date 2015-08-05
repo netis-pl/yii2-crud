@@ -29,7 +29,7 @@ foreach ($relations as $relationName => $data) {
             class="<?= $relationName === $activeRelation ? 'active' : ''?>">
             <a href="#tab_<?= $relationName ?>" aria-controls="tab_<?= $relationName ?>"
                role="tab" data-toggle="tab">
-                <?= $data['model']->getCrudLabel('relation') ?>
+                <?= $model->getRelationLabel($data['dataProvider']->query, $relationName) ?>
             </a>
         </li>
 <?php endforeach; ?>

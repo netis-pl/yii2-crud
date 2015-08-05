@@ -16,21 +16,21 @@
     netis.init = function(settings) {
         _settings = $.extend({}, defaults, settings);
 
-        $(document).on('pjax:timeout', _settings.modalId, function(event) {
+        $(document).off('pjax:timeout', _settings.modalId).on('pjax:timeout', _settings.modalId, function(event) {
             event.preventDefault();
         });
-        $(document).on('pjax:error', _settings.modalId, function(event) {
+        $(document).off('pjax:error', _settings.modalId).on('pjax:error', _settings.modalId, function(event) {
             event.preventDefault();
         });
         //$(document).on('pjax:send', settings.modalId, function() { })
         //$(document).on('pjax:complete', settings.modalId, function() { })
 
-        $(_settings.modalId).on('show.bs.modal', netis.showModal);
+        $(_settings.modalId).off('show.bs.modal').on('show.bs.modal', netis.showModal);
 
         var saveButton = $(_settings.saveButtonId);
-        saveButton.on('click', netis.saveRelation);
+        saveButton.off('click').on('click', netis.saveRelation);
 
-        $('.relations-panel .tab-pane').on('click', 'a.remove', function(event) {
+        $('.relations-panel .tab-pane').off('click', 'a.remove').on('click', 'a.remove', function(event) {
             var key = $(this).parent().closest('tr').data('key');
             netis.removeRelation($(event.delegateTarget).children('div'), key);
             event.preventDefault();
@@ -71,6 +71,7 @@
         $(document).on('submit', container + ' form', function(event) {
             $.pjax.submit(event, container, options);
         });
+        $(document).off('pjax:success', _settings.modalId);
         $(document).on('pjax:success', _settings.modalId, function(event, data, status, xhr, options) {
             var saveButton = $(_settings.saveButtonId),
                 selectionFields = $(target).data('selectionFields'),
