@@ -568,12 +568,12 @@ DESC;
         }
 
         try {
-            $result += $this->generateUniqueRules($table);
+            $result = array_merge($result, $this->generateUniqueRules($table));
         } catch (NotSupportedException $e) {
             // doesn't support unique indexes information...do nothing
         }
 
-        return $result + $this->generateExistRules($table);
+        return array_merge($result, $this->generateExistRules($table));
     }
 
     /**
