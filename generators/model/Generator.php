@@ -312,9 +312,10 @@ DESC;
      * @param array $rules
      * @param \yii\db\ColumnSchema $column
      * @param string|bool $behavesAs
+     * @param bool $isForeignKey
      * @return array
      */
-    protected function getColumnRules($rules, $column, $behavesAs = false)
+    protected function getColumnRules($rules, $column, $behavesAs = false, $isForeignKey = false)
     {
         $isRequired = !$column->allowNull && $column->defaultValue === null;
 
@@ -334,6 +335,9 @@ DESC;
             }
         }
 
+        if ($behavesAs === true && $isForeignKey) {
+            $rules['explodeKey']['attributes'][] = $column->name;
+        }
         switch ($column->type) {
             case Schema::TYPE_PK:
             case Schema::TYPE_BIGPK:
@@ -377,7 +381,17 @@ DESC;
                         //'skipOnEmpty' => $column->allowNull ? 'true' : 'false',
                     ]);
                 }
-                $rules[$name]['attributes'][] = $column->name;
+                if ($behavesAs === true && $isForeignKey) {
+                    $eachName = 'each_'.$name;
+                    if (!isset($rules[$eachName])) {
+                        $rules[$eachName] = [
+                            'validator' => 'each',
+                            'rule' => $rules[$name],
+                        ];
+                    }
+                } else {
+                    $rules[$name]['attributes'][] = $column->name;
+                }
                 break;
             case Schema::TYPE_FLOAT:
             case Schema::TYPE_DOUBLE:
@@ -443,6 +457,11 @@ DESC;
             'default' => [
                 'attributes' => [],
             ],
+            'explodeKey' => [
+                'validator' => 'filter',
+                'filter' => 'function ($value) {return \netis\utils\crud\Action::explodeEscaped(\netis\utils\crud\Action::KEYS_SEPARATOR, $value);}',
+                'attributes' => [],
+            ],
             'required' => [
                 'attributes' => [],
             ],
@@ -502,6 +521,13 @@ DESC;
             ],
         ];
 
+        $foreignKeys = [];
+        foreach ($table->foreignKeys as $foreignKey) {
+            array_shift($foreignKey);
+            foreach ($foreignKey as $column) {
+                $foreignKeys[$column] = true;
+            }
+        }
         foreach ($table->columns as $column) {
             if ($column->autoIncrement) {
                 continue;
@@ -522,7 +548,12 @@ DESC;
                 }
             }
 
-            $rules = $this->getColumnRules($rules, $column, $isSearchScenario ? true : $behavesAs);
+            $rules = $this->getColumnRules(
+                $rules,
+                $column,
+                $isSearchScenario ? true : $behavesAs,
+                isset($foreignKeys[$column->name])
+            );
         }
 
         // remove safe attributes that have any other rules without a specific scenario
