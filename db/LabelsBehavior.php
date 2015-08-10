@@ -6,6 +6,7 @@
 
 namespace netis\utils\db;
 
+use netis\utils\crud\ActiveRecord;
 use yii\base\Behavior;
 
 /**
@@ -117,10 +118,11 @@ class LabelsBehavior extends Behavior
         if (isset($this->cachedRelationLabels[$modelClass][$relation])) {
             return $this->cachedRelationLabels[$modelClass][$relation];
         }
-        $relationModel = new $modelClass;
-        if (isset($relationModel->relationLabels[$relation])) {
-            $label = $relationModel->relationLabels[$relation];
+        if (isset($this->relationLabels[$relation])) {
+            $label = $this->relationLabels[$relation];
         } else {
+            /** @var ActiveRecord $relationModel */
+            $relationModel = new $modelClass;
             $label = $relationModel->getCrudLabel($activeRelation->multiple ? 'relation' : 'default');
         }
         return $this->cachedRelationLabels[$modelClass][$relation] = $label;

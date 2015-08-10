@@ -590,7 +590,7 @@ JavaScript;
         }
         $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
         $field
-            ->error(['class' => 'help-block'])
+            ->error(['class' => 'help-block help-block-error'])
             ->widget($data['widgetClass'], $data['options']);
         echo $field;
         return;
