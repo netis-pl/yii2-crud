@@ -287,6 +287,28 @@ DESC;
     }
 
     /**
+     * Generates exist rules for foreign key columns.
+     * @param \yii\db\TableSchema $table the table schema
+     * @return array the generated exist validation rules
+     */
+    public function generateExistRules($table)
+    {
+        $rules = [];
+        foreach ($table->foreignKeys as $refs) {
+            $refClassName = $this->generateClassName($refs[0]);
+            unset($refs[0]);
+            $attributes = implode("', '", array_keys($refs));
+            $targetAttributes = [];
+            foreach ($refs as $key => $value) {
+                $targetAttributes[] = "'$key' => '$value'";
+            }
+            $targetAttributes = implode(', ', $targetAttributes);
+            $rules[] = "[['$attributes'], 'exist', 'skipOnError' => true, 'targetClass' => $refClassName::className(), 'targetAttribute' => [$targetAttributes]]";
+        }
+        return $rules;
+    }
+
+    /**
      * @param array $rules
      * @param \yii\db\ColumnSchema $column
      * @param string|bool $behavesAs
@@ -551,7 +573,7 @@ DESC;
             // doesn't support unique indexes information...do nothing
         }
 
-        return $result;
+        return $result + $this->generateExistRules($table);
     }
 
     /**
