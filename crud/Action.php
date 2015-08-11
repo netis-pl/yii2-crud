@@ -199,6 +199,26 @@ class Action extends \yii\rest\Action
     }
 
     /**
+     * Splits multiple keys string into an array using default separator and escape char.
+     * @param string $string
+     * @return array
+     */
+    public static function explodeKeys($string)
+    {
+        return self::explodeEscaped(self::KEYS_SEPARATOR, $string);
+    }
+
+    /**
+     * Splits a composite key string into an array using default separator and escape char.
+     * @param string $string
+     * @return array
+     */
+    public static function explodeCompositeKey($string)
+    {
+        return self::explodeEscaped(self::COMPOSITE_KEY_SEPARATOR, $string);
+    }
+
+    /**
      * Sets a flash message if the response format is set to Response::FORMAT_HTML.
      * @param string $key the key identifying the flash message. Note that flash messages
      * and normal session variables share the same name space. If you have a normal

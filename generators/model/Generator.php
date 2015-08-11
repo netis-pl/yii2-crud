@@ -289,9 +289,10 @@ DESC;
     /**
      * Generates exist rules for foreign key columns.
      * @param \yii\db\TableSchema $table the table schema
+     * @param array $columnBehaviors
      * @return array the generated exist validation rules
      */
-    public function generateExistRules($table)
+    public function generateExistRules($table, $columnBehaviors)
     {
         $rules = [];
         foreach ($table->foreignKeys as $refs) {
@@ -300,12 +301,44 @@ DESC;
             $attributes = implode("', '", array_keys($refs));
             $targetAttributes = [];
             foreach ($refs as $key => $value) {
+                if (isset($columnBehaviors[$key]) && $columnBehaviors[$key] !== false) {
+                    continue 2;
+                }
                 $targetAttributes[] = "'$key' => '$value'";
             }
             $targetAttributes = implode(', ', $targetAttributes);
             $rules[] = "[['$attributes'], 'exist', 'skipOnError' => true, 'targetClass' => $refClassName::className(), 'targetAttribute' => [$targetAttributes]]";
         }
         return $rules;
+    }
+
+    /**
+     * Creates an 'each' rule from a normal validation rule.
+     * @param array $rule
+     * @param string $validator
+     * @return array
+     */
+    private function createEachRule($rule, $validator = null)
+    {
+        unset($rule['attributes']);
+        if (isset($rule['validator'])) {
+            array_unshift($rule, "'{$rule['validator']}'");
+            unset($rule['validator']);
+        } elseif ($validator !== null) {
+            array_unshift($rule, "'$validator'");
+        }
+        $result = [
+            'validator' => 'each',
+            'rule' => $rule,
+            'attributes' => [],
+        ];
+        foreach (['on', 'except'] as $param) {
+            if (isset($rule[$param])) {
+                $result[$param] = $result['rule'][$param];
+                unset($result['rule'][$param]);
+            }
+        }
+        return $result;
     }
 
     /**
@@ -384,11 +417,9 @@ DESC;
                 if ($behavesAs === true && $isForeignKey) {
                     $eachName = 'each_'.$name;
                     if (!isset($rules[$eachName])) {
-                        $rules[$eachName] = [
-                            'validator' => 'each',
-                            'rule' => $rules[$name],
-                        ];
+                        $rules[$eachName] = $this->createEachRule($rules[$name]);
                     }
+                    $rules[$eachName]['attributes'][] = $column->name;
                 } else {
                     $rules[$name]['attributes'][] = $column->name;
                 }
@@ -419,7 +450,12 @@ DESC;
             case Schema::TYPE_MONEY:
                 $rules['number']['attributes'][] = $column->name;
                 break;
-            default: // strings
+            default:
+                // strings
+                if ($behavesAs === true && $isForeignKey) {
+                    $rules['safe']['attributes'][] = $column->name;
+                    break;
+                }
                 if ($column->dbType === 'interval') {
                     $rules['filterInterval']['attributes'][] = $column->name;
                     $rules['interval']['attributes'][] = $column->name;
@@ -440,17 +476,11 @@ DESC;
     }
 
     /**
-     * Generates validation rules for the specified table.
-     * @param \yii\db\TableSchema $table the table schema
-     * @param bool $isSearchScenario if false, special columns will be unsafe (no rules)
-     * @return array the generated validation rules
+     * @return array
      */
-    public function generateRules($table, $isSearchScenario = false)
+    private function getDefaultRules()
     {
-        $behaviors = $this->generateBehaviors($table);
-
-        /** @var array $rules predefine only rules with names different than the validator */
-        $rules = [
+        return [
             'trim' => [
                 'attributes' => [],
             ],
@@ -459,7 +489,7 @@ DESC;
             ],
             'explodeKey' => [
                 'validator' => 'filter',
-                'filter' => 'function ($value) {return \netis\utils\crud\Action::explodeEscaped(\netis\utils\crud\Action::KEYS_SEPARATOR, $value);}',
+                'filter' => "'\\netis\\utils\\crud\\Action::explodeKeys'",
                 'attributes' => [],
             ],
             'required' => [
@@ -467,15 +497,15 @@ DESC;
             ],
             'updateTrim' => [
                 'validator' => 'trim',
-                'on' => 'update',
+                'on' => 'self::SCENARIO_UPDATE',
             ],
             'updateDefault' => [
                 'validator' => 'default',
-                'on' => 'update',
+                'on' => 'self::SCENARIO_UPDATE',
             ],
             'updateRequired' => [
                 'validator' => 'required',
-                'on' => 'update',
+                'on' => 'self::SCENARIO_UPDATE',
             ],
             'filterDatetime' => [
                 'validator' => 'filter',
@@ -520,30 +550,69 @@ DESC;
                 'attributes' => [],
             ],
         ];
+    }
+
+    /**
+     * Casts rule params array to string.
+     * @param array $params
+     * @return string
+     */
+    private function serializeRuleParams($params)
+    {
+        $result = [];
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $value = '['.$this->serializeRuleParams($value).']';
+            }
+            if (is_numeric($key)) {
+                $result[] = $value;
+            } else {
+                $result[] = "'$key' => $value";
+            }
+        }
+        return implode(', ', $result);
+    }
+
+    /**
+     * Generates validation rules for the specified table.
+     * @param \yii\db\TableSchema $table the table schema
+     * @param bool $isSearchScenario if false, special columns will be unsafe (no rules)
+     * @return array the generated validation rules
+     */
+    public function generateRules($table, $isSearchScenario = false)
+    {
+        /** @var array $rules predefine only rules with names different than the validator */
+        $rules = $this->getDefaultRules();
 
         $foreignKeys = [];
         foreach ($table->foreignKeys as $foreignKey) {
             array_shift($foreignKey);
-            foreach ($foreignKey as $column) {
-                $foreignKeys[$column] = true;
+            foreach ($foreignKey as $fk => $pk) {
+                $foreignKeys[$fk] = true;
             }
         }
+        $behaviors = $this->generateBehaviors($table);
+        $columnBehaviors = [];
         foreach ($table->columns as $column) {
             if ($column->autoIncrement) {
                 continue;
             }
 
             // assume special attributes will ALWAYS be filled automatically and are never required by user
-            $behavesAs = false;
-            foreach ($behaviors as $behaviorName => $behavior) {
-                foreach ($behavior['options'] as $option) {
-                    if ($option === $column->name) {
-                        if ($option === 'updateNotesAttribute') {
-                            $behavesAs = 'blameableNote';
-                        } else {
-                            $behavesAs = $behaviorName;
+            $columnBehaviors[$column->name] = false;
+            if ($isSearchScenario) {
+                $columnBehaviors[$column->name] = true;
+            } else {
+                foreach ($behaviors as $behaviorName => $behavior) {
+                    foreach ($behavior['options'] as $option) {
+                        if ($option === $column->name) {
+                            if ($option === 'updateNotesAttribute') {
+                                $columnBehaviors[$column->name] = 'blameableNote';
+                            } else {
+                                $columnBehaviors[$column->name] = $behaviorName;
+                            }
+                            break 2;
                         }
-                        break 2;
                     }
                 }
             }
@@ -551,7 +620,7 @@ DESC;
             $rules = $this->getColumnRules(
                 $rules,
                 $column,
-                $isSearchScenario ? true : $behavesAs,
+                $columnBehaviors[$column->name],
                 isset($foreignKeys[$column->name])
             );
         }
@@ -585,9 +654,7 @@ DESC;
             }
             $params = '';
             if (!empty($rule)) {
-                $params = ', ' . implode(', ', array_map(function ($k, $v) {
-                    return "'$k' => $v";
-                }, array_keys($rule), array_values($rule)));
+                $params = ', ' . $this->serializeRuleParams($rule);
             }
             if ($ruleName === 'formatTimestamp') {
                 foreach ($attributes as $attribute) {
@@ -598,13 +665,16 @@ DESC;
             }
         }
 
-        try {
-            $result = array_merge($result, $this->generateUniqueRules($table));
-        } catch (NotSupportedException $e) {
-            // doesn't support unique indexes information...do nothing
+        if (!$isSearchScenario) {
+            try {
+                $result = array_merge($result, $this->generateUniqueRules($table));
+            } catch (NotSupportedException $e) {
+                // doesn't support unique indexes information...do nothing
+            }
+            $result = array_merge($result, $this->generateExistRules($table, $columnBehaviors));
         }
 
-        return array_merge($result, $this->generateExistRules($table));
+        return $result;
     }
 
     /**
