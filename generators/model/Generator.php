@@ -157,6 +157,7 @@ DESC;
                     'queryClassName' => $queryClassName ? $queryClassName : 'ActiveQuery',
                     'labels' => $this->generateLabels($tableSchema),
                     'rules' => $this->generateRules($tableSchema, true),
+                    'relations' => isset($relations[$tableName]) ? $relations[$tableName] : [],
                 ];
                 $files[] = new CodeFile(
                     Yii::getAlias('@' . str_replace('\\', '/', $this->searchNs)) . '/' . $searchClassName . '.php',

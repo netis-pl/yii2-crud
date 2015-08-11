@@ -9,6 +9,7 @@ namespace netis\utils\widgets;
 use netis\utils\crud\Action;
 use netis\utils\db\ActiveQuery;
 use Yii;
+use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
@@ -209,15 +210,28 @@ function(object){
 }
 JavaScript;
         if ($isMany) {
-            $value = Action::implodeEscaped(
-                Action::KEYS_SEPARATOR,
-                array_map(
+            if (property_exists($model, $relation)) {
+                // special case for search models, where there is a relation property defined that holds the keys
+                $value = $model->$relation;
+            } else {
+                $value = array_map(
                     '\netis\utils\crud\Action::exportKey',
                     $activeRelation->select($primaryKey)->asArray()->all()
-                )
-            );
+                );
+            }
+            if (is_array($value)) {
+                $value = Action::implodeEscaped(Action::KEYS_SEPARATOR, $value);
+            }
         } else {
-            $value = Action::exportKey($model->getAttributes($foreignKeys));
+            // special case for search models, where fks holds array of keys
+            if (is_array($model->getAttribute($foreignKey))) {
+                if (count($foreignKeys) > 1) {
+                    throw new Exception('Composite foreign keys are not supported for searching.');
+                }
+                $value = Action::implodeEscaped(Action::KEYS_SEPARATOR, $model->getAttribute($foreignKey));
+            } else {
+                $value = Action::exportKey($model->getAttributes($foreignKeys));
+            }
         }
         list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
             $model,

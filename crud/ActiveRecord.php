@@ -181,7 +181,8 @@ class ActiveRecord extends \yii\db\ActiveRecord
         $formats = [];
         foreach ($attributes as $attribute) {
             if (!isset($columns[$attribute])) {
-                $formats[$attribute] = Schema::TYPE_STRING;
+                $formats[$attribute] = 'raw';
+                continue;
             }
             $type = $columns[$attribute]->type;
             if ($columns[$attribute]->dbType === 'interval') {

@@ -73,6 +73,43 @@ trait ActiveSearchTrait
     }
 
     /**
+     * @return array contains two arrays: hasOne and hasMany relation names.
+     */
+    private function getRelationTypes()
+    {
+        $result = [[], []];
+        foreach ($this->relations() as $name) {
+            $relation = $this->getRelation($name);
+            $result[$relation->multiple ? 1 : 0][] = $name;
+        }
+        return $result;
+    }
+
+    /**
+     * @inheritdoc
+     * HasOne relations are never safe, even if they have validation rules.
+     */
+    public function safeAttributes()
+    {
+        list($hasOneRelations, $hasManyRelations) = $this->getRelationTypes();
+        // copied from yii\base\Model because parent::safeAttributes() already filters all relations
+        $scenario = $this->getScenario();
+        $scenarios = $this->scenarios();
+        if (!isset($scenarios[$scenario])) {
+            return [];
+        }
+        $attributes = [];
+        foreach ($scenarios[$scenario] as $attribute) {
+            if ($attribute[0] !== '!') {
+                $attributes[] = $attribute;
+            }
+        }
+        // end of copy
+
+        return array_diff($attributes, $hasOneRelations);
+    }
+
+    /**
      * @param string $attribute
      * @param string $value
      * @param array $formats
@@ -85,7 +122,7 @@ trait ActiveSearchTrait
         $columnName = $tablePrefix . '.' . $this->getDb()->getSchema()->quoteSimpleColumnName($attribute);
         switch ($formats[$attribute]) {
             default:
-                if (strlen($value) < 2 || ($value{0} !== '>' && $value{0} !== '<')) {
+                if (!is_string($value) || strlen($value) < 2 || ($value{0} !== '>' && $value{0} !== '<')) {
                     return [$columnName => $value];
                 }
 
@@ -100,6 +137,9 @@ trait ActiveSearchTrait
             case 'text':
             case 'email':
             case 'url':
+                if (is_array($value)) {
+                    return [$columnName => $value];
+                }
                 return [$hasILike ? 'ilike' : 'like', $columnName, $value];
             case 'json':
                 $subquery = (new Query())
@@ -108,6 +148,45 @@ trait ActiveSearchTrait
                     ->where([$hasILike ? 'ilike' : 'like', 'a::text', $value]);
                 return ['exists', $subquery];
         }
+    }
+
+    /**
+     * Only hasMany relations should be ever marked as valid attributes.
+     * @param string $attribute relation name
+     * @param array $value
+     * @return array an IN condition with a subquery
+     */
+    protected function getRelationCondition($attribute, $value)
+    {
+        /** @var \yii\db\ActiveQuery $relation */
+        $relation = $this->getRelation($attribute);
+        /** @var \yii\db\ActiveRecord $relationClass */
+        $relationClass = $relation->modelClass;
+        if ($relation->via !== null) {
+            /* @var $viaRelation \yii\db\ActiveQuery */
+            $viaRelation = is_array($relation->via) ? $relation->via[1] : $relation->via;
+            /** @var \yii\db\ActiveRecord $viaClass */
+            $viaClass = $viaRelation->modelClass;
+            $subquery = (new Query)
+                ->select(array_map(function ($key) {
+                    return 'j.' . $key;
+                }, array_keys($viaRelation->link)))
+                ->from(['t' => $relationClass::tableName()])
+                ->innerJoin(['j' => $viaClass::tableName()], implode(' AND ', array_map(function ($leftKey, $rightKey) {
+                    return 't.' . $leftKey .' = j.' . $rightKey;
+                }, array_keys($relation->link), array_values($relation->link))))
+                ->where(['IN', array_map(function ($key) {
+                    return 't.' . $key;
+                }, $relationClass::primaryKey()), $value]);
+            $linkKeys = array_values($viaRelation->link);
+        } else {
+            $subquery = (new Query)
+                ->select(array_keys($relation->link))
+                ->from(['t' => $relationClass::tableName()])
+                ->where(['IN', $relationClass::primaryKey(), $value]);
+            $linkKeys = array_values($relation->link);
+        }
+        return ['IN', $linkKeys, $subquery];
     }
 
     /**
@@ -165,7 +244,7 @@ trait ActiveSearchTrait
         $hasILike = $this->getDb()->driverName === 'pgsql';
         foreach ($validAttributes as $attribute) {
             $value = $attributeValues[$attribute];
-            if ($value === null || !isset($formats[$attribute])
+            if (empty($value) || !isset($formats[$attribute])
                 || ($enums !== null && $enums->has($formats[$attribute]))
             ) {
                 continue;
@@ -251,7 +330,7 @@ trait ActiveSearchTrait
                 continue;
             }
             $relationName = substr($attribute, 0, $pos);
-            /** @var ActiveQuery $activeRelation */
+            /** @var \yii\db\ActiveQuery $activeRelation */
             $activeRelation = $this->getRelation($relationName);
             $relationModel = new $activeRelation->modelClass();
             $relationModel->scenario = $this->scenario;
@@ -295,6 +374,7 @@ trait ActiveSearchTrait
         $conditions = ['and'];
         $formats = $this->attributeFormats();
         $attributes = $this->attributes();
+        $relations = $this->relations();
         $validAttributes = array_diff($attributes, array_keys($this->getErrors()));
         $attributeValues = $this->getAttributes($validAttributes);
         $hasILike = $this->getDb()->driverName === 'pgsql';
@@ -302,13 +382,18 @@ trait ActiveSearchTrait
         $enums = Yii::$app->formatter instanceof Formatter ? Yii::$app->formatter->getEnums() : null;
         foreach ($validAttributes as $attribute) {
             $value = $attributeValues[$attribute];
-            if ($value === null || !isset($formats[$attribute])
+            if (empty($value) || !isset($formats[$attribute])
                 || ($enums !== null && $enums->has($formats[$attribute]))
             ) {
                 continue;
             }
 
-            $conditions[] = $this->getAttributeCondition($attribute, $value, $formats, $tablePrefix, $hasILike);
+            if (in_array($attribute, $relations)) {
+                // only hasMany relations should be ever marked as valid attributes
+                $conditions[] = $this->getRelationCondition($attribute, $value);
+            } else {
+                $conditions[] = $this->getAttributeCondition($attribute, $value, $formats, $tablePrefix, $hasILike);
+            }
         }
         // don't clear attributes to allow rendering filled search form
         //$this->setAttributes(array_fill_keys($attributes, null));

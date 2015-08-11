@@ -42,15 +42,19 @@ class IndexAction extends Action
             call_user_func($this->checkAccess, 'read');
         }
         $controller = $this->controller;
-        $model = $controller instanceof ActiveController ? $controller->getSearchModel() : new $this->modelClass();
+        $model = new $this->modelClass();
+        $searchModel = $controller instanceof ActiveController ? $controller->getSearchModel() : $model;
         // prepared here because it modifies $model
-        $dataProvider = $this->prepareDataProvider($model);
+        $dataProvider = $this->prepareDataProvider($searchModel);
 
         return [
             'dataProvider' => $dataProvider,
             'columns' => $this->getIndexGridColumns($model, $this->getFields($model, 'grid')),
-            'searchModel' => $model,
-            'searchFields' => FormBuilder::getFormFields($model, $this->getFields($model, 'searchForm'), true),
+            'searchModel' => $searchModel,
+            'searchFields' => FormBuilder::getFormFields($searchModel, array_merge(
+                $this->getFields($searchModel, 'searchForm'),
+                $this->getExtraFields($searchModel, 'searchForm')
+            ), true),
         ];
     }
 

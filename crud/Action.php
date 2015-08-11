@@ -205,7 +205,7 @@ class Action extends \yii\rest\Action
      */
     public static function explodeKeys($string)
     {
-        return self::explodeEscaped(self::KEYS_SEPARATOR, $string);
+        return array_filter(array_map('trim', self::explodeEscaped(self::KEYS_SEPARATOR, $string)));
     }
 
     /**

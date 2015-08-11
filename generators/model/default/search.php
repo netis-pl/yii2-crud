@@ -12,6 +12,7 @@ use yii\helpers\Inflector;
 /* @var $queryClassName string query model class name */
 /* @var $labels string[] list of attribute labels (name => label) */
 /* @var $rules string[] list of validation rules */
+/* @var $relations array list of relations (name => relation declaration) */
 
 $modelFullClassName = $modelClassName;
 if ($generator->ns !== $generator->searchNs) {
@@ -39,6 +40,13 @@ class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelCla
 {
     use \netis\utils\db\ActiveSearchTrait;
 
+<?php foreach ($relations as $name => $relation): if (true || !$relation[2]) continue; ?>
+    /**
+     * @var string <?= $name ?> relation keys
+     */
+    public $<?= lcfirst($name) ?>;
+
+<?php endforeach; ?>
     /**
      * @inheritdoc
      */
