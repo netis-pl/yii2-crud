@@ -332,6 +332,7 @@ class UpdateAction extends Action
             return Url::toRoute($params);
         };
         $columns[0]['buttons']['update'] = function ($url, $model, $key) use ($actionColumn, $relationName) {
+            /** @var \netis\utils\crud\ActiveRecord $model */
             if (!Yii::$app->user->can($model::className() . '.update', ['model' => $model])) {
                 return null;
             }
@@ -350,8 +351,20 @@ class UpdateAction extends Action
             ], $actionColumn->buttonOptions);
             return \yii\helpers\Html::a('<span class="glyphicon glyphicon-pencil"></span>', $url, $options);
         };
-        $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn) {
-            if (!Yii::$app->user->can($model::className() . '.update', ['model' => $model])) {
+        $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn, $relation) {
+            /** @var \netis\utils\crud\ActiveRecord $model */
+            /** @var \yii\db\ActiveQuery $relation */
+            $keys = array_keys($relation->link);
+            $remove = false;
+            $tableSchema = $model->getTableSchema();
+            foreach ($keys as $k) {
+                $columnDefinition = $tableSchema->getColumn($k);
+                if (!$columnDefinition->allowNull) {
+                    $remove = true;
+                    break;
+                }
+            }
+            if (!Yii::$app->user->can($model::className() . ($remove ? '.delete' : '.update'), ['model' => $model])) {
                 return null;
             }
 

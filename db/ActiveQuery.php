@@ -13,7 +13,9 @@ use yii\db\ActiveRecord;
 /**
  * Provides queries to add default order and support the soft delete ToggableBehavior.
  * @package netis\utils\db
+ *
  * @method ActiveQuery authorized(\yii\db\ActiveRecord $model, array $relations, \yii\web\IdentityInterface $user)
+ * @method \yii\db\Query getRelatedUserQuery($model, $relations, $user = null, $baseConditions = [], $baseParams = [], $primaryKey = null)
  */
 class ActiveQuery extends \yii\db\ActiveQuery
 {
