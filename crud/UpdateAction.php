@@ -354,16 +354,11 @@ class UpdateAction extends Action
         $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn, $relation) {
             /** @var \netis\utils\crud\ActiveRecord $model */
             /** @var \yii\db\ActiveQuery $relation */
-            $keys = array_keys($relation->link);
             $remove = false;
-            $tableSchema = $model->getTableSchema();
-            foreach ($keys as $k) {
-                $columnDefinition = $tableSchema->getColumn($k);
-                if (!$columnDefinition->allowNull) {
-                    $remove = true;
-                    break;
-                }
+            foreach (array_keys($relation->link) as $foreignKey) {
+                $remove = $remove && $model->getTableSchema()->getColumn($foreignKey)->allowNull;
             }
+
             if (!Yii::$app->user->can($model::className() . ($remove ? '.delete' : '.update'), ['model' => $model])) {
                 return null;
             }
