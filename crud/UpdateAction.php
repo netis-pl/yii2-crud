@@ -356,7 +356,7 @@ class UpdateAction extends Action
             /** @var \yii\db\ActiveQuery $relation */
             $remove = false;
             foreach (array_keys($relation->link) as $foreignKey) {
-                $remove = $remove && $model->getTableSchema()->getColumn($foreignKey)->allowNull;
+                $remove = $remove || !$model->getTableSchema()->getColumn($foreignKey)->allowNull;
             }
 
             if (!Yii::$app->user->can($model::className() . ($remove ? '.delete' : '.update'), ['model' => $model])) {

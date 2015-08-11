@@ -156,7 +156,7 @@ class LinkableBehavior extends Behavior
         if (!empty($keys) || !empty($removeKeys)) {
             $remove = false;
             foreach (array_keys($relation->link) as $foreignKey) {
-                $remove = $remove && $relatedClass::getTableSchema()->getColumn($foreignKey)->allowNull;
+                $remove = $remove || !$relatedClass::getTableSchema()->getColumn($foreignKey)->allowNull;
             }
 
             $this->checkAccess($relation->modelClass, $removeKeys, $remove ? 'delete' : 'update');
