@@ -7,7 +7,7 @@
 namespace netis\utils\rbac;
 
 use yii\base\Behavior;
-use yii\db\ActiveRecord;
+use netis\utils\crud\ActiveRecord;
 use yii\web\IdentityInterface;
 
 /**

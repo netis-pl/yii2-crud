@@ -7,10 +7,13 @@
 namespace netis\utils\db;
 
 use netis\utils\crud\Action;
+use Yii;
 use yii\base\Behavior;
 use yii\base\InvalidCallException;
 use yii\db\Expression;
 use yii\db\Query;
+use yii\web\ForbiddenHttpException;
+
 
 /**
  * LinkableBehavior provides methods for easy linking of current model with related records.
@@ -69,6 +72,9 @@ class LinkableBehavior extends Behavior
             $viaTable = reset($relation->via->from);
         }
         $schema = $owner::getDb()->getSchema();
+
+        $this->checkAccess($relation->modelClass, array_merge($keys, $removeKeys), 'read');
+
         if (!empty($keys) || !empty($removeKeys)) {
             $owner::getDb()->createCommand()
                 ->delete(
@@ -142,30 +148,41 @@ class LinkableBehavior extends Behavior
         /** @var \yii\db\ActiveRecord $owner */
         $owner = $this->owner;
         // update related clearing those not in $keys and setting those which are
-        //! @todo when TableSchema will allow it, check if 'on update' action is 'set default'
-        // when updating the column is not possible this method should not be called at all, an exception should be thrown here
         /** @var \yii\db\ActiveRecord $relatedClass */
         $relatedClass = $relation->modelClass;
         $relatedTable = $relatedClass::getTableSchema()->fullName;
         $leftKeys = array_keys($relation->link);
         $rightKeys = array_values($relation->link);
         if (!empty($keys) || !empty($removeKeys)) {
-            $owner::getDb()->createCommand()
-                ->update(
-                    $relatedTable,
-                    array_fill_keys($leftKeys, null),
-                    [
-                        'and',
-                        $removeKeys === null
-                            ? $this->buildKeyInCondition('not in', $relatedClass::getTableSchema()->primaryKey, $keys)
-                            : $this->buildKeyInCondition('in', $relatedClass::getTableSchema()->primaryKey, $removeKeys),
-                        array_combine($leftKeys, $owner->getAttributes($rightKeys)),
-                    ]
-                )->execute();
+            $remove = false;
+            foreach (array_keys($relation->link) as $foreignKey) {
+                $remove = $remove || !$relatedClass::getTableSchema()->getColumn($foreignKey)->allowNull;
+            }
+
+            $this->checkAccess($relation->modelClass, $removeKeys, $remove ? 'delete' : 'update');
+
+            $where = [
+                'and',
+                $removeKeys === null
+                    ? $this->buildKeyInCondition('not in', $relatedClass::getTableSchema()->primaryKey, $keys)
+                    : $this->buildKeyInCondition('in', $relatedClass::getTableSchema()->primaryKey, $removeKeys),
+                array_combine($leftKeys, $owner->getAttributes($rightKeys)),
+            ];
+
+            if ($remove) {
+                $owner::getDb()->createCommand()->delete($relatedTable, $where)->execute();
+            } else {
+                $owner::getDb()->createCommand()
+                    ->update($relatedTable, array_fill_keys($leftKeys, null), $where)
+                    ->execute();
+            }
         }
         if (empty($keys)) {
             return;
         }
+
+        $this->checkAccess($relation->modelClass, $keys, 'update');
+
         $owner::getDb()->createCommand()
             ->update(
                 $relatedTable,
@@ -206,7 +223,9 @@ class LinkableBehavior extends Behavior
      * supplied by end user.
      * @param string $formName the form name to be used for loading the data into the model.
      * If not set, [[formName()]] will be used.
-     * @return boolean whether no data was sent or the relations has been successfully linked.
+     * @return bool whether no data was sent or the relations has been successfully linked.
+     * @throws ForbiddenHttpException
+     * @throws \yii\base\InvalidConfigException
      */
     public function saveRelations($data, $formName = null)
     {
@@ -237,5 +256,23 @@ class LinkableBehavior extends Behavior
             $this->linkByKeys($relation, $addKeys, $removeKeys);
         }
         return true;
+    }
+
+    /**
+     * Checks access for multiple models.
+     *
+     * @param string $modelClass
+     * @param array $keys
+     * @param string $operation
+     * @throws ForbiddenHttpException
+     */
+    private function checkAccess($modelClass, $keys, $operation)
+    {
+        $models = $modelClass::findAll($keys);
+        foreach ($models as $model) {
+            if (!Yii::$app->user->can("{$modelClass}.{$operation}", ['model' => $model])) {
+                throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
+            }
+        }
     }
 }
