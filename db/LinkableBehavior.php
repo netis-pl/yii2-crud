@@ -72,6 +72,9 @@ class LinkableBehavior extends Behavior
             $viaTable = reset($relation->via->from);
         }
         $schema = $owner::getDb()->getSchema();
+
+        $this->checkAccess($relation->modelClass, array_merge($keys, $removeKeys), 'read');
+
         if (!empty($keys) || !empty($removeKeys)) {
             $owner::getDb()->createCommand()
                 ->delete(
