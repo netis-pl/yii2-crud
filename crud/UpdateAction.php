@@ -233,7 +233,7 @@ class UpdateAction extends Action
      */
     private function getRelationButtons($relationName, $relation, $model)
     {
-        /** @var \yii\db\ActiveRecord $relatedModel */
+        /** @var \netis\utils\crud\ActiveRecord $relatedModel */
         $relatedModel = $relation['model'];
         $dataProvider = $relation['dataProvider'];
 
@@ -254,6 +254,7 @@ class UpdateAction extends Action
                 'data-relation' => $relationName,
                 'data-title'    => $relatedModel->getCrudLabel('create'),
                 'data-pjax-url' => Url::toRoute($createRoute),
+                'data-mode'     => FormBuilder::MODAL_MODE_NEW_RECORD,
                 'class'         => 'btn btn-default',
             ]);
         }
@@ -268,6 +269,7 @@ class UpdateAction extends Action
                 'data-relation' => $relationName,
                 'data-title'    => $relatedModel->getCrudLabel('index'),
                 'data-pjax-url' => Url::toRoute($searchRoute),
+                'data-mode'     => FormBuilder::MODAL_MODE_EXISTING_RECORD,
                 'class'         => 'btn btn-default',
             ]);
         }
@@ -351,14 +353,16 @@ class UpdateAction extends Action
             ], $actionColumn->buttonOptions);
             return \yii\helpers\Html::a('<span class="glyphicon glyphicon-pencil"></span>', $url, $options);
         };
-        $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn, $relation) {
-            /** @var \netis\utils\crud\ActiveRecord $model */
-            /** @var \yii\db\ActiveQuery $relation */
-            $remove = false;
-            foreach (array_keys($relation->link) as $foreignKey) {
-                $remove = $remove || !$model->getTableSchema()->getColumn($foreignKey)->allowNull;
-            }
 
+        /** @var \yii\db\ActiveQuery $relation */
+        $remove = false;
+        $modelClass = $relation->modelClass;
+        foreach (array_keys($relation->link) as $foreignKey) {
+            $remove = $remove || !$modelClass::getTableSchema()->getColumn($foreignKey)->allowNull;
+        }
+
+        $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn, $remove) {
+            /** @var \netis\utils\crud\ActiveRecord $model */
             if (!Yii::$app->user->can($model::className() . ($remove ? '.delete' : '.update'), ['model' => $model])) {
                 return null;
             }

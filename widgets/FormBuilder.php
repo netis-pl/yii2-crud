@@ -18,6 +18,9 @@ use yii\web\JsExpression;
 
 class FormBuilder
 {
+    const MODAL_MODE_NEW_RECORD = 1;
+    const MODAL_MODE_EXISTING_RECORD = 2;
+
     /**
      * Registers JS code to help initialize Select2 widgets
      * with access to netis\utils\crud\ActiveController API.
