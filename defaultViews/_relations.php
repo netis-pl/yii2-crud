@@ -6,12 +6,10 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $model netis\utils\crud\ActiveRecord */
 /* @var $relations array */
-/* @var $form yii\widgets\ActiveForm */
 /* @var $controller netis\utils\crud\ActiveController */
-/* @var $view \netis\utils\web\View */
+/* @var $renderKeyInputs bool */
 
 $controller = $this->context;
-$view = $this;
 
 $pjax = Yii::$app->request->getQueryParam('_pjax');
 $activeRelation = false;
@@ -36,29 +34,32 @@ foreach ($relations as $relationName => $data) {
 <?php endforeach; ?>
     </ul>
     <div class="tab-content">
-        <?php foreach ($relations as $relationName => $data): ?>
-            <?php
-            /** @var \yii\db\ActiveRecord $relationModel */
-            $relationModel = $data['model'];
-            /** @var \yii\db\ActiveQuery $query */
-            $query = clone $data['dataProvider']->query;
-            $keys = Action::implodeEscaped(
-                Action::KEYS_SEPARATOR,
-                array_map(
-                    '\netis\utils\crud\Action::exportKey',
-                    $query->select($relationModel->getTableSchema()->primaryKey)
-                        ->asArray()
-                        ->all()
-                )
-            );?>
-            <?= Html::activeHiddenInput($model, $relationName.'[add]', ['value' => $keys]) ?>
-            <?= Html::activeHiddenInput($model, $relationName.'[remove]') ?>
-            <?= $this->render('_relation_widget', [
-                'model' => $model,
-                'relations' => $relations,
-                'relationName' => $relationName,
-                'isActive' => $relationName === $activeRelation,
-            ], $this->context) ?>
-        <?php endforeach; ?>
+<?php
+foreach ($relations as $relationName => $data) {
+    if (!isset($renderKeyInputs) || $renderKeyInputs) {
+        /** @var \yii\db\ActiveRecord $relationModel */
+        $relationModel = $data['model'];
+        /** @var \yii\db\ActiveQuery $query */
+        $query = clone $data['dataProvider']->query;
+        $keys  = Action::implodeEscaped(
+            Action::KEYS_SEPARATOR,
+            array_map(
+                '\netis\utils\crud\Action::exportKey',
+                $query->select($relationModel->getTableSchema()->primaryKey)
+                    ->asArray()
+                    ->all()
+            )
+        );
+        echo Html::activeHiddenInput($model, $relationName . '[add]', ['value' => $keys]);
+        echo Html::activeHiddenInput($model, $relationName . '[remove]');
+    }
+    echo $this->render('_relation_widget', [
+        'model'        => $model,
+        'relations'    => $relations,
+        'relationName' => $relationName,
+        'isActive'     => $relationName === $activeRelation,
+    ], $this->context);
+}
+?>
     </div>
 </div>

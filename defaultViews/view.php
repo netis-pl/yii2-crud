@@ -27,14 +27,6 @@ if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
     return;
 }
 
-$pjax = Yii::$app->request->getQueryParam('_pjax');
-$activeRelation = false;
-foreach ($relations as $relationName => $data) {
-    if ($pjax === null || $pjax === "#$relationName") {
-        $activeRelation = $relationName;
-        break;
-    }
-}
 ?>
 
 <h1><span><?= Html::encode($this->title) ?></span></h1>
@@ -44,30 +36,10 @@ foreach ($relations as $relationName => $data) {
 <?= DetailView::widget([
     'model' => $model,
     'attributes' => $attributes,
-])
-?>
-<div role="tabpanel" class="relations-panel">
-    <ul class="nav nav-tabs" role="tablist">
-<?php foreach ($relations as $relationName => $data): ?>
-        <li role="presentation"
-            class="<?= $relationName === $activeRelation ? 'active' : ''?>">
-            <a href="#tab_<?= $relationName ?>" aria-controls="tab_<?= $relationName ?>"
-               role="tab" data-toggle="tab">
-                <?= $data['model']->getCrudLabel('relation') ?>
-            </a>
-        </li>
-<?php endforeach; ?>
-    </ul>
-    <div class="tab-content">
-        <?php
-        foreach ($relations as $relationName => $data) {
-            echo $this->render('_relation_widget', array(
-                'model' => $model,
-                'relations' => $relations,
-                'relationName' => $relationName,
-                'isActive' => $relationName === $activeRelation,
-            ));
-        }
-        ?>
-    </div>
-</div>
+]) ?>
+
+<?= $this->render('_relations', [
+    'model' => $model,
+    'relations' => $relations,
+], $this->context) ?>
+
