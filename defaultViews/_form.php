@@ -57,7 +57,6 @@ echo FormBuilder::registerRelations($this);
     <?= $this->render('_relations', [
         'model' => $model,
         'relations' => $relations,
-        'form' => $form,
     ], $this->context) ?>
 
     <div class="form-group form-buttons">
