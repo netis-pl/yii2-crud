@@ -208,7 +208,9 @@
             escapeChar = '\\';
         }
         return $.map(pieces, function(k) {
-            return String(k).replace(/escapeChar/g, escapeChar + escapeChar).replace(/glue/g, escapeChar + glue);
+            var value = String(k).replace(/escapeChar/g, escapeChar + escapeChar).replace(/glue/g, escapeChar + glue);
+            //return null if it is empty item to remove from array
+            return $.trim(value) === '' ? null : value;
         }).join(glue);
     };
 
