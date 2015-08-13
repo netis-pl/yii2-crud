@@ -253,7 +253,6 @@ JavaScript;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, $relation);
         }
-        //! @todo add an 'change' event that detects them and opens up a modal dialog, same as in relations.js
         $ajaxResults = new JsExpression('s2helper.results');
         $clientEvents = null;
         if ($searchRoute !== null || $createRoute !== null) {
