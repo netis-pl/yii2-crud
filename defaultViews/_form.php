@@ -5,7 +5,7 @@ use yii\bootstrap\ActiveForm;
 use yii\helpers\Json;
 use netis\utils\widgets\FormBuilder;
 
-/* @var $this yii\web\View */
+/* @var $this \netis\utils\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $fields array */
 /* @var $relations array */

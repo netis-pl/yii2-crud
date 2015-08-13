@@ -3,7 +3,7 @@
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
-/* @var $this yii\web\View */
+/* @var $this \netis\utils\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $attributes array */
 /* @var $relations array */
@@ -61,12 +61,17 @@ foreach ($relations as $relationName => $data) {
     <div class="tab-content">
         <?php
         foreach ($relations as $relationName => $data) {
-            echo $this->render('_relation_widget', array(
+            echo Html::beginTag('div', [
+                'role' => 'tabpanel',
+                'id' => $relationName,
+                'class' => 'tab-pane fade' . ($relationName === $activeRelation ? ' in active' : '')]
+            );
+            echo $this->render('_relation_widget', [
                 'model' => $model,
                 'relations' => $relations,
                 'relationName' => $relationName,
-                'isActive' => $relationName === $activeRelation,
-            ));
+            ]);
+            echo Html::endTag('div');
         }
         ?>
     </div>

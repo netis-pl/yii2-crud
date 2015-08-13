@@ -37,28 +37,31 @@ foreach ($relations as $relationName => $data) {
     </ul>
     <div class="tab-content">
         <?php foreach ($relations as $relationName => $data): ?>
-            <?php
-            /** @var \yii\db\ActiveRecord $relationModel */
-            $relationModel = $data['model'];
-            /** @var \yii\db\ActiveQuery $query */
-            $query = clone $data['dataProvider']->query;
-            $keys = Action::implodeEscaped(
-                Action::KEYS_SEPARATOR,
-                array_map(
-                    '\netis\utils\crud\Action::exportKey',
-                    $query->select($relationModel->getTableSchema()->primaryKey)
-                        ->asArray()
-                        ->all()
-                )
-            );?>
-            <?= Html::activeHiddenInput($model, $relationName.'[add]', ['value' => $keys]) ?>
-            <?= Html::activeHiddenInput($model, $relationName.'[remove]') ?>
-            <?= $this->render('_relation_widget', [
-                'model' => $model,
-                'relations' => $relations,
-                'relationName' => $relationName,
-                'isActive' => $relationName === $activeRelation,
-            ], $this->context) ?>
+            <div role="tabpanel"
+                 class="tab-pane fade<?= $relationName === $activeRelation ? ' in active' : '' ?>"
+                 id="tab_<?= $relationName ?>">
+                <?php
+                /** @var \yii\db\ActiveRecord $relationModel */
+                $relationModel = $data['model'];
+                /** @var \yii\db\ActiveQuery $query */
+                $query = clone $data['dataProvider']->query;
+                $keys = Action::implodeEscaped(
+                    Action::KEYS_SEPARATOR,
+                    array_map(
+                        '\netis\utils\crud\Action::exportKey',
+                        $query->select($relationModel->getTableSchema()->primaryKey)
+                            ->asArray()
+                            ->all()
+                    )
+                );?>
+                <?= Html::activeHiddenInput($model, $relationName.'[add]', ['value' => $keys]) ?>
+                <?= Html::activeHiddenInput($model, $relationName.'[remove]') ?>
+                <?= $this->render('_relation_widget', [
+                    'model' => $model,
+                    'relations' => $relations,
+                    'relationName' => $relationName,
+                ], $this->context) ?>
+            </div>
         <?php endforeach; ?>
     </div>
 </div>

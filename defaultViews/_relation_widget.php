@@ -9,7 +9,6 @@ use yii\widgets\Pjax;
 /* @var $relations array */
 /* @var $relationName string */
 /* @var $relation array */
-/* @var $isActive boolean */
 /* @var $controller netis\utils\crud\ActiveController */
 
 $relation = $relations[$relationName];
@@ -31,20 +30,15 @@ $layout = <<<HTML
     <div class="col-md-4">{lengthPicker}</div>
 </div>
 HTML;
-?>
 
-<div role="tabpanel"
-     class="tab-pane fade<?= $isActive ? ' in active' : '' ?>"
-     id="tab_<?= $relationName ?>">
-
-<?php if (!isset($relation['pjax']) || $relation['pjax']): ?>
-    <?php $pjax = Pjax::begin([
+if (!isset($relation['pjax']) || $relation['pjax']) {
+    $pjax = Pjax::begin([
         'id' => $relationName.'Pjax',
         'linkSelector' => false,
-    ]); ?>
+    ]);
 
-    <?php $fieldId = \yii\helpers\Html::getInputId($model, $relationName); ?>
-    <?php $script = <<<JavaScript
+    $fieldId = \yii\helpers\Html::getInputId($model, $relationName);
+    $script = <<<JavaScript
 $('#{$relationName}Pjax').data('selectionFields', {'add': '#{$fieldId}-add', 'remove': '#{$fieldId}-remove'});
 $(document).pjax('#{$relationName}Pjax a', '#{$relationName}Pjax');
 $(document).on('pjax:beforeSend', '#{$relationName}Pjax', function(event, xhr, options) {
@@ -53,17 +47,15 @@ $(document).on('pjax:beforeSend', '#{$relationName}Pjax', function(event, xhr, o
   xhr.setRequestHeader('X-Selection-remove', $(container.data('selectionFields').remove).val());
 });
 JavaScript;
-    ?>
-    <?php $this->registerJs($script); ?>
-<?php endif; ?>
+    $this->registerJs($script);
+}
 
-    <?= GridView::widget([
-        'id'           => $relationName.'Grid',
-        'dataProvider' => $relation['dataProvider'],
-        'filterSelector' => "#{$relationName}Grid-quickSearch",
-        'columns'      => $relation['columns'],
-        'layout'       => isset($relation['layout']) ? $relation['layout'] : $layout,
-        'buttons'      => isset($relation['buttons']) ? $relation['buttons'] : [],
-    ]); ?>
-    <?php $pjax !== null && Pjax::end(); ?>
-</div>
+echo GridView::widget([
+    'id'           => $relationName.'Grid',
+    'dataProvider' => $relation['dataProvider'],
+    'filterSelector' => "#{$relationName}Grid-quickSearch",
+    'columns'      => $relation['columns'],
+    'layout'       => isset($relation['layout']) ? $relation['layout'] : $layout,
+    'buttons'      => isset($relation['buttons']) ? $relation['buttons'] : [],
+]);
+$pjax !== null && Pjax::end();
