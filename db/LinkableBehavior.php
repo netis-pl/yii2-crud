@@ -73,7 +73,7 @@ class LinkableBehavior extends Behavior
         }
         $schema = $owner::getDb()->getSchema();
 
-        $this->checkAccess($relation->modelClass, array_merge($keys, $removeKeys), 'read');
+        $this->checkAccess($relation->modelClass, array_merge($keys, $removeKeys === null ? [] : $removeKeys), 'read');
 
         if (!empty($keys) || !empty($removeKeys)) {
             $owner::getDb()->createCommand()
