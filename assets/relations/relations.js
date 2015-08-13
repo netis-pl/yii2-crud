@@ -106,8 +106,8 @@
             saveButton.data('target', target);
 
             if (_selectionFields !== undefined) {
-                added = netis.explodeEscaped(_settings.keysSeparator, _selectionFields.add.val());
-                removed = netis.explodeEscaped(_settings.keysSeparator, _selectionFields.remove.val());
+                added = netis.explodeKeys(_selectionFields.add.val());
+                removed = netis.explodeKeys(_selectionFields.remove.val());
             }
 
             if (_mode === MODE_EXISTING_RECORD && grid.length) {
@@ -154,8 +154,8 @@
             remove = [];
 
         if (_selectionFields !== undefined) {
-            add = netis.explodeEscaped(_settings.keysSeparator, _selectionFields.add.val());
-            remove = netis.explodeEscaped(_settings.keysSeparator, _selectionFields.remove.val());
+            add = netis.explodeKeys(_selectionFields.add.val());
+            remove = netis.explodeKeys(_selectionFields.remove.val());
         }
 
         if (_mode === MODE_EXISTING_RECORD && grid.length) {
@@ -177,8 +177,8 @@
         }
 
         if (_selectionFields !== undefined) {
-            _selectionFields.add.val(netis.implodeEscaped(_settings.keysSeparator, add));
-            _selectionFields.remove.val(netis.implodeEscaped(_settings.keysSeparator, remove));
+            _selectionFields.add.val(netis.implodeKeys(add));
+            _selectionFields.remove.val(netis.implodeKeys(remove));
             $.pjax.reload(_container);
         } else {
             _container.select2('val', add);
@@ -188,8 +188,8 @@
     };
 
     netis.removeRelation = function(container, key) {
-        var add = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').add).val()),
-            remove = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').remove).val()),
+        var add = netis.explodeKeys($(container.data('selectionFields').add).val()),
+            remove = netis.explodeKeys($(container.data('selectionFields').remove).val()),
             idx = $.inArray(key.toString(), add);
         if (idx !== -1) {
             add.splice(idx, 1);
@@ -198,8 +198,8 @@
             remove.push(key);
         }
 
-        $(container.data('selectionFields').add).val(netis.implodeEscaped(_settings.keysSeparator, add));
-        $(container.data('selectionFields').remove).val(netis.implodeEscaped(_settings.keysSeparator, remove));
+        $(container.data('selectionFields').add).val(netis.implodeKeys(add));
+        $(container.data('selectionFields').remove).val(netis.implodeKeys(remove));
         $.pjax.reload(container);
     };
 
@@ -207,35 +207,69 @@
         if (escapeChar === undefined) {
             escapeChar = '\\';
         }
+        var glueRegExp = new RegExp(netis.escapeRegex(glue), "g");
+        var escapeCharRegExp = new RegExp(netis.escapeRegex(escapeChar), "g");
         return $.map(pieces, function(k) {
-            var value = String(k).replace(/escapeChar/g, escapeChar + escapeChar).replace(/glue/g, escapeChar + glue);
-            //return null if it is empty item to remove from array
-            return $.trim(value) === '' ? null : value;
+            return String(k).replace(escapeCharRegExp, escapeChar + escapeChar).replace(glueRegExp, escapeChar + glue);
         }).join(glue);
     };
 
-    netis.explodeEscaped = function(delimiter, string, escapeChar, removeEmpty) {
+    netis.implodeKeys = function (pieces) {
+        var glue = _settings.keysSeparator || ',';
+
+        pieces = $.map(pieces, function (v) {
+            return $.trim(v) === '' ? null : v;
+        });
+
+        return netis.implodeEscaped(glue, pieces);
+    };
+
+    /**
+     * Splits a string into elements handling an escaped delimiter.
+     *
+     * FIXME This function fails for string: such as 'a\\,b\\' where \ is escape char and , is delimiter. It returns ['a\,b\']
+     * but should return ['a\','b\']. If string is 'a\\b,c\\d' it works ok and returns ['a\b', 'c\d'].
+     *
+     * @param delimiter
+     * @param string
+     * @param escapeChar
+     * @returns {Array}
+     */
+    netis.explodeEscaped = function(delimiter, string, escapeChar) {
         if (escapeChar === undefined) {
             escapeChar = '\\';
         }
-        if (removeEmpty === undefined) {
-            removeEmpty = true;
-        }
-        var lastIndex = 0,
+        var lastIndex = -1,
             prevIndex = -1,
             result = [];
+        var escapeRegExp = new RegExp(netis.escapeRegex(escapeChar) + '(.)', 'g');
         while ((lastIndex = string.indexOf(delimiter, lastIndex + 1)) > -1) {
-            if (string[lastIndex - 1] !== escapeChar) {
-                if (!removeEmpty || lastIndex - prevIndex + 1 > 0) {
-                    result.push(string.substring(prevIndex + 1, lastIndex));
-                }
-                prevIndex = lastIndex;
+            if (string[lastIndex - 1] === escapeChar) {
+                continue;
             }
+            if (lastIndex - prevIndex + 1 > 0) {
+                result.push(string.substring(prevIndex + 1, lastIndex).replace(escapeRegExp, '$1'));
+            }
+            prevIndex = lastIndex;
         }
-        if (!removeEmpty || string.length - prevIndex + 1 > 0) {
-            result.push(string.substring(prevIndex + 1));
+        if (string.length - prevIndex + 1 > 0) {
+            result.push(string.substring(prevIndex + 1).replace(escapeRegExp, '$1'));
         }
 
         return result;
+    };
+
+    netis.explodeKeys = function (string) {
+        var delimiter = _settings.keysSeparator || ',';
+
+        var pieces = netis.explodeEscaped(delimiter, string);
+
+        return $.map(pieces, function (v) {
+            return $.trim(v) === '' ? null : v;
+        });
+    };
+
+    netis.escapeRegex = function(str) {
+        return String(str).replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
     };
 }(window.netis = window.netis || {}, jQuery));

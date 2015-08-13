@@ -177,6 +177,17 @@ class Action extends \yii\rest\Action
     }
 
     /**
+     * Joins all elements of $pieces using default glue and escape char. This method skip empty values from imploding.
+     *
+     * @param string[] $pieces
+     * @return string
+     */
+    public static function implodeKeys($pieces)
+    {
+        return self::implodeEscaped(self::KEYS_SEPARATOR, array_filter(array_map('trim', $pieces)));
+    }
+
+    /**
      * Splits a string into elements handling an escaped delimiter.
      * @param string $delimiter
      * @param string $string
@@ -199,7 +210,9 @@ class Action extends \yii\rest\Action
     }
 
     /**
-     * Splits multiple keys string into an array using default separator and escape char.
+     * Splits multiple keys string into an array using default separator and escape char. This function removes empty
+     * values from result.
+     *
      * @param string $string
      * @return array
      */
