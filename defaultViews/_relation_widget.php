@@ -48,7 +48,7 @@ HTML;
 $('#{$relationName}Pjax').data('selectionFields', {'add': '#{$fieldId}-add', 'remove': '#{$fieldId}-remove'});
 $(document).pjax('#{$relationName}Pjax a', '#{$relationName}Pjax');
 $(document).on('pjax:beforeSend', '#{$relationName}Pjax', function(event, xhr, options) {
-  var container = $('#{$relationName}Pjax');
+  var container = $(event.target);
   xhr.setRequestHeader('X-Selection-add', $(container.data('selectionFields').add).val());
   xhr.setRequestHeader('X-Selection-remove', $(container.data('selectionFields').remove).val());
 });

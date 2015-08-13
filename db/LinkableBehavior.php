@@ -112,6 +112,8 @@ class LinkableBehavior extends Behavior
         $prefixedForeignKeys = array_map(function ($c) {
             return 'j.'.$c;
         }, array_values($relation->link));
+
+        $alreadyLinked = $relation->select(array_keys($relation->link))->asArray()->all();
         // a subquery is used as a more SQL portable way to specify list of values by putting them in a condition
         $subquery = (new Query())
             ->select(array_merge(
@@ -124,7 +126,8 @@ class LinkableBehavior extends Behavior
                 $prefixedPrimaryKeys
             ))
             ->from($relationClass::tableName().' t')
-            ->where($this->buildKeyInCondition('in', $prefixedPrimaryKeys, $keys));
+            ->where($this->buildKeyInCondition('in', $prefixedPrimaryKeys, $keys))
+            ->andWhere($this->buildKeyInCondition('not in', $prefixedPrimaryKeys, $alreadyLinked));
         if ($removeKeys === null) {
             $subquery->leftJoin($viaTable.' j', array_combine($prefixedForeignKeys, array_map(function ($k) {
                 return new Expression($k);

@@ -1,9 +1,10 @@
 <?php
 
+use netis\utils\crud\Action;
 use yii\helpers\Html;
 
 /* @var $this yii\web\View */
-/* @var $model yii\db\ActiveRecord */
+/* @var $model netis\utils\crud\ActiveRecord */
 /* @var $relations array */
 /* @var $form yii\widgets\ActiveForm */
 /* @var $controller netis\utils\crud\ActiveController */
@@ -36,7 +37,21 @@ foreach ($relations as $relationName => $data) {
     </ul>
     <div class="tab-content">
         <?php foreach ($relations as $relationName => $data): ?>
-            <?= Html::activeHiddenInput($model, $relationName.'[add]') ?>
+            <?php
+            /** @var \yii\db\ActiveRecord $relationModel */
+            $relationModel = $data['model'];
+            /** @var \yii\db\ActiveQuery $query */
+            $query = clone $data['dataProvider']->query;
+            $keys = Action::implodeEscaped(
+                Action::KEYS_SEPARATOR,
+                array_map(
+                    '\netis\utils\crud\Action::exportKey',
+                    $query->select($relationModel->getTableSchema()->primaryKey)
+                        ->asArray()
+                        ->all()
+                )
+            );?>
+            <?= Html::activeHiddenInput($model, $relationName.'[add]', ['value' => $keys]) ?>
             <?= Html::activeHiddenInput($model, $relationName.'[remove]') ?>
             <?= $this->render('_relation_widget', [
                 'model' => $model,

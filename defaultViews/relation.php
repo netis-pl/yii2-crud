@@ -20,6 +20,7 @@ HTML;
 
 <?php Pjax::begin([
     'timeout' => 6000,
+    'enablePushState' => false,
 ]); ?>
 <?= GridView::widget([
     'id'             => 'relationGrid',

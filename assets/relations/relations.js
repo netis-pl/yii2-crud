@@ -1,5 +1,7 @@
 (function(netis, $, undefined) {
     'use strict';
+    var MODE_NEW_RECORD = 1;
+    var MODE_EXISTING_RECORD = 2;
 
     var defaults = {
         modalId: '#relationModal',
@@ -12,6 +14,10 @@
     };
 
     var _settings;
+
+    var _mode = undefined;
+    var _selectionFields = undefined;
+    var _container = undefined;
 
     netis.init = function(settings) {
         _settings = $.extend({}, defaults, settings);
@@ -26,6 +32,7 @@
         //$(document).on('pjax:complete', settings.modalId, function() { })
 
         $(_settings.modalId).off('show.bs.modal').on('show.bs.modal', netis.showModal);
+        $(_settings.modalId).off('hide.bs.modal').on('hide.bs.modal', netis.hideModal);
 
         var saveButton = $(_settings.saveButtonId);
         saveButton.off('click').on('click', netis.saveRelation);
@@ -36,6 +43,13 @@
             event.preventDefault();
             return false;
         });
+    };
+
+    netis.hideModal = function(event) {
+        _mode = undefined;
+        _selectionFields = undefined;
+        _container = undefined;
+        $('.modal-body', this).empty();
     };
 
     netis.showModal = function(event) {
@@ -52,13 +66,24 @@
             relation = clicked.data('relation');
             title = clicked.data('title');
             url = clicked.data('pjax-url');
+            _mode = clicked.data('mode');
             target = '#' + relation + 'Pjax';
         } else {
             // clicked on a select list option for a hasOne relation
             relation = modal.data('relation');
             title = modal.data('title');
             url = modal.data('pjax-url');
+            _mode = modal.data('mode');
             target = '#' + modal.data('target');
+        }
+        _container = $(target);
+        var fieldsSelectors = $(target).data('selectionFields');
+        if (fieldsSelectors !== undefined) {
+            //save references to selection fields because new modal content could have fields with same selectors
+            _selectionFields = {
+                add: $(fieldsSelectors.add),
+                remove: $(fieldsSelectors.remove)
+            };
         }
 
         modal.find('.modal-title').text(title);
@@ -74,21 +99,20 @@
         $(document).off('pjax:success', _settings.modalId);
         $(document).on('pjax:success', _settings.modalId, function(event, data, status, xhr, options) {
             var saveButton = $(_settings.saveButtonId),
-                selectionFields = $(target).data('selectionFields'),
                 added = [],
                 removed = [],
                 grid = $(_settings.modalId + ' .grid-view');
 
             saveButton.data('target', target);
 
-            if (selectionFields !== undefined) {
-                added = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.add).val());
-                removed = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.remove).val());
+            if (_selectionFields !== undefined) {
+                added = netis.explodeKeys(_selectionFields.add.val());
+                removed = netis.explodeKeys(_selectionFields.remove.val());
             }
 
-            if (grid.length) {
+            if (_mode === MODE_EXISTING_RECORD && grid.length) {
                 grid.find("input[name='selection[]']").each(function() {
-                    var key = $(this).parent().closest('tr').data('key');
+                    var key = $(this).parent().closest('tr').data('key').toString();
                     if ($.inArray(key, added) !== -1) {
                         $(this).prop('disabled', true).prop('checked', true);
                     } else if ($.inArray(key, removed) !== -1) {
@@ -125,21 +149,18 @@
 
     netis.saveRelation = function(event) {
         var saveButton = $(_settings.saveButtonId),
-            target = saveButton.data('target'),
-            container = $(target),
-            selectionFields = container.data('selectionFields'),
             grid = $(_settings.modalId + ' .grid-view'),
             add = [],
             remove = [];
 
-        if (selectionFields !== undefined) {
-            add = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.add).val());
-            remove = netis.explodeEscaped(_settings.keysSeparator, $(selectionFields.remove).val());
+        if (_selectionFields !== undefined) {
+            add = netis.explodeKeys(_selectionFields.add.val());
+            remove = netis.explodeKeys(_selectionFields.remove.val());
         }
 
-        if (grid.length) {
+        if (_mode === MODE_EXISTING_RECORD && grid.length) {
             grid.find("input[name='selection[]']:checked").not(':disabled').each(function () {
-                var key = $(this).parent().closest('tr').data('key'),
+                var key = $(this).parent().closest('tr').data('key').toString(),
                     idx = $.inArray(key, remove);
                 if (idx !== -1) {
                     remove.splice(idx, 1);
@@ -155,29 +176,30 @@
             add.push(saveButton.data('primaryKey'));
         }
 
-        if (selectionFields !== undefined) {
-            $(selectionFields.add).val(netis.implodeEscaped(_settings.keysSeparator, add));
-            $(selectionFields.remove).val(netis.implodeEscaped(_settings.keysSeparator, remove));
-            $.pjax.reload(container);
+        if (_selectionFields !== undefined) {
+            _selectionFields.add.val(netis.implodeKeys(add));
+            _selectionFields.remove.val(netis.implodeKeys(remove));
+            $.pjax.reload(_container);
         } else {
-            container.select2('val', add);
+            _container.select2('val', add);
         }
 
         $(_settings.modalId).modal('hide');
     };
 
     netis.removeRelation = function(container, key) {
-        var add = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').add).val()),
-            remove = netis.explodeEscaped(_settings.keysSeparator, $(container.data('selectionFields').remove).val()),
-            idx = $.inArray(key, add);
+        var add = netis.explodeKeys($(container.data('selectionFields').add).val()),
+            remove = netis.explodeKeys($(container.data('selectionFields').remove).val()),
+            idx = $.inArray(key.toString(), add);
         if (idx !== -1) {
             add.splice(idx, 1);
-        } else {
+        }
+        if ($.inArray(key.toString(), remove) === -1) {
             remove.push(key);
         }
 
-        $(container.data('selectionFields').add).val(netis.implodeEscaped(_settings.keysSeparator, add));
-        $(container.data('selectionFields').remove).val(netis.implodeEscaped(_settings.keysSeparator, remove));
+        $(container.data('selectionFields').add).val(netis.implodeKeys(add));
+        $(container.data('selectionFields').remove).val(netis.implodeKeys(remove));
         $.pjax.reload(container);
     };
 
@@ -185,33 +207,69 @@
         if (escapeChar === undefined) {
             escapeChar = '\\';
         }
+        var glueRegExp = new RegExp(netis.escapeRegex(glue), "g");
+        var escapeCharRegExp = new RegExp(netis.escapeRegex(escapeChar), "g");
         return $.map(pieces, function(k) {
-            return String(k).replace(/escapeChar/g, escapeChar + escapeChar).replace(/glue/g, escapeChar + glue);
+            return String(k).replace(escapeCharRegExp, escapeChar + escapeChar).replace(glueRegExp, escapeChar + glue);
         }).join(glue);
     };
 
-    netis.explodeEscaped = function(delimiter, string, escapeChar, removeEmpty) {
+    netis.implodeKeys = function (pieces) {
+        var glue = _settings.keysSeparator || ',';
+
+        pieces = $.map(pieces, function (v) {
+            return $.trim(v) === '' ? null : v;
+        });
+
+        return netis.implodeEscaped(glue, pieces);
+    };
+
+    /**
+     * Splits a string into elements handling an escaped delimiter.
+     *
+     * FIXME This function fails for string: such as 'a\\,b\\' where \ is escape char and , is delimiter. It returns ['a\,b\']
+     * but should return ['a\','b\']. If string is 'a\\b,c\\d' it works ok and returns ['a\b', 'c\d'].
+     *
+     * @param delimiter
+     * @param string
+     * @param escapeChar
+     * @returns {Array}
+     */
+    netis.explodeEscaped = function(delimiter, string, escapeChar) {
         if (escapeChar === undefined) {
             escapeChar = '\\';
         }
-        if (removeEmpty === undefined) {
-            removeEmpty = true;
-        }
-        var lastIndex = 0,
+        var lastIndex = -1,
             prevIndex = -1,
             result = [];
+        var escapeRegExp = new RegExp(netis.escapeRegex(escapeChar) + '(.)', 'g');
         while ((lastIndex = string.indexOf(delimiter, lastIndex + 1)) > -1) {
-            if (string[lastIndex - 1] !== escapeChar) {
-                if (!removeEmpty || lastIndex - prevIndex + 1 > 0) {
-                    result.push(string.substring(prevIndex + 1, lastIndex));
-                }
-                prevIndex = lastIndex;
+            if (string[lastIndex - 1] === escapeChar) {
+                continue;
             }
+            if (lastIndex - prevIndex + 1 > 0) {
+                result.push(string.substring(prevIndex + 1, lastIndex).replace(escapeRegExp, '$1'));
+            }
+            prevIndex = lastIndex;
         }
-        if (!removeEmpty || string.length - prevIndex + 1 > 0) {
-            result.push(string.substring(prevIndex + 1));
+        if (string.length - prevIndex + 1 > 0) {
+            result.push(string.substring(prevIndex + 1).replace(escapeRegExp, '$1'));
         }
 
         return result;
+    };
+
+    netis.explodeKeys = function (string) {
+        var delimiter = _settings.keysSeparator || ',';
+
+        var pieces = netis.explodeEscaped(delimiter, string);
+
+        return $.map(pieces, function (v) {
+            return $.trim(v) === '' ? null : v;
+        });
+    };
+
+    netis.escapeRegex = function(str) {
+        return String(str).replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
     };
 }(window.netis = window.netis || {}, jQuery));
