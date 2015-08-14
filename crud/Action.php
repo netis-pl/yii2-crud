@@ -583,16 +583,17 @@ class Action extends \yii\rest\Action
                 if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
                     continue;
                 }
-                $isNumeric = in_array($formats[$field], [
-                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal',
+                $format = $formats[$field];
+                $isNumeric = in_array(is_array($format) ? reset($format) : $format, [
+                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'multiplied',
                     'shortWeight', 'shortLength', 'money', 'currency', 'minorCurrency',
                 ]);
-                if ($formats[$field] === 'crudLink') {
-                    $formats[$field] = ['crudLink', ['data-pjax' => '0']];
+                if ($format === 'crudLink') {
+                    $format = ['crudLink', ['data-pjax' => '0']];
                 }
                 $columns[] = [
                     'attribute' => $field,
-                    'format' => $formats[$field],
+                    'format' => $format,
                     'contentOptions' => $isNumeric
                         ? function ($model, $key, $index, $column) {
                             return $model->{$column->attribute} === null ? [] : ['class' => 'text-right text-nowrap'];

@@ -231,6 +231,22 @@ class Formatter extends \yii\i18n\Formatter
     }
 
     /**
+     * Formats the value as a multiplied number.
+     *
+     * @param mixed $value the value to be formatted.
+     * @param integer $divisor
+     * @return string the formatted result.
+     * @throws InvalidParamException if the input value is not numeric or the formatting failed.
+     */
+    public function asMultiplied($value, $divisor)
+    {
+        if ($value === null) {
+            return $this->nullDisplay;
+        }
+        return $this->normalizeNumericValue($value / (double)$divisor);
+    }
+
+    /**
      * @inheritdoc
      * Adds support for [-]infinity.
      */
