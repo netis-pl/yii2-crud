@@ -30,7 +30,10 @@ if (!isset($buttons)) {
 }
 
 FormBuilder::registerSelect($this);
-echo FormBuilder::registerRelations($this);
+//do not render modal for relations handling if request is pjax and content will be inserted in modal.
+if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '#relationModal .modal-body') {
+    echo FormBuilder::registerRelations($this);
+}
 ?>
 
 <div class="ar-form">

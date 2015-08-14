@@ -50,6 +50,7 @@
         _selectionFields = undefined;
         _container = undefined;
         $('.modal-body', this).empty();
+        $(_settings.saveButtonId).removeData('primaryKey');
     };
 
     netis.showModal = function(event) {
@@ -90,7 +91,7 @@
         modal.find('.modal-body').text(_settings.i18n.loadingText);
 
         $(document).off('click.pjax', container + ' a');
-        $(document).off('submit', container + ' form[data-pjax]');
+        $(document).off('submit', container + ' form');
 
         $(document).pjax(container + ' a', container, options);
         $(document).on('submit', container + ' form', function(event) {
