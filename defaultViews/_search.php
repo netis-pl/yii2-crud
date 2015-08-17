@@ -8,6 +8,7 @@ use yii\bootstrap\ActiveForm;
 /* @var $model netis\utils\db\ActiveSearchTrait */
 /* @var $fields array */
 /* @var $form yii\bootstrap\ActiveForm */
+/* @var $formBody string if set, allows to override only the form part */
 
 FormBuilder::registerSelect($this);
 echo FormBuilder::registerRelations($this);
@@ -32,7 +33,7 @@ $visible = array_filter($model->getAttributes()) !== [];
     ]); ?>
 
     <fieldset>
-        <?php FormBuilder::renderRow($this, $model, $form, $fields, 10); ?>
+        <?= isset($formBody) ? $formBody : FormBuilder::renderRow($this, $model, $form, $fields, 10); ?>
     </fieldset>
 
     <div class="form-group">

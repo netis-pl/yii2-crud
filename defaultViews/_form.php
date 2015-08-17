@@ -2,7 +2,6 @@
 
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
-use yii\helpers\Json;
 use netis\utils\widgets\FormBuilder;
 
 /* @var $this \netis\utils\web\View */
