@@ -587,6 +587,7 @@ JavaScript;
      * @param \yii\widgets\ActiveForm $form
      * @param string $name
      * @param array $data
+     * @return string
      */
     public static function renderControlGroup($view, $model, $form, $name, $data)
     {
@@ -598,18 +599,16 @@ JavaScript;
         $field->label($label, ['class' => 'control-label']);
         if (isset($data['formMethod'])) {
             if (is_string($data['formMethod'])) {
-                echo call_user_func_array([$field, $data['formMethod']], $data['arguments']);
+                return call_user_func_array([$field, $data['formMethod']], $data['arguments']);
             } else {
-                echo call_user_func($data['formMethod'], $field, $data['arguments']);
+                return call_user_func($data['formMethod'], $field, $data['arguments']);
             }
-            return;
         }
         $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
         $field
             ->error(['class' => 'help-block help-block-error'])
             ->widget($data['widgetClass'], $data['options']);
-        echo $field;
-        return;
+        return $field;
     }
 
     /**
@@ -618,34 +617,38 @@ JavaScript;
      * @param \yii\widgets\ActiveForm $form
      * @param array $fields
      * @param int $topColumnWidth
+     * @return string
      */
     public static function renderRow($view, $model, $form, $fields, $topColumnWidth = 12)
     {
         if (empty($fields)) {
-            return;
+            return '';
         }
+        $result = [];
         $oneColumn = false; // optionally: count($fields) == 1;
-        echo $oneColumn ? '' : '<div class="row">';
+        $result[] = $oneColumn ? '' : '<div class="row">';
         $columnWidth = ceil($topColumnWidth / count($fields));
         foreach ($fields as $name => $column) {
-            echo $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
+            $result[] = $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
             if (is_string($column)) {
-                echo $column;
+                $result[] = $column;
             } elseif (!is_numeric($name) && isset($column['attribute'])) {
-                static::renderControlGroup($view, $model, $form, $name, $column);
+                $result[] = static::renderControlGroup($view, $model, $form, $name, $column);
             } else {
                 foreach ($column as $name2 => $row) {
                     if (is_string($row)) {
-                        echo $row;
+                        $result[] = $row;
                     } elseif (!is_numeric($name2) && isset($row['attribute'])) {
-                        static::renderControlGroup($view, $model, $form, $name2, $row);
+                        $result[] = static::renderControlGroup($view, $model, $form, $name2, $row);
                     } else {
-                        static::renderRow($view, $model, $form, $row);
+                        $result[] = static::renderRow($view, $model, $form, $row);
                     }
                 }
             }
-            echo $oneColumn ? '' : '</div>';
+            $result[] = $oneColumn ? '' : '</div>';
         }
-        echo $oneColumn ? '' : '</div>';
+        $result[] = $oneColumn ? '' : '</div>';
+
+        return implode('', $result);
     }
 }

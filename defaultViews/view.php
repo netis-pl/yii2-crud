@@ -8,6 +8,7 @@ use yii\widgets\DetailView;
 /* @var $attributes array */
 /* @var $relations array */
 /* @var $controller netis\utils\crud\ActiveController */
+/* @var $detailsBody string if set, allows to override only the details part */
 
 $controller = $this->context;
 $this->title = $model->getCrudLabel('read').': '.$model->__toString();
@@ -33,7 +34,7 @@ if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
 
 <?= netis\utils\web\Alerts::widget() ?>
 
-<?= DetailView::widget([
+<?= isset($detailsBody) ? $detailsBody : DetailView::widget([
     'model' => $model,
     'attributes' => $attributes,
 ]) ?>

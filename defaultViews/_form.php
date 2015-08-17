@@ -15,6 +15,7 @@ use netis\utils\widgets\FormBuilder;
 /* @var $view \netis\utils\web\View */
 /* @var $formOptions array form options, will be merged with defaults */
 /* @var $buttons array */
+/* @var $formBody string if set, allows to override only the form part */
 
 $controller = $this->context;
 $action = $controller->action;
@@ -54,7 +55,7 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '
     <?= $form->errorSummary($model); ?>
 
     <fieldset class="well">
-    <?php FormBuilder::renderRow($this, $model, $form, $fields, Yii::$app->request->getIsAjax() ? 12 : 4); ?>
+    <?= isset($formBody) ? $formBody : FormBuilder::renderRow($this, $model, $form, $fields, Yii::$app->request->getIsAjax() ? 12 : 4); ?>
     </fieldset>
 
     <?= $this->render('_relations', [
