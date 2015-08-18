@@ -647,7 +647,7 @@ class Formatter extends \yii\i18n\Formatter
     }
 
     /**
-     * Converts a decimal number as string to a 32 bit integer.
+     * Converts a decimal number as string to an integer.
      * @param string $value
      * @param int $precision
      * @return int
@@ -660,7 +660,7 @@ class Formatter extends \yii\i18n\Formatter
         }
         if (($pos = strpos($value, ',')) === false && ($pos = strpos($value, '.')) === false) {
             $value = $value . str_pad('', $precision, '0');
-            return min(max((int)$value, -0x80000000), 0xFFFFFFFF);
+            return (int)$value;
         }
         $distance = strlen($value) - $pos;
         if ($distance > $precision) {
@@ -672,6 +672,6 @@ class Formatter extends \yii\i18n\Formatter
         }
         $value = str_replace([',', '.'], '', $value);
 
-        return min(max((int)$value, -0x80000000), 0xFFFFFFFF);
+        return (int)$value;
     }
 }
