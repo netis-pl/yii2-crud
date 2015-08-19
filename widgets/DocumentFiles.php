@@ -3,69 +3,87 @@
 namespace netis\utils\widgets;
 
 use Yii;
-use yii\base\InvalidParamException;
-use yii\base\Widget;
-use yii\base\Model;
+use yii\base\InvalidConfigException;
 use yii\helpers\Html;
+use yii\widgets\InputWidget;
 
-class DocumentFiles extends Widget
+/**
+ * Renders a list of models.
+ * @package netis\utils\widgets
+ */
+class DocumentFiles extends InputWidget
 {
     /**
      * @var string action route to read document.
      */
     public $action;
     /**
-     * @var Model the data model that this widget is associated with.
+     * @var string Document model display attribute, if null, the model will be cast to string
      */
-    public $model;
+    public $displayAttribute = null;
     /**
-     * @var string the model attribute that this widget is associated with.
+     * @var bool should display labels be encoded
      */
-    public $attribute;
-    /**
-     * @var string Document model identifier
-     */
-    public $identifier = 'id';
+    public $encodeLabels = true;
 
     /**
-     * @var string Document model display attribute
+     * @inheritdoc
      */
-    public $displayAttribute = 'filename';
-
-
     public function init()
     {
-        if ($this->action === null) {
-            throw new InvalidParamException(Yii::t('app', '{parameter} parameter has to be set.', ['parameter' => 'Action']));
-        } elseif (!$this->model instanceof Model) {
-            throw new InvalidParamException(Yii::t('app', 'Model has to be instance of "yii\base\Model".'));
-        } elseif ($this->attribute === null) {
-            throw new InvalidParamException(Yii::t('app', '{parameter} parameter has to be set.', ['parameter' => 'Attribute']));
-        } elseif (!is_array($this->model->{$this->attribute})) {
-            throw new InvalidParamException(Yii::t('app', 'Attribute parameter value has to be an array.'));
-        }
         parent::init();
+        if ($this->action === null) {
+            throw new InvalidConfigException(
+                Yii::t('app', "The DocumentFiles widget requires the '{parameter}' parameter.", [
+                    'parameter' => 'action',
+                ])
+            );
+        } elseif (!is_array($this->getValue())) {
+            throw new InvalidConfigException(
+                Yii::t('app', 'The value for the DocumentFiles widget has to be an array.')
+            );
+        }
     }
 
+    /**
+     * @inheritdoc
+     */
     public function run()
     {
-        $html = $this->prepareOutput();
-
-        return $html;
-    }
-
-    public function prepareOutput()
-    {
-        $html = '<ul class="list-unstyled">';
-        foreach ($this->model->{$this->attribute} as $model) {
-            $html .= '<li>' . Html::a($model->{$this->displayAttribute}, \yii\helpers\Url::toRoute([
-                    $this->action,
-                    'id' => \netis\utils\crud\Action::exportKey($model->{$this->identifier}),
-                ])) . '</li>';
+        $result = [];
+        /** @var \yii\db\ActiveRecord $model */
+        foreach ($this->getValue() as $model) {
+            $url = \yii\helpers\Url::toRoute([
+                $this->action,
+                'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
+            ]);
+            $result[] = Html::tag('li', Html::a($this->getLabel($model), $url));
         }
-        $html .= '</ul>';
 
-        return $html;
+        return Html::tag('ul', implode('', $result), ['class' => 'list-unstyled']);
     }
 
+    /**
+     * @return mixed
+     */
+    private function getValue()
+    {
+        if ($this->hasModel()) {
+            return $this->model->{$this->attribute};
+        }
+        if (isset($this->options['value'])) {
+            return $this->options['value'];
+        }
+        return null;
+    }
+
+    /**
+     * @param \yii\base\Model $model
+     * @return string
+     */
+    private function getLabel($model)
+    {
+        $value = $this->displayAttribute === null ? (string)$model : $model->{$this->displayAttribute};
+        return $this->encodeLabels ? Html::encode($value) : $value;
+    }
 }
