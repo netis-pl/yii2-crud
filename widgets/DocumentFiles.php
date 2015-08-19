@@ -35,9 +35,9 @@ class DocumentFiles extends InputWidget
      */
     public $deleteAction;
     /**
-     * @var boolean should display fileInput
+     * @var string name of model upload attribute
      */
-    public $fileInput = false;
+    public $uploadAttribute = 'documentFiles';
 
     /**
      * @inheritdoc
@@ -128,17 +128,15 @@ class DocumentFiles extends InputWidget
      */
     public function createFileInput()
     {
-        if ($this->fileInput === false) {
-            return '';
-        }
-        if (!$this->model->hasProperty('documentFiles')) {
+        if (!$this->model->hasProperty($this->uploadAttribute)) {
             throw new InvalidConfigException(
                 Yii::t('app', "The DocumentFiles widget requires the '{property}' property.", [
-                    'property' => 'documentFiles',
+                    'property' => $this->uploadAttribute,
                 ])
             );
         }
+        $attributeName = (isset($this->options['multiple'])) ? $this->uploadAttribute . '[]' : $this->uploadAttribute;
 
-        return Html::activeFileInput($this->model, 'documentFiles[]', ['multiple' => "true"]);
+        return Html::activeFileInput($this->model, $attributeName, $this->options);
     }
 }
