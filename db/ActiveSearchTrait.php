@@ -215,7 +215,9 @@ trait ActiveSearchTrait
         /** @var EnumCollection $enums */
         $enums = Yii::$app->formatter instanceof Formatter ? Yii::$app->formatter->getEnums() : null;
         foreach ($attributes as $attribute) {
-            if (!isset($formats[$attribute]) || $enums === null || !$enums->has($formats[$attribute])) {
+            if (!isset($formats[$attribute]) || $enums === null
+                || (!is_array($formats[$attribute]) && !$enums->has($formats[$attribute]))
+            ) {
                 $plainAttributes[$attribute] = $token;
                 continue;
             }
