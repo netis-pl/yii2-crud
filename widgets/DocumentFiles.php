@@ -27,9 +27,9 @@ class DocumentFiles extends InputWidget
      */
     public $encodeLabels = true;
     /**
-     * @var boolean should display delete button
+     * @var string
      */
-    public $deleteButton = true;
+    public $template = "{label} {deleteButton}";
     /**
      * @var string Action route to delete document
      */
@@ -66,12 +66,15 @@ class DocumentFiles extends InputWidget
         $result = [];
         /** @var \yii\db\ActiveRecord $model */
         foreach ($this->getValue() as $model) {
+            $parts = [];
             $documentId = \netis\utils\crud\Action::exportKey($model->getPrimaryKey());
             $url = Url::toRoute([
                 $this->action,
                 'id' => $documentId,
             ]);
-            $result[] = Html::tag('li', Html::a($this->getLabel($model), $url) . $this->createDeleteButton($documentId));
+            $parts['{label}'] = Html::a($this->getLabel($model), $url);
+            $parts['{deleteButton}'] = $this->createDeleteButton($documentId);
+            $result[] = Html::tag('li',  strtr($this->template, $parts) );
         }
         return Html::tag('ul', implode('', $result), ['class' => 'list-unstyled']) . $this->createFileInput();
     }
@@ -107,9 +110,6 @@ class DocumentFiles extends InputWidget
      */
     public function createDeleteButton($documentId)
     {
-        if ($this->deleteButton === false) {
-            return '';
-        }
         $url = Url::toRoute([
             $this->deleteAction,
             'id' => $documentId,
@@ -131,14 +131,14 @@ class DocumentFiles extends InputWidget
         if ($this->fileInput === false) {
             return '';
         }
-        if (!$this->model->hasProperty('documentFile')) {
+        if (!$this->model->hasProperty('documentFiles')) {
             throw new InvalidConfigException(
                 Yii::t('app', "The DocumentFiles widget requires the '{property}' property.", [
-                    'property' => 'documentFile',
+                    'property' => 'documentFiles',
                 ])
             );
         }
 
-        return Html::activeFileInput($this->model, 'documentFile');
+        return Html::activeFileInput($this->model, 'documentFiles[]', ['multiple' => "true"]);
     }
 }
