@@ -6,6 +6,7 @@ use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\Html;
 use yii\widgets\InputWidget;
+use yii\helpers\Url;
 
 /**
  * Renders a list of models.
@@ -25,6 +26,18 @@ class DocumentFiles extends InputWidget
      * @var bool should display labels be encoded
      */
     public $encodeLabels = true;
+    /**
+     * @var boolean should display delete button
+     */
+    public $deleteButton = true;
+    /**
+     * @var string Action route to delete document
+     */
+    public $deleteAction;
+    /**
+     * @var boolean should display fileInput
+     */
+    public $fileInput = false;
 
     /**
      * @inheritdoc
@@ -53,14 +66,14 @@ class DocumentFiles extends InputWidget
         $result = [];
         /** @var \yii\db\ActiveRecord $model */
         foreach ($this->getValue() as $model) {
-            $url = \yii\helpers\Url::toRoute([
+            $documentId = \netis\utils\crud\Action::exportKey($model->getPrimaryKey());
+            $url = Url::toRoute([
                 $this->action,
-                'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey()),
+                'id' => $documentId,
             ]);
-            $result[] = Html::tag('li', Html::a($this->getLabel($model), $url));
+            $result[] = Html::tag('li', Html::a($this->getLabel($model), $url) . $this->createDeleteButton($documentId));
         }
-
-        return Html::tag('ul', implode('', $result), ['class' => 'list-unstyled']);
+        return Html::tag('ul', implode('', $result), ['class' => 'list-unstyled']) . $this->createFileInput();
     }
 
     /**
@@ -85,5 +98,47 @@ class DocumentFiles extends InputWidget
     {
         $value = $this->displayAttribute === null ? (string)$model : $model->{$this->displayAttribute};
         return $this->encodeLabels ? Html::encode($value) : $value;
+    }
+
+    /**
+     * @param integer $documentId
+     *
+     * @return string
+     */
+    public function createDeleteButton($documentId)
+    {
+        if ($this->deleteButton === false) {
+            return '';
+        }
+        $url = Url::toRoute([
+            $this->deleteAction,
+            'id' => $documentId,
+        ]);
+
+        return Html::a(Html::tag('i', '', ['class' => 'glyphicon glyphicon-trash']), $url, [
+            'data-method'  => 'POST',
+            'data-confirm' => Yii::t('yii', 'Are you sure you want to delete this item?'),
+            'aria-label'   => Yii::t('app', 'Delete'),
+        ]);
+    }
+
+    /**
+     * @return string
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function createFileInput()
+    {
+        if ($this->fileInput === false) {
+            return '';
+        }
+        if (!$this->model->hasProperty('documentFile')) {
+            throw new InvalidConfigException(
+                Yii::t('app', "The DocumentFiles widget requires the '{property}' property.", [
+                    'property' => 'documentFile',
+                ])
+            );
+        }
+
+        return Html::activeFileInput($this->model, 'documentFile');
     }
 }
