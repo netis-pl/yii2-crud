@@ -37,7 +37,7 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '
 ?>
 
 <div class="ar-form">
-    <?php $form = ActiveForm::begin(array_merge([
+    <?php $form = isset($form) ? $form : ActiveForm::begin(array_merge([
         'enableAjaxValidation' => !Yii::$app->request->getIsAjax(),
         'validateOnSubmit' => true,
         'options' => [
