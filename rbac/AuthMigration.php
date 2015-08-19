@@ -90,7 +90,12 @@ abstract class AuthMigration extends Migration
                 $authItem->data = $data;
                 $authItem->ruleName = $ruleName;
                 if ($description === null) {
-                    list($modelClass, $suffix) = explode('.', $name, 2);
+                    if (strpos($name, '.') !== false) {
+                        list($modelClass, $suffix) = explode('.', $name, 2);
+                    } else {
+                        $modelClass = $name;
+                        $suffix = 'default';
+                    }
                     $labelsMap   = $this->getLabelsMap($modelClass);
                     $description = $labelsMap[$suffix];
                 }
