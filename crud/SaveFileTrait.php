@@ -12,30 +12,56 @@ use Yii;
 trait SaveFileTrait
 {
     /**
-     * @param string $fileClass Namespace of file class
-     * @param array $files UploadedFile instances
-     * @param $primaryValue Basic model primary
+     * @param string $fileClass    Namespace of file class
+     * @param array  $files        UploadedFile instances
+     * @param        $primaryValue Basic model primary
      * @param string $foreignKey
      *
      * @return bool
      */
-    public function saveFile($fileClass, $files, $primaryValue, $foreignKey)
+    public function saveFiles($fileClass, $files, $primaryValue, $foreignKey)
     {
+        if ($this->checkAccess) {
+            $document = new $fileClass();
+            call_user_func($this->checkAccess, 'create', $document);
+            unset($document);
+        }
         foreach ($files as $documentFile) {
             $document = new $fileClass();
             $content  = file_get_contents($documentFile->tempName);
             $info     = strpos($documentFile->type, 'image/') !== 0 ? [null, null] : getimagesizefromstring($content);
             $document->setAttributes([
-                'filename'        => $documentFile->name,
-                'size'            => $documentFile->size,
-                'content'         => base64_encode($content),
-                'mimetype'        => $documentFile->type,
-                'hash'            => sha1($content),
-                'width'           => $info[0],
-                'height'          => $info[1],
-                $foreignKey       => $primaryValue,
+                'filename'  => $documentFile->name,
+                'size'      => $documentFile->size,
+                'content'   => base64_encode($content),
+                'mimetype'  => $documentFile->type,
+                'hash'      => sha1($content),
+                'width'     => $info[0],
+                'height'    => $info[1],
+                $foreignKey => $primaryValue,
             ], false);
             if (!$document->save()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param string $fileClass Namespace of file class
+     * @param array  $files     UploadedFile instances
+     *
+     * @return bool
+     */
+    public function deleteFiles($fileClass, $files)
+    {
+        foreach ($files as $id) {
+            $document = $fileClass::findOne($id);
+            if ($this->checkAccess) {
+                call_user_func($this->checkAccess, 'delete', $document);
+            }
+            if (!$document->delete()) {
                 return false;
             }
         }

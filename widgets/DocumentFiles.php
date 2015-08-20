@@ -73,7 +73,7 @@ class DocumentFiles extends InputWidget
                 'id' => $documentId,
             ]);
             $parts['{label}'] = Html::a($this->getLabel($model), $url);
-            $parts['{deleteButton}'] = $this->createDeleteButton($documentId);
+            $parts['{deleteButton}'] = $this->createDeleteButton($model);
             $result[] = Html::tag('li',  strtr($this->template, $parts) );
         }
         return Html::tag('ul', implode('', $result), ['class' => 'list-unstyled']) . $this->createFileInput();
@@ -104,22 +104,13 @@ class DocumentFiles extends InputWidget
     }
 
     /**
-     * @param integer $documentId
+     * @param \yii\base\Model $model
      *
      * @return string
      */
-    public function createDeleteButton($documentId)
+    public function createDeleteButton($model)
     {
-        $url = Url::toRoute([
-            $this->deleteAction,
-            'id' => $documentId,
-        ]);
-
-        return Html::a(Html::tag('i', '', ['class' => 'glyphicon glyphicon-trash']), $url, [
-            'data-method'  => 'POST',
-            'data-confirm' => Yii::t('yii', 'Are you sure you want to delete this item?'),
-            'aria-label'   => Yii::t('app', 'Delete'),
-        ]);
+        return Html::activeCheckbox($this->model, "$this->uploadAttribute[$model->id]", ['label' => Yii::t('app', 'Delete')]);
     }
 
     /**
@@ -128,13 +119,6 @@ class DocumentFiles extends InputWidget
      */
     public function createFileInput()
     {
-        if (!$this->model->hasProperty($this->uploadAttribute)) {
-            throw new InvalidConfigException(
-                Yii::t('app', "The DocumentFiles widget requires the '{property}' property.", [
-                    'property' => $this->uploadAttribute,
-                ])
-            );
-        }
         $attributeName = (isset($this->options['multiple'])) ? $this->uploadAttribute . '[]' : $this->uploadAttribute;
 
         return Html::activeFileInput($this->model, $attributeName, $this->options);
