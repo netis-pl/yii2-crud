@@ -12,70 +12,33 @@ use Yii;
 trait SaveFileTrait
 {
     /**
-     * @param object $model Basic model object
-     * @param Request $request
-     * @param string $filesAttribute Attribute contains UploadedFile instance
-     *
-     * @return mixed
-     */
-    protected function load($model, $request, $filesAttribute)
-    {
-        if (($result = parent::load($model, $request))) {
-            $model->$filesAttribute = \yii\web\UploadedFile::getInstances($model, $filesAttribute);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param object $model Basic model object
-     * @param string $filesAttribute Attribute contains UploadedFile instance
-     * @param string $modelDocument
-     * @param array $documentRelation ActiveQuery->link property
+     * @param string $fileClass Namespace of file class
+     * @param array $files UploadedFile instances
+     * @param $primaryValue Basic model primary
+     * @param array $foreignKey ActiveQuery->link property
      *
      * @return bool
-     * @throws \yii\base\InvalidConfigException
      */
-    protected function save($model, $filesAttribute, $modelDocument, $documentRelation)
+    public function saveFile($fileClass, $files, $primaryValue, $foreignKey)
     {
-        $trx = $model::getDb()->beginTransaction();
-        $model->beginChangeset();
-        if (!$model->save(false) || !$model->saveRelations(Yii::$app->getRequest()->getBodyParams())) {
-            $model->endChangeset();
-            $trx->rollback();
-
-            return false;
-        }
-        if (empty($model->$filesAttribute)) {
-            $model->endChangeset();
-            $trx->commit();
-
-            return true;
-        }
-        foreach ($model->$filesAttribute as $documentFile) {
-            $document = new $modelDocument;
+        foreach ($files as $documentFile) {
+            $document = new $fileClass();
             $content  = file_get_contents($documentFile->tempName);
             $info     = strpos($documentFile->type, 'image/') !== 0 ? [null, null] : getimagesizefromstring($content);
             $document->setAttributes([
-                'filename'              => $documentFile->name,
-                'size'                  => $documentFile->size,
-                'content'               => base64_encode($content),
-                'mimetype'              => $documentFile->type,
-                'hash'                  => sha1($content),
-                'width'                 => $info[0],
-                'height'                => $info[1],
-                $documentRelation['id'] => $model->getPrimaryKey(),
+                'filename'        => $documentFile->name,
+                'size'            => $documentFile->size,
+                'content'         => base64_encode($content),
+                'mimetype'        => $documentFile->type,
+                'hash'            => sha1($content),
+                'width'           => $info[0],
+                'height'          => $info[1],
+                $foreignKey['id'] => $primaryValue,
             ], false);
             if (!$document->save()) {
-                $model->addError($filesAttribute, Yii::t('netis/shipments/app', 'Failed to save document.'));
-                $model->endChangeset();
-                $trx->rollback();
-
                 return false;
             }
         }
-        $model->endChangeset();
-        $trx->commit();
 
         return true;
     }
