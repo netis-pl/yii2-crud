@@ -54,7 +54,7 @@ class EnumCollection extends Object implements \IteratorAggregate, \ArrayAccess,
      */
     public function has($name)
     {
-        return is_string($name) || is_numeric($name) && isset($this->data[$name]);
+        return (is_string($name) || is_numeric($name)) && isset($this->data[$name]);
     }
 
     /**
