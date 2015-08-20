@@ -15,7 +15,7 @@ trait SaveFileTrait
      * @param string $fileClass Namespace of file class
      * @param array $files UploadedFile instances
      * @param $primaryValue Basic model primary
-     * @param array $foreignKey ActiveQuery->link property
+     * @param string $foreignKey
      *
      * @return bool
      */
@@ -33,7 +33,7 @@ trait SaveFileTrait
                 'hash'            => sha1($content),
                 'width'           => $info[0],
                 'height'          => $info[1],
-                $foreignKey['id'] => $primaryValue,
+                $foreignKey       => $primaryValue,
             ], false);
             if (!$document->save()) {
                 return false;
