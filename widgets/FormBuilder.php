@@ -8,6 +8,7 @@ namespace netis\utils\widgets;
 
 use netis\utils\crud\Action;
 use netis\utils\db\ActiveQuery;
+use netis\utils\web\Formatter;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
@@ -437,13 +438,15 @@ JavaScript;
             'arguments' => [],
         ];
         $format = is_array($formats[$attribute]) ? $formats[$attribute][0] : $formats[$attribute];
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
         switch ($format) {
             case 'boolean':
                 if ($multiple) {
-                    $field['formMethod'] = function ($field, $arguments) {
+                    $field['formMethod'] = function ($field, $arguments) use ($formatter) {
                         return $field->inline()->radioList([
-                            '0' => Yii::$app->formatter->booleanFormat[0],
-                            '1' => Yii::$app->formatter->booleanFormat[1],
+                            '0' => $formatter->booleanFormat[0],
+                            '1' => $formatter->booleanFormat[1],
                             '' => Yii::t('app', 'Any'),
                         ]);
                     };
@@ -451,11 +454,15 @@ JavaScript;
                     $field['formMethod'] = 'checkbox';
                 }
                 break;
+            case 'multiplied':
             case 'integer':
+                $value = $model->getAttribute($attribute);
                 $field['formMethod'] = 'textInput';
                 $field['arguments'] = [
                     [
-                        'value' => $model->getAttribute($attribute),
+                        'value' => $format === 'multiplied'
+                            ? ($value === null ? null : $formatter->asMultiplied($value, $formats[$attribute][1]))
+                            : $value,
                     ],
                 ];
                 break;
@@ -482,11 +489,11 @@ JavaScript;
                 $field['formMethod'] = 'dropDownList';
                 $field['arguments'] = [
                     // first argument is the items array
-                    Yii::$app->formatter->getEnums()->get($formats[$attribute][1]),
+                    $formatter->getEnums()->get($formats[$attribute][1]),
                 ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
                     $field['arguments'][] = [
-                        'empty' => Yii::$app->formatter->nullDisplay,
+                        'empty' => $formatter->nullDisplay,
                     ];
                 }
                 break;

@@ -90,7 +90,12 @@ abstract class AuthMigration extends Migration
                 $authItem->data = $data;
                 $authItem->ruleName = $ruleName;
                 if ($description === null) {
-                    list($modelClass, $suffix) = explode('.', $name, 2);
+                    if (strpos($name, '.') !== false) {
+                        list($modelClass, $suffix) = explode('.', $name, 2);
+                    } else {
+                        $modelClass = $name;
+                        $suffix = 'default';
+                    }
                     $labelsMap   = $this->getLabelsMap($modelClass);
                     $description = $labelsMap[$suffix];
                 }
@@ -100,12 +105,10 @@ abstract class AuthMigration extends Migration
         } else {
             $authItem = $name;
         }
-        if ($child !== null && $authItem !== null) {
-            if (!$auth->hasChild($authItem, $child)) {
-                $auth->addChild($authItem, $child);
-            }
+        if ($child !== null && $authItem !== null && !$auth->hasChild($authItem, $child)) {
+            $auth->addChild($authItem, $child);
         }
-        if (empty($parents)) {
+        if (empty($parents) && !$auth->hasChild($role, $authItem)) {
             $auth->addChild($role, $authItem);
         }
         foreach ($parents as $parentName => $grandParents) {

@@ -243,7 +243,7 @@ class Formatter extends \yii\i18n\Formatter
         if ($value === null) {
             return $this->nullDisplay;
         }
-        return $this->normalizeNumericValue($value / (double)$divisor);
+        return $this->normalizeNumericValue($value) / (double)$divisor;
     }
 
     /**
