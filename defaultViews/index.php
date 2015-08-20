@@ -4,7 +4,6 @@ use yii\helpers\Html;
 use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
 
-
 /* @var $this yii\web\View */
 /* @var $searchModel \yii\base\Model */
 /* @var $dataProvider yii\data\ActiveDataProvider */
