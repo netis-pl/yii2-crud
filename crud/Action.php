@@ -553,6 +553,49 @@ class Action extends \yii\rest\Action
     }
 
     /**
+     * @param ActiveRecord $model
+     * @param string $field attribute name
+     * @param string|array $format attribute format
+     * @return array grid column definition
+     */
+    protected static function getAttributeColumn($model, $field, $format)
+    {
+        $isNumeric = in_array(is_array($format) ? reset($format) : $format, [
+            'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'multiplied',
+            'shortWeight', 'shortLength', 'money', 'currency', 'minorCurrency',
+        ]);
+        if ($format === 'crudLink') {
+            $format = ['crudLink', ['data-pjax' => '0']];
+        }
+        $column = [
+            'attribute' => $field,
+            'format' => $format,
+        ];
+        if ($isNumeric) {
+            $column['contentOptions'] = function ($model, $key, $index, $column) {
+                return $model->{$column->attribute} === null ? [] : ['class' => 'text-right text-nowrap'];
+            };
+        }
+        return $column;
+    }
+
+    /**
+     * @param ActiveRecord $model
+     * @param string $field relation name
+     * @param ActiveQuery $relation
+     * @return array grid column definition
+     */
+    protected static function getRelationColumn($model, $field, $relation)
+    {
+        return [
+            'attribute' => $field,
+            'format'    => ['crudLink', ['data-pjax' => '0']],
+            'visible'   => true,
+            'label'     => $model->getRelationLabel($relation, $field),
+        ];
+    }
+
+    /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
      * @param array $fields
@@ -571,6 +614,7 @@ class Action extends \yii\rest\Action
 
         $columns = [];
         foreach ($fields as $key => $field) {
+            // for arrays and callables, don't generate the column, use the one provided
             if (is_array($field)) {
                 $columns[$key] = $field;
                 continue;
@@ -583,23 +627,7 @@ class Action extends \yii\rest\Action
                 if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
                     continue;
                 }
-                $format = $formats[$field];
-                $isNumeric = in_array(is_array($format) ? reset($format) : $format, [
-                    'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'multiplied',
-                    'shortWeight', 'shortLength', 'money', 'currency', 'minorCurrency',
-                ]);
-                if ($format === 'crudLink') {
-                    $format = ['crudLink', ['data-pjax' => '0']];
-                }
-                $columns[] = [
-                    'attribute' => $field,
-                    'format' => $format,
-                    'contentOptions' => $isNumeric
-                        ? function ($model, $key, $index, $column) {
-                            return $model->{$column->attribute} === null ? [] : ['class' => 'text-right text-nowrap'];
-                        }
-                        : [],
-                ];
+                $columns[] = static::getAttributeColumn($model, $field, $formats[$field]);
                 continue;
             }
 
@@ -613,13 +641,7 @@ class Action extends \yii\rest\Action
             if (!Yii::$app->user->can($relation->modelClass . '.read')) {
                 continue;
             }
-            $label = $model->getRelationLabel($relation, $field);
-            $columns[] = [
-                'attribute' => $field,
-                'format'    => ['crudLink', ['data-pjax' => '0']],
-                'visible'   => true,
-                'label'     => $label,
-            ];
+            $columns[] = static::getRelationColumn($model, $field, $relation);
         }
 
         return $columns;

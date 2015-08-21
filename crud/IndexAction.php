@@ -7,6 +7,7 @@
 namespace netis\utils\crud;
 
 use netis\utils\db\ActiveQuery;
+use netis\utils\db\LabelsBehavior;
 use netis\utils\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
@@ -69,7 +70,8 @@ class IndexAction extends Action
         /** @var ActiveController $controller */
         $controller = $this->controller;
         $actionColumn = new ActionColumn();
-        return array_merge([
+        $actionColumn->buttonOptions['class'] = 'operation-button';
+        $extraColumns = [
             [
                 'class'         => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'column-action'],
@@ -120,7 +122,26 @@ class IndexAction extends Action
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
             ],
-        ], static::getGridColumns($model, $fields));
+        ];
+
+        return array_merge($extraColumns, static::getGridColumns($model, $fields));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected static function getAttributeColumn($model, $field, $format)
+    {
+        /** @var LabelsBehavior $behavior */
+        $behavior = $model->getBehavior('labels');
+        if (in_array($field, $behavior->attributes)) {
+            return array_merge(parent::getAttributeColumn($model, $field, 'crudLink'), [
+                'value' => function ($model, $key, $index, $column) {
+                    return $model;
+                },
+            ]);
+        }
+        return parent::getAttributeColumn($model, $field, $format);
     }
 
     /**
