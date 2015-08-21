@@ -327,12 +327,11 @@ class ActiveNavigation extends Behavior
                 $isActive = isset($item['active']) && $item['active'];
                 $isDisabled = isset($item['disabled']) && $item['disabled'];
                 if ($isActive || $isDisabled) {
-                    $item['url'] = '#';
                     if ($isDisabled) {
+                        $item['url'] = '#';
                         \yii\helpers\Html::addCssClass($item['options'], 'disabled');
                     }
-                    if (isset($item['linkOptions']) && isset($item['linkOptions']['confirm'])
-                    ) {
+                    if (isset($item['linkOptions']) && isset($item['linkOptions']['confirm'])) {
                         unset($item['linkOptions']['confirm']);
                     }
                 }
