@@ -84,10 +84,17 @@ class GridView extends \yii\grid\GridView
         $result = <<<HTML
         <div class="form-group">
             <div class="input-group grid-quick-search">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>
-                    <input class="form-control"
+                <div class="input-group-btn">
+                    <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+                </div>
+                <input class="form-control"
                         id="{$id}-quickSearch" name="search" placeholder="$placeholder" value="$value" type="text"/>
                          <!--onkeyup="jQuery('#{$id}').yiiGridView('applyFilter')"-->
+                <div class="input-group-btn">
+                    <button class="btn btn-default" onclick="$('#{$id}-quickSearch').val('');return false;">
+                        <i class="glyphicon glyphicon-remove"></i>
+                    </button>
+                </div>
             </div>
         </div>
 HTML;
