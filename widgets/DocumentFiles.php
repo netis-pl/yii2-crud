@@ -73,7 +73,7 @@ class DocumentFiles extends InputWidget
                 'id' => $documentId,
             ]);
             $parts['{label}'] = Html::a($this->getLabel($model), $url);
-            $parts['{deleteButton}'] = $this->createDeleteButton($model);
+            $parts['{deleteButton}'] = $this->createDeleteButton($documentId);
             $result[] = Html::tag('li',  strtr($this->template, $parts) );
         }
         return Html::tag('ul', implode('', $result), ['class' => 'list-unstyled']) . $this->createFileInput();
@@ -104,13 +104,13 @@ class DocumentFiles extends InputWidget
     }
 
     /**
-     * @param \yii\base\Model $model
+     * @param \netis\utils\crud\Action::exportKey $documentId
      *
      * @return string
      */
-    public function createDeleteButton($model)
+    public function createDeleteButton($documentId)
     {
-        return Html::activeCheckbox($this->model, "$this->uploadAttribute[$model->id]", ['label' => Yii::t('app', 'Delete')]);
+        return Html::activeCheckbox($this->model, "$this->uploadAttribute[]", ['label' => Yii::t('app', 'Delete'), 'value' => $documentId]);
     }
 
     /**

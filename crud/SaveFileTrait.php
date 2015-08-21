@@ -8,6 +8,7 @@
 namespace netis\utils\crud;
 
 use Yii;
+use yii\web\ForbiddenHttpException;
 
 trait SaveFileTrait
 {
@@ -18,13 +19,12 @@ trait SaveFileTrait
      * @param string $foreignKey
      *
      * @return bool
+     * @throws \yii\web\ForbiddenHttpException
      */
     public function saveFiles($fileClass, $files, $primaryValue, $foreignKey)
     {
-        if ($this->checkAccess) {
-            $document = new $fileClass();
-            call_user_func($this->checkAccess, 'create', $document);
-            unset($document);
+        if (!Yii::$app->user->can("$fileClass.create")) {
+            throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
         }
         foreach ($files as $documentFile) {
             $document = new $fileClass();
@@ -53,13 +53,14 @@ trait SaveFileTrait
      * @param array  $files     UploadedFile instances
      *
      * @return bool
+     * @throws \yii\web\ForbiddenHttpException
      */
     public function deleteFiles($fileClass, $files)
     {
         foreach ($files as $id) {
-            $document = $fileClass::findOne($id);
-            if ($this->checkAccess) {
-                call_user_func($this->checkAccess, 'delete', $document);
+            $document = $fileClass::findOne(Action::importKey($fileClass, $id));
+            if (!Yii::$app->user->can("$fileClass.delete", $document)) {
+                throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
             }
             if (!$document->delete()) {
                 return false;
