@@ -192,13 +192,12 @@ trait ActiveSearchTrait
     /**
      * Assigns specified token to specified attributes and validates
      * current model to filter the values. Then, creates search condition.
-     * @param  \yii\db\ActiveQuery $query
      * @param  string $token     one search token extracted from whole term
      * @param  array $attributes attributes safe to search
      * @param  string $tablePrefix
-     * @return \yii\db\ActiveQuery all conditions joined with OR operator, should be merged with main criteria object
+     * @return array all conditions joined with OR operator, should be merged with main query object
      */
-    protected function processSearchToken(\yii\db\ActiveQuery $query, $token, array $attributes, $tablePrefix = null)
+    public function processSearchToken($token, array $attributes, $tablePrefix = null)
     {
         /** @var \yii\db\Schema $schema */
         $schema = $this->getDb()->getSchema();
@@ -256,11 +255,7 @@ trait ActiveSearchTrait
         }
         $this->setAttributes($oldAttributes);
 
-        if ($conditions !== ['or']) {
-            $query->andWhere($conditions);
-        }
-
-        return $query;
+        return $conditions !== ['or'] ? $conditions : null;
     }
 
     /**
@@ -274,10 +269,11 @@ trait ActiveSearchTrait
      *                                       'searchModel' => netis\utils\db\ActiveSearchTrait,
      *                                       'attributes' => array
      *                                   )
-     * @return \yii\db\ActiveQuery $query
+     * @return array conditions to add to $query
      */
     protected function processSearchRelated(\yii\db\ActiveQuery $query, array $tokens, array $relationAttributes)
     {
+        $allConditions = ['or'];
         foreach ($relationAttributes as $relationName => $relation) {
             /**
              * @todo optimize this (check first, don't want to loose another battle with PostgreSQL query planner):
@@ -289,12 +285,18 @@ trait ActiveSearchTrait
                 return $query->select(false);
             }]);
             $query->distinct = true;
+            $conditions = ['and'];
             foreach ($tokens as $token) {
-                $relation['searchModel']->processSearchToken($query, $token, $relation['attributes'], $relationName);
+                if (($condition = $relation['searchModel']->processSearchToken($token, $relation['attributes'], $relationName)) !== null) {
+                    $conditions[] = $condition;
+                }
+            }
+            if ($conditions !== ['and']) {
+                $allConditions[] = $conditions;
             }
         }
 
-        return $query;
+        return $allConditions !== ['or'] ? $allConditions : null;
     }
 
     /**
@@ -325,24 +327,30 @@ trait ActiveSearchTrait
         ) : $this->safeAttributes();
         $safeAttributes = [];
         $relationAttributes = [];
+        $relations = $this->relations();
 
         foreach ($allAttributes as $attribute) {
-            if (($pos = strpos($attribute, '.')) === false) {
+            if (($pos = strpos($attribute, '.')) === false && !in_array($attribute, $relations)) {
                 $safeAttributes[] = $attribute;
                 continue;
             }
-            $relationName = substr($attribute, 0, $pos);
+            if ($pos === false) {
+                $relationName = $attribute;
+            } else {
+                $relationName = substr($attribute, 0, $pos);
+            }
             /** @var \yii\db\ActiveQuery $activeRelation */
             $activeRelation = $this->getRelation($relationName);
+            /** @var ActiveRecord $relationModel */
             $relationModel = new $activeRelation->modelClass();
             $relationModel->scenario = $this->scenario;
 
             $parts = explode('\\', $activeRelation->modelClass);
             $modelClass = array_pop($parts);
             $namespace = implode('\\', $parts);
-            $relationSearchModel = new $namespace . '\\search\\' . $modelClass;
+            $searchModelClass = $namespace . '\\search\\' . $modelClass;
+            $relationSearchModel = new $searchModelClass;
 
-            $attribute = substr($attribute, $pos + 1);
             if (!isset($relationAttributes[$relationName])) {
                 $relationAttributes[$relationName] = [
                     'model'      => $relationModel,
@@ -350,12 +358,28 @@ trait ActiveSearchTrait
                     'attributes' => [],
                 ];
             }
-            $relationAttributes[$relationName]['attributes'][] = $attribute;
+            if ($pos === false) {
+                /** @var LabelsBehavior $labelsBehavior */
+                $labelsBehavior = $relationModel->getBehavior('labels');
+                foreach ($labelsBehavior->attributes as $rcAttribute) {
+                    $relationAttributes[$relationName]['attributes'][] = $rcAttribute;
+                }
+            } else {
+                $relationAttributes[$relationName]['attributes'][] = substr($attribute, $pos + 1);
+            }
         }
+        $conditions = ['or'];
         foreach ($searchPhrase as $word) {
-            $this->processSearchToken($query, $word, $safeAttributes);
+            if (($condition = $this->processSearchToken($word, $safeAttributes)) !== null) {
+                $conditions[] = $condition;
+            }
         }
-        $this->processSearchRelated($query, $searchPhrase, $relationAttributes);
+        if (($condition = $this->processSearchRelated($query, $searchPhrase, $relationAttributes)) !== null) {
+            $conditions[] = $condition;
+        }
+        if ($conditions !== ['or']) {
+            $query->andWhere($conditions);
+        }
         return $query;
     }
 
