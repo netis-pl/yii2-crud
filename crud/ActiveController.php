@@ -30,9 +30,9 @@ use yii\web\ForbiddenHttpException;
  *
  * @package netis\utils\crud
  * @method array getBreadcrumbs(Action $action, ActiveRecord $model)
- * @method array getMenuCurrent(Action $action, ActiveRecord $model, bool $horizontal, array $privs, array $defaultActions, array $confirms)
- * @method array getMenuCommon(Action $action, ActiveRecord $model, bool $horizontal, array $privs, array $defaultActions, array $confirms)
- * @method array getMenu(Action $action, ActiveRecord $model, bool $readOnly = false, bool $horizontal = true)
+ * @method array getMenuCurrent(\yii\base\Action $action, ActiveRecord $model, $horizontal, array $privs, array $defaultActions, array $confirms) {@link ActiveNavigation::getMenuCurrent}
+ * @method array getMenuCommon(\yii\base\Action $action, ActiveRecord $model, $horizontal, array $privs, array $defaultActions, array $confirms) {@link ActiveNavigation::getMenuCommon}
+ * @method array getMenu(\yii\base\Action $action, ActiveRecord $model, $readOnly = false, $horizontal = true)
  */
 class ActiveController extends \yii\rest\ActiveController
 {
