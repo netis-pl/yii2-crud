@@ -481,7 +481,7 @@ JavaScript;
                     'model' => $model,
                     'attribute' => $attribute,
                     'options' => ['class' => 'form-control'],
-                    'dateFormat' => 'yyyy-MM-dd',
+                    'dateFormat' => 'dd-MM-yyyy',//'yyyy-MM-dd',
                 ];
                 break;
             case 'enum':
@@ -602,6 +602,14 @@ JavaScript;
             $model = $data['model'];
         }
         $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
+//        foreach($model->getValidators() as $validator)
+//        {
+//            if( in_array($name, $validator->attributes) && $validator instanceof RequiredValidator ) {
+//                $label = $label . ' *';
+//            }
+//
+//        }
+
         $field = $form->field($model, $data['attribute']);
         $field->label($label, ['class' => 'control-label']);
         if (isset($data['formMethod'])) {
