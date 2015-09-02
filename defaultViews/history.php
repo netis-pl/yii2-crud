@@ -22,7 +22,7 @@ if ($model instanceof \netis\utils\crud\ActiveRecord) {
         ],
         [
             'label' => $model->__toString(),
-            'url' => ['view', 'id' => $id],
+            'url' => ['view', 'id' => $model->id],
         ],
         Yii::t('app', 'History'),
     ];
