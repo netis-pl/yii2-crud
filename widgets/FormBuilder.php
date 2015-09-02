@@ -440,6 +440,7 @@ JavaScript;
         $format = is_array($formats[$attribute]) ? $formats[$attribute][0] : $formats[$attribute];
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
+
         switch ($format) {
             case 'boolean':
                 if ($multiple) {
@@ -481,7 +482,7 @@ JavaScript;
                     'model' => $model,
                     'attribute' => $attribute,
                     'options' => ['class' => 'form-control'],
-                    'dateFormat' => 'dd-MM-yyyy',//'yyyy-MM-dd',
+                    'dateFormat' => Yii::$app->formatter->dateFormat,
                 ];
                 break;
             case 'enum':
@@ -602,14 +603,6 @@ JavaScript;
             $model = $data['model'];
         }
         $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
-//        foreach($model->getValidators() as $validator)
-//        {
-//            if( in_array($name, $validator->attributes) && $validator instanceof RequiredValidator ) {
-//                $label = $label . ' *';
-//            }
-//
-//        }
-
         $field = $form->field($model, $data['attribute']);
         $field->label($label, ['class' => 'control-label']);
         if (isset($data['formMethod'])) {

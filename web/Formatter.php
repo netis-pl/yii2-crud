@@ -537,7 +537,7 @@ class Formatter extends \yii\i18n\Formatter
             return null;
         }
 
-        return date('dd-MM-yyyy', $ts);
+        return date('Y-m-d', $ts);
     }
 
     /**
@@ -551,7 +551,7 @@ class Formatter extends \yii\i18n\Formatter
             return null;
         }
 
-        return date('dd-MM-yyyy H:i:s', $ts);
+        return date('Y-m-d H:m:s', $ts);
     }
 
     /**
