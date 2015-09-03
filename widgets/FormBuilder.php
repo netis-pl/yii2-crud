@@ -484,7 +484,7 @@ JavaScript;
                     'attribute'  => $attribute,
                     'options'    => [
                         'class' => 'form-control',
-                        'value' => (is_null($value) ? null : $formatter->asDate($value)),
+                        'value' => ($value === null ? null : $formatter->asDate($value)),
                     ],
                     'dateFormat' => $formatter->dateFormat,
                 ];
