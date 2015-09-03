@@ -28,7 +28,7 @@ class LabelsBehavior extends Behavior
      */
     public $crudLabels = [];
     /**
-     * @var array realtion labels
+     * @var array relation labels
      */
     public $relationLabels = [];
     /**
