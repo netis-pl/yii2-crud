@@ -478,12 +478,14 @@ JavaScript;
             case 'datetime':
             case 'date':
                 $value = $model->getAttribute($attribute);
-                $value = $formatter->asDate($value);
                 $field['widgetClass'] = 'omnilight\widgets\DatePicker';
                 $field['options'] = [
                     'model' => $model,
                     'attribute' => $attribute,
-                    'options' => ['class' => 'form-control', 'value' => $value],
+                    'options' => [
+                        'class' => 'form-control',
+                        'value' => (preg_match("/^[-:0-9 ]+/", $value) ? $formatter->asDate($value) : null ),
+                    ],
                     'dateFormat' => $formatter->dateFormat,
                 ];
                 break;
