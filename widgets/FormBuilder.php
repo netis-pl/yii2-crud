@@ -493,7 +493,7 @@ JavaScript;
                 ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
                     $field['arguments'][] = [
-                        'empty' => $formatter->nullDisplay,
+                        'prompt' =>  strip_tags($formatter->nullDisplay),
                     ];
                 }
                 break;

@@ -20,6 +20,11 @@ class ActiveNavigation extends Behavior
     const SECT_CURRENT = 'current';
 
     /**
+     * @var bool Whether to create drop down menu for transitions.
+     */
+    public $useDropDownMenuForTransitions = true;
+
+    /**
      * @param Action $action
      * @param ActiveRecord $model
      * @return array
@@ -196,16 +201,21 @@ class ActiveNavigation extends Behavior
         ) {
             $transitions = $model->getTransitionsGroupedByTarget();
             $stateAttribute = $model->getStateAttributeName();
-            $menu['state'] = \netis\fsm\components\StateAction::getContextMenuItem(
+            $stateMenu = \netis\fsm\components\StateAction::getContextMenuItem(
                 'state',
                 $transitions,
                 $model,
                 $model->$stateAttribute,
-                [$this->owner, 'checkAccess']
+                [$this->owner, 'checkAccess'],
+                $this->useDropDownMenuForTransitions
             );
-            if ($action->id === 'state') {
-                $menu['state']['active'] = true;
+            //if label is set then it's drop down menu
+            //todo set active item for buttons
+            if (isset($stateMenu['label']) && $action->id === 'state') {
+                $stateMenu['active'] = true;
             }
+
+            $menu = array_merge($menu, $stateMenu);
         }
         foreach ($menu as $key => $item) {
             if ($model->isNewRecord) {
