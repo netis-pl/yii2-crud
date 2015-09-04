@@ -28,7 +28,7 @@ class LabelsBehavior extends Behavior
      */
     public $crudLabels = [];
     /**
-     * @var array realtion labels
+     * @var array relation labels
      */
     public $relationLabels = [];
     /**
@@ -147,10 +147,15 @@ class LabelsBehavior extends Behavior
         if ($language === null) {
             $language = \Yii::$app->language;
         }
-        if ($this->owner->isNewRecord) {
-            return $this->owner->getAttribute($attribute);
+        /** @var ActiveRecord $owner */
+        $owner = $this->owner;
+        if ($owner->isNewRecord) {
+            return $owner->getAttribute($attribute);
         }
         $localLabels = $this->getLocalLabels();
-        return $localLabels[$language][$this->owner->getPrimaryKey()][$attribute];
+
+        return !isset($localLabels[$language])
+            ? $owner->getAttribute($attribute)
+            : $localLabels[$language][$owner->getPrimaryKey()][$attribute];
     }
 }

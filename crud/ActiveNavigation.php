@@ -20,6 +20,11 @@ class ActiveNavigation extends Behavior
     const SECT_CURRENT = 'current';
 
     /**
+     * @var bool Whether to create drop down menu for transitions.
+     */
+    public $useDropDownMenuForTransitions = true;
+
+    /**
      * @param Action $action
      * @param ActiveRecord $model
      * @return array
@@ -58,7 +63,7 @@ class ActiveNavigation extends Behavior
     }
 
     /**
-     * @param Action $action
+     * @param \yii\base\Action $action
      * @param ActiveRecord $model
      * @param bool $horizontal
      * @param array $privs
@@ -66,7 +71,7 @@ class ActiveNavigation extends Behavior
      * @param array $confirms
      * @return array
      */
-    public function getMenuCommon(Action $action, $model, $horizontal, $privs, $defaultActions, $confirms)
+    public function getMenuCommon(\yii\base\Action $action, $model, $horizontal, $privs, $defaultActions, $confirms)
     {
         $menu = [];
 
@@ -119,7 +124,7 @@ class ActiveNavigation extends Behavior
     }
 
     /**
-     * @param Action $action
+     * @param \yii\base\Action $action
      * @param ActiveRecord $model
      * @param bool $horizontal
      * @param array $privs
@@ -127,10 +132,13 @@ class ActiveNavigation extends Behavior
      * @param array $confirms
      * @return array
      */
-    public function getMenuCurrent(Action $action, $model, $horizontal, $privs, $defaultActions, $confirms)
+    public function getMenuCurrent(\yii\base\Action $action, $model, $horizontal, $privs, $defaultActions, $confirms)
     {
         $menu = [];
-        $id = $model->isNewRecord ? null : $action->exportKey($model->getPrimaryKey(true));
+        $id = null;
+        if (!$model->isNewRecord) {
+            $id = $action instanceof Action ? $action->exportKey($model->getPrimaryKey(true)) : implode('-', $model->getPrimaryKey(true));
+        }
 
         if ($privs['read'] && $defaultActions['history']
             && (!$model->isNewRecord || $action->id === 'update')
@@ -193,16 +201,21 @@ class ActiveNavigation extends Behavior
         ) {
             $transitions = $model->getTransitionsGroupedByTarget();
             $stateAttribute = $model->getStateAttributeName();
-            $menu['state'] = \netis\fsm\components\StateAction::getContextMenuItem(
+            $stateMenu = \netis\fsm\components\StateAction::getContextMenuItem(
                 'state',
                 $transitions,
                 $model,
                 $model->$stateAttribute,
-                [$this->owner, 'checkAccess']
+                [$this->owner, 'checkAccess'],
+                $this->useDropDownMenuForTransitions
             );
-            if ($action->id === 'state') {
-                $menu['state']['active'] = true;
+            //if label is set then it's drop down menu
+            //todo set active item for buttons
+            if (isset($stateMenu['label']) && $action->id === 'state') {
+                $stateMenu['active'] = true;
             }
+
+            $menu = array_merge($menu, $stateMenu);
         }
         foreach ($menu as $key => $item) {
             if ($model->isNewRecord) {
@@ -271,14 +284,14 @@ class ActiveNavigation extends Behavior
 
     /**
      * Builds navigation items like the sidebar menu.
-     * @param Action       $action
+     * @param \yii\base\Action       $action
      * @param ActiveRecord $model
      * @param boolean      $readOnly   should the method generate links for create/update/delete actions
      * @param boolean $horizontal if menu will be displayed as horizontal pills,
      *                            in that case group titles are not added
      * @return array
      */
-    public function getMenu(Action $action, ActiveRecord $model, $readOnly = false, $horizontal = true)
+    public function getMenu(\yii\base\Action $action, ActiveRecord $model, $readOnly = false, $horizontal = true)
     {
         /** @var ActiveController $owner */
         $owner = $this->owner;

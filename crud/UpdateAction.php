@@ -139,6 +139,11 @@ class UpdateAction extends Action
      */
     protected function save($model)
     {
+        /** @var \app\behaviors\PendingBehavior pending */
+        if (($model->getBehavior('pending')) !== null) {
+            return $model->savePending(Yii::$app->getRequest()->getBodyParams(), $model);
+        }
+
         /** @var \nineinchnick\audit\behaviors\TrackableBehavior $trackable */
         if (($trackable = $model->getBehavior('trackable')) !== null) {
             $model->beginChangeset();
@@ -157,17 +162,23 @@ class UpdateAction extends Action
      */
     protected function afterSave($model, $wasNew)
     {
-        if ($wasNew) {
-            $message = Yii::t('app', 'A new has been successfully created.');
+        $id = $this->exportKey($model->getPrimaryKey(true));
+        if (($model->getBehavior('pending')) !== null) {
+            $message  = Yii::t('app', 'Record has been sent to accept by moderator.');
+            $location = Url::toRoute(['index'], true);
         } else {
-            $message = Yii::t('app', 'Record has been successfully updated.');
+            $location = Url::toRoute([$this->viewAction, 'id' => $id], true);
+            if ($wasNew) {
+                $message = Yii::t('app', 'A new has been successfully created.');
+            } else {
+                $message = Yii::t('app', 'Record has been successfully updated.');
+            }
         }
         $this->setFlash('success', $message);
 
-        $id = $this->exportKey($model->getPrimaryKey(true));
         $response = Yii::$app->getResponse();
         $response->setStatusCode(201);
-        $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
+        $response->getHeaders()->set('Location', $location);
         $response->getHeaders()->set('X-Primary-Key', $id);
     }
 

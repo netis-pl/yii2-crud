@@ -59,7 +59,7 @@ trait SaveFileTrait
     {
         foreach ($files as $id) {
             $document = $fileClass::findOne(Action::importKey($fileClass, $id));
-            if (!Yii::$app->user->can("$fileClass.delete", $document)) {
+            if (!Yii::$app->user->can("$fileClass.delete", ['model' => $document])) {
                 throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
             }
             if (!$document->delete()) {
