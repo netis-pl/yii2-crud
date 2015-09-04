@@ -564,7 +564,7 @@ class Action extends \yii\rest\Action
             'boolean', 'smallint', 'integer', 'bigint', 'float', 'decimal', 'multiplied',
             'shortWeight', 'shortLength', 'money', 'currency', 'minorCurrency',
         ]);
-        if ($format === 'crudLink') {
+        if ($format === 'crudLink' || (is_array($format) && reset($format) === 'crudLink')) {
             $format = ['crudLink', ['data-pjax' => '0']];
         }
         $column = [
