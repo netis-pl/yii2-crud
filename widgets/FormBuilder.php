@@ -477,16 +477,15 @@ JavaScript;
                 break;
             case 'datetime':
             case 'date':
-                $value = $model->getAttribute($attribute);
+                $value                = $model->getAttribute($attribute);
                 $field['widgetClass'] = 'omnilight\widgets\DatePicker';
                 $field['options']     = [
-                    'model'      => $model,
-                    'attribute'  => $attribute,
-                    'options'    => [
+                    'model'     => $model,
+                    'attribute' => $attribute,
+                    'options'   => [
                         'class' => 'form-control',
                         'value' => ($value === null ? null : $formatter->asDate($value)),
                     ],
-                    'dateFormat' => $formatter->dateFormat,
                 ];
                 break;
             case 'enum':
