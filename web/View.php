@@ -9,6 +9,7 @@ namespace netis\utils\web;
 use Yii;
 use yii\base\InvalidParamException;
 use yii\base\ViewContextInterface;
+use yii\helpers\FileHelper;
 
 class View extends \yii\web\View implements ViewContextInterface
 {
@@ -69,6 +70,13 @@ class View extends \yii\web\View implements ViewContextInterface
     protected function findViewFile($view, $context = null)
     {
         $path = parent::findViewFile($view, $context);
+
+        if ($this->theme !== null) {
+            $path = $this->theme->applyTo($path);
+        }
+        if (is_file($path)) {
+            $path = FileHelper::localize($path);
+        }
 
         if (is_file($path)) {
             return $path;

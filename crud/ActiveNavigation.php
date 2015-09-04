@@ -82,7 +82,7 @@ class ActiveNavigation extends Behavior
                     'label'       => Yii::t('app', 'List'),
                     'icon'        => 'list-alt',
                     'url'         => ['index'],
-                    'linkOptions' => $action->id === 'update' ? ['confirm' => $confirms['leave']] : [],
+                    'linkOptions' => $action->id === 'update' ? ['data-confirm' => $confirms['leave']] : [],
                     'active'      => $action->id === 'index',
                 ];
             }
@@ -93,7 +93,7 @@ class ActiveNavigation extends Behavior
                 'label'       => Yii::t('app', 'Create'),
                 'icon'        => 'file',
                 'url'         => ['update'],
-                'linkOptions' => $action->id !== 'update' ? [] : ['confirm' => $confirms['leave']],
+                'linkOptions' => $action->id !== 'update' ? [] : ['data-confirm' => $confirms['leave']],
                 'active'      => $action->id === 'update' && $model->isNewRecord,
             ];
         }
@@ -166,7 +166,7 @@ class ActiveNavigation extends Behavior
                 'label'       => Yii::t('app', 'View'),
                 'icon'        => 'eye-open',
                 'url'         => ['view', 'id' => $id],
-                'linkOptions' => $action->id === 'view' ? [] : ['confirm' => $confirms['leave']],
+                'linkOptions' => $action->id === 'view' ? [] : ['data-confirm' => $confirms['leave']],
                 'active'      => $action->id === 'view',
             ];
         }
@@ -175,7 +175,7 @@ class ActiveNavigation extends Behavior
                 'label'       => Yii::t('app', 'Print'),
                 'icon'        => 'print',
                 'url'         => ['print', 'id' => $id, '_format' => 'pdf'],
-                'linkOptions' => $action->id === 'print' ? [] : ['confirm' => $confirms['leave']],
+                'linkOptions' => $action->id === 'print' ? [] : ['data-confirm' => $confirms['leave']],
                 'active'      => $action->id === 'print',
             ];
         }
@@ -184,7 +184,7 @@ class ActiveNavigation extends Behavior
                 'label'       => Yii::t('app', 'Delete'),
                 'icon'        => 'trash',
                 'url'         => ['delete', 'id' => $id],
-                'linkOptions' => ['confirm' => $confirms['delete'], 'method' => 'post'],
+                'linkOptions' => ['data-confirm' => $confirms['delete'], 'data-method' => 'post'],
             ];
         }
         if ($privs['toggle']) {
@@ -193,7 +193,7 @@ class ActiveNavigation extends Behavior
                 'label'       => $enabled ? Yii::t('app', 'Disable') : Yii::t('app', 'Enable'),
                 'icon'        => $enabled ? 'ban' : 'reply',
                 'url'         => ['toggle', 'id' => $id],
-                'linkOptions' => $enabled ? ['confirm' => $confirms['disable']] : [],
+                'linkOptions' => $enabled ? ['data-confirm' => $confirms['disable']] : [],
             ];
         }
         if (class_exists('netis\fsm\components\StateAction') && $model instanceof \netis\fsm\components\IStateful
@@ -344,8 +344,11 @@ class ActiveNavigation extends Behavior
                         $item['url'] = '#';
                         \yii\helpers\Html::addCssClass($item['options'], 'disabled');
                     }
-                    if (isset($item['linkOptions']) && isset($item['linkOptions']['confirm'])) {
-                        unset($item['linkOptions']['confirm']);
+                    if (isset($item['linkOptions']) && isset($item['linkOptions']['data-confirm'])) {
+                        unset($item['linkOptions']['data-confirm']);
+                    }
+                    if (isset($item['linkOptions']) && isset($item['linkOptions']['data-method'])) {
+                        unset($item['linkOptions']['data-method']);
                     }
                 }
                 if (isset($item['icon'])) {

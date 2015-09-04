@@ -13,6 +13,7 @@ use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\grid\ActionColumn;
+use yii\helpers\Html;
 
 class IndexAction extends Action
 {
@@ -76,7 +77,7 @@ class IndexAction extends Action
                 'class'         => 'yii\grid\ActionColumn',
                 'headerOptions' => ['class' => 'column-action'],
                 'controller'    => Yii::$app->crudModelsMap[$model::className()],
-                'template'      => '{view} {update} {delete} {toggle}',
+                'template'      => '{update} {delete} {toggle}', // {view} removed because representing column is linked
                 'buttons' => [
                     'view'   => function ($url, $model, $key) use ($controller, $actionColumn) {
                         if (!$controller->hasAccess('read', $model)) {
@@ -135,11 +136,16 @@ class IndexAction extends Action
         /** @var LabelsBehavior $behavior */
         $behavior = $model->getBehavior('labels');
         if (in_array($field, $behavior->attributes)) {
-            return array_merge(parent::getAttributeColumn($model, $field, 'crudLink'), [
-                'value' => function ($model, $key, $index, $column) {
-                    return $model;
-                },
-            ]);
+            return array_merge(
+                parent::getAttributeColumn($model, $field, ['crudLink', [], 'view', function($value) use ($field) {
+                    return Html::encode($value->$field);
+                }]),
+                [
+                    'value' => function ($model, $key, $index, $column) {
+                        return $model;
+                    },
+                ]
+            );
         }
         return parent::getAttributeColumn($model, $field, $format);
     }
@@ -159,7 +165,7 @@ class IndexAction extends Action
         $query = $model::find();
         $sort = $this->getSort($query);
         $pagination = [
-            'pageSizeLimit' => [1, 0x7FFFFFFF],
+            'pageSizeLimit' => [-1, 0x7FFFFFFF],
             'defaultPageSize' => 25,
         ];
 
