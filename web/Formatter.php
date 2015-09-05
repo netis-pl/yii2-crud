@@ -497,6 +497,28 @@ class Formatter extends \yii\i18n\Formatter
     }
 
     /**
+     * A wrapper for filterDecimal using precision of 2, commonly used for money amounts.
+     * Does nothing if $value is not a string.
+     * @param string $value the value to be filtered
+     * @return int
+     */
+    public function filterDecimal2($value)
+    {
+        return is_string($value) ? $this->filterDecimal($value, null, 2, 100) : $value;
+    }
+
+    /**
+     * A wrapper for filterDecimal using precision of 5, commonly used for quantities.
+     * Does nothing if $value is not a string.
+     * @param string $value the value to be filtered
+     * @return int
+     */
+    public function filterDecimal5($value)
+    {
+        return is_string($value) ? $this->filterDecimal($value, null, 5, 100000) : $value;
+    }
+
+    /**
      * Filters the value to the ones contained in the enum and returns its key.
      * Note, the value is searched using exact comparison so it may need to be trimmed.
      * @param string $value the value to be filtered
