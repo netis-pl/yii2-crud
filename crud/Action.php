@@ -11,7 +11,6 @@ use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\db\ActiveRecordInterface;
-use yii\grid\ActionColumn;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -528,6 +527,8 @@ class Action extends \yii\rest\Action
      */
     public static function getRelationGridColumns($model, $fields, $relationName, $relation)
     {
+        return self::getGridColumns($model, $fields);
+        /* disabled, since columns should already contain one linked to the view action
         $actionColumn = new ActionColumn();
         return array_merge([
             [
@@ -545,11 +546,11 @@ class Action extends \yii\rest\Action
                     },
                 ],
             ],
-            /*[
+            / *[
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
-            ],*/
-        ], self::getGridColumns($model, $fields));
+            ],* /
+        ], self::getGridColumns($model, $fields));*/
     }
 
     /**

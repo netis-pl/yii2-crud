@@ -316,13 +316,19 @@ class UpdateAction extends Action
     public static function getRelationGridColumns($model, $fields, $relationName, $relation)
     {
         $columns = parent::getRelationGridColumns($model, $fields, $relationName, $relation);
-
-        if (!isset($columns[0]) || !isset($columns[0]['class']) || $columns[0]['class'] !== 'yii\grid\ActionColumn') {
-            return $columns;
-        }
-
         $controller = Yii::$app->crudModelsMap[$model::className()];
         $actionColumn = new \yii\grid\ActionColumn();
+
+        if (!isset($columns[0]) || !isset($columns[0]['class']) || $columns[0]['class'] !== 'yii\grid\ActionColumn') {
+            array_unshift($columns, [
+                'class'         => 'yii\grid\ActionColumn',
+                'headerOptions' => ['class' => 'column-action'],
+                'controller'    => $controller,
+                'template'      => '',
+                'buttons'       => [],
+            ]);
+        }
+
         $columns[0]['template'] = '{update} {unlink}';
         $columns[0]['urlCreator'] = function ($action, $model, $key, $index) use ($controller, $relation) {
             $params = is_array($key) ? $key : ['id' => (string)$key];
@@ -377,5 +383,19 @@ class UpdateAction extends Action
             return \yii\helpers\Html::a('<span class="glyphicon glyphicon-remove"></span>', $url, $options);
         };
         return $columns;
+    }
+
+    /**
+     * Changed format from crudLink to text.
+     * @inheritdoc
+     */
+    protected static function getRelationColumn($model, $field, $relation)
+    {
+        return [
+            'attribute' => $field,
+            'format'    => 'text',
+            'visible'   => true,
+            'label'     => $model->getRelationLabel($relation, $field),
+        ];
     }
 }
