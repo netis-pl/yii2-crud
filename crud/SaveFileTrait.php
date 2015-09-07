@@ -23,9 +23,6 @@ trait SaveFileTrait
      */
     public function saveFiles($fileClass, $files, $primaryValue, $foreignKey)
     {
-        if (!Yii::$app->user->can("$fileClass.create")) {
-            throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
-        }
         foreach ($files as $documentFile) {
             $document = new $fileClass();
             $content  = file_get_contents($documentFile->tempName);
