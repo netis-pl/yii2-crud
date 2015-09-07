@@ -31,6 +31,10 @@ class IndexAction extends Action
      * The callable should return an instance of [[ActiveDataProvider]].
      */
     public $prepareDataProvider;
+    /**
+     * @var bool should a serial column be used
+     */
+    public $useSerialColumn = true;
 
 
     /**
@@ -119,11 +123,13 @@ class IndexAction extends Action
                     },
                 ],
             ],
-            [
+        ];
+        if ($this->useSerialColumn) {
+            $extraColumns[] = [
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
-            ],
-        ];
+            ];
+        }
 
         return array_merge($extraColumns, static::getGridColumns($model, $fields));
     }
@@ -137,7 +143,7 @@ class IndexAction extends Action
         $behavior = $model->getBehavior('labels');
         if (in_array($field, $behavior->attributes)) {
             return array_merge(
-                parent::getAttributeColumn($model, $field, ['crudLink', [], 'view', function($value) use ($field) {
+                parent::getAttributeColumn($model, $field, ['crudLink', [], 'view', function ($value) use ($field) {
                     return Html::encode($value->$field);
                 }]),
                 [
