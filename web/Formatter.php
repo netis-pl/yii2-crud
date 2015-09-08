@@ -573,7 +573,12 @@ class Formatter extends \yii\i18n\Formatter
             return null;
         }
 
-        return date('Y-m-d H:i:s', $ts);
+        $parsed = date_parse($value);
+
+        $date = new \DateTime($value, $parsed['hour'] !== false ? new \DateTimeZone(date_default_timezone_get()) : new \DateTimeZone('UTC'));
+        if($parsed['hour'] !== false) { $date->setTimezone(new \DateTimeZone('UTC')); }
+
+        return $date->format('Y-m-d H:i:s');
     }
 
     /**
