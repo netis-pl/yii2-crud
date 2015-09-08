@@ -183,7 +183,9 @@ trait ActiveSearchTrait
             $subquery = (new Query)
                 ->select(array_keys($relation->link))
                 ->from(['t' => $relationClass::tableName()])
-                ->where(['IN', $relationClass::primaryKey(), $value]);
+                ->where(['IN', array_map(function ($key) {
+                    return 't.' . $key;
+                }, $relationClass::primaryKey()), $value]);
             $linkKeys = array_values($relation->link);
         }
         return ['IN', $linkKeys, $subquery];
