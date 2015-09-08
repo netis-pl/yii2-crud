@@ -440,6 +440,7 @@ JavaScript;
         $format = is_array($formats[$attribute]) ? $formats[$attribute][0] : $formats[$attribute];
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
+
         switch ($format) {
             case 'boolean':
                 if ($multiple) {
@@ -476,12 +477,15 @@ JavaScript;
                 break;
             case 'datetime':
             case 'date':
+                $value                = $model->getAttribute($attribute);
                 $field['widgetClass'] = 'omnilight\widgets\DatePicker';
-                $field['options'] = [
-                    'model' => $model,
+                $field['options']     = [
+                    'model'     => $model,
                     'attribute' => $attribute,
-                    'options' => ['class' => 'form-control'],
-                    'dateFormat' => 'yyyy-MM-dd',
+                    'options'   => [
+                        'class' => 'form-control',
+                        'value' => ($value === null ? null : $formatter->asDate($value)),
+                    ],
                 ];
                 break;
             case 'enum':

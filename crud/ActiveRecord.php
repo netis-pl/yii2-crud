@@ -28,6 +28,8 @@ use yii\web\IdentityInterface;
  * @method null beginChangeset()
  * @method null endChangeset()
  * @method ActiveRecord loadVersion(integer $version_id)
+ * @method array getAttributeVersions(string $attribute)
+ * @method array getRecordedVersions()
  * @method \netis\utils\db\ActiveQuery getRelation($name, $throwException = true)
  * @method static \netis\utils\db\ActiveQuery find()
  */

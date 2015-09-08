@@ -3,7 +3,7 @@
 use yii\helpers\Html;
 
 /* @var $this yii\web\View */
-/* @var $model yii\db\ActiveRecord */
+/* @var $model netis\utils\crud\ActiveRecord */
 /* @var $fields array */
 /* @var $relations array */
 /* @var $controller netis\utils\crud\ActiveController */
