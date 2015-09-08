@@ -574,14 +574,11 @@ class Formatter extends \yii\i18n\Formatter
         }
 
         $parsed = date_parse($value);
-        $date = new \DateTime($value, new \DateTimeZone('Europe/Warsaw'));
-        date_sub($date, date_interval_create_from_date_string('2 hours'));
 
-        if ($parsed['hour'] === false) {
-            $date->setTimezone(new \DateTimeZone('UTC'));
-        }
+        $date = new \DateTime($value, $parsed['hour'] !== false ? new \DateTimeZone(date_default_timezone_get()) : new \DateTimeZone('UTC'));
+        if($parsed['hour'] !== false) { $date->setTimezone(new \DateTimeZone('UTC')); }
 
-        return date('Y-m-d H:i:s', date_timestamp_get($date));
+        return $date->format('Y-m-d H:i:s');
     }
 
     /**
