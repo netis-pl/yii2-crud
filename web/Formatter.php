@@ -551,7 +551,15 @@ class Formatter extends \yii\i18n\Formatter
             return null;
         }
 
-        return date('Y-m-d H:i:s', $ts);
+        $parsed = date_parse($value);
+        $date = new \DateTime($value, new \DateTimeZone('Europe/Warsaw'));
+        date_sub($date, date_interval_create_from_date_string('2 hours'));
+
+        if ($parsed['hour'] === false) {
+            $date->setTimezone(new \DateTimeZone('UTC'));
+        }
+
+        return date('Y-m-d H:i:s', date_timestamp_get($date));
     }
 
     /**
