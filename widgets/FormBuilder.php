@@ -662,4 +662,51 @@ JavaScript;
 
         return implode('', $result);
     }
+
+    /**
+     * @param \yii\base\Model $model
+     * @param array[]         $fields
+     *
+     * @return bool
+     */
+    public static function hasRequiredFields($model, $fields)
+    {
+        foreach ($fields as $name => $column) {
+            if (is_string($column)) {
+                if ($model->isAttributeRequired($column)) {
+                    return true;
+                }
+                continue;
+            }
+
+            if (!is_numeric($name) && isset($column['attribute'])) {
+                if ($model->isAttributeRequired($column['attribute'])) {
+                    return true;
+                }
+                continue;
+            }
+
+            foreach ($column as $name2 => $row) {
+                if (is_string($row)) {
+                    if ($model->isAttributeRequired($row)) {
+                        return true;
+                    }
+                    continue;
+                }
+
+                if (!is_numeric($name2) && isset($row['attribute'])) {
+                    if ($model->isAttributeRequired($row['attribute'])) {
+                        return true;
+                    }
+                    continue;
+                }
+
+                if(static::hasRequiredFields($model, $row)) {
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
 }
