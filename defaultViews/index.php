@@ -5,9 +5,10 @@ use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
 
 /* @var $this yii\web\View */
-/* @var $searchModel \yii\base\Model */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $columns array */
+/* @var $buttons array each entry is an array with keys: icon, label, url, options */
+/* @var $searchModel \yii\base\Model */
 /* @var $searchFields array*/
 /* @var $controller netis\utils\crud\ActiveController */
 
@@ -22,24 +23,18 @@ if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
 }
 
 $searchLabel = Yii::t('app', 'Advanced search');
-/** @var \yii\filters\ContentNegotiator $negotiator */
-$negotiator = $controller->getBehavior('contentNegotiator');
-$excelUrl = \yii\helpers\Url::current([
-    $negotiator->formatParam => \netis\utils\web\Response::FORMAT_XLS,
-    $dataProvider->pagination->pageSizeParam => -1,
-]);
-$csvUrl = \yii\helpers\Url::current([
-    $negotiator->formatParam => \netis\utils\web\Response::FORMAT_CSV,
-    $dataProvider->pagination->pageSizeParam => -1,
-]);
+$buttonsTemplate = implode("\n        ", array_map(function ($button) {
+    $icon = isset($button['icon']) ? '<i class="'.$button['icon'].'"></i> ' : '';
+    return Html::a($icon . $button['label'], $button['url'], $button['options']);
+}, $buttons));
+
 $layout = <<<HTML
 <div class="row">
     <div class="col-md-3">{quickSearch}</div>
-    <div class="col-md-3">
+    <div class="col-md-9">
         <a class="btn btn-default" data-toggle="collapse" href="#advancedSearch"
            aria-expanded="false" aria-controls="advancedSearch">$searchLabel</a>
-        <a class="btn btn-default" data-pjax="0" href="$excelUrl"><i class="glyphicon glyphicon-file"></i> XLS</a>
-        <a class="btn btn-default" data-pjax="0" href="$csvUrl"><i class="glyphicon glyphicon-file"></i> CSV</a>
+        $buttonsTemplate
     </div>
 </div>
 {items}
