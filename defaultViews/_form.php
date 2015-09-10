@@ -50,11 +50,13 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '
         ],
     ], isset($formOptions) ? $formOptions : [])); ?>
 
+    <?php if (FormBuilder::hasRequiredFields($model, $fields)):?>
     <p class="note">
         <?= Yii::t('app', 'Fields with {asterisk} are required.', [
             'asterisk' => '<span class="required">*</span>'
         ]); ?>
     </p>
+    <?php endif;?>
 
     <?= $form->errorSummary($model); ?>
 
