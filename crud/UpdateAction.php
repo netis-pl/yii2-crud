@@ -36,7 +36,7 @@ class UpdateAction extends Action
      */
     public $viewAction = 'view';
 
-    public $responseButton = 'createResponseButton';
+    const NEW_RELATED_BUTTON_NAME = 'createResponseButton';
 
     /**
      * Updates an existing model or creates a new one if $id is null.
@@ -166,7 +166,7 @@ class UpdateAction extends Action
             $message = Yii::t('app', 'Record has been successfully updated.');
         }
 
-        if (!isset($_POST[$this->responseButton])) {
+        if (!isset($_POST[self::NEW_RELATED_BUTTON_NAME])) {
             $this->setFlash('success', $message);
         }
 
@@ -175,8 +175,8 @@ class UpdateAction extends Action
         $response->setStatusCode(201);
 
         $response->getHeaders()->set('Location',
-            isset($_POST[$this->responseButton]) ?
-                Url::current(['id' => $id, 'addRelated' => $_POST[$this->responseButton]], true) :
+            isset($_POST[self::NEW_RELATED_BUTTON_NAME]) ?
+                Url::current(['id' => $id, 'addRelated' => $_POST[self::NEW_RELATED_BUTTON_NAME]], true) :
                 Url::toRoute([$this->viewAction, 'id' => $id], true));
 
         $response->getHeaders()->set('X-Primary-Key', $id);
@@ -274,7 +274,7 @@ class UpdateAction extends Action
 
             $result[] = Html::button('<span class="glyphicon glyphicon-file"></span>',
                 [
-                    'name'  => $this->responseButton,
+                    'name'  => self::NEW_RELATED_BUTTON_NAME,
                     'type'  => 'submit',
                     'class' => 'btn btn-default',
                     'value' => $relationName,
