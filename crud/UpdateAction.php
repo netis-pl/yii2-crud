@@ -9,6 +9,7 @@ namespace netis\utils\crud;
 use netis\utils\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
+use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\Request;
 use yii\web\Response;
@@ -167,7 +168,14 @@ class UpdateAction extends Action
         $id = $this->exportKey($model->getPrimaryKey(true));
         $response = Yii::$app->getResponse();
         $response->setStatusCode(201);
-        $response->getHeaders()->set('Location',  Url::toRoute([$this->viewAction, 'id' => $id], true));
+
+        $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
+        foreach ($_POST as $key => $value) {
+            if($key === 'createResponseButton') {
+                $response->getHeaders()->set('Location', str_replace("view","update", Url::toRoute([$this->viewAction, 'id' => $id, 're' => true] , true)));
+            }
+        }
+
         $response->getHeaders()->set('X-Primary-Key', $id);
     }
 
@@ -245,19 +253,32 @@ class UpdateAction extends Action
 
         $result = [];
         if ($createRoute !== null) {
-            $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
-                'title'         => Yii::t('app', 'Create new'),
-                'aria-label'    => Yii::t('app', 'Create new'),
-                'data-pjax'     => '0',
-                'data-toggle'   => 'modal',
-                'data-target'   => '#relationModal',
-                'data-relation' => $relationName,
-                'data-title'    => $relatedModel->getCrudLabel('create'),
-                'data-pjax-url' => Url::toRoute($createRoute),
-                'data-mode'     => FormBuilder::MODAL_MODE_NEW_RECORD,
-                'class'         => 'btn btn-default',
-            ]);
+            if ($createRoute !== null) {
+                $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
+                    'title'         => Yii::t('app', 'Create new'),
+                    'aria-label'    => Yii::t('app', 'Create new'),
+                    'data-pjax'     => '0',
+                    'data-toggle'   => 'modal',
+                    'data-target'   => '#relationModal',
+                    'data-relation' => $relationName,
+                    'data-title'    => $relatedModel->getCrudLabel('create'),
+                    'data-pjax-url' => Url::toRoute($createRoute),
+                    'data-mode'     => FormBuilder::MODAL_MODE_NEW_RECORD,
+                    'class'         => 'btn btn-default',
+                ]);
+            }
+
+        } else {
+
+            $result[] = Html::button('<span class="glyphicon glyphicon-file"></span>',
+                [
+                    'name'  => 'createResponseButton',
+                    'type'  => 'submit',
+                    'class' => 'btn btn-default',
+                ]);
         }
+
+
 
         if ($searchRoute !== null) {
             $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
