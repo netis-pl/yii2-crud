@@ -33,9 +33,14 @@ class Alerts extends \yii\base\Widget
             return;
         }
         echo '<div class="flashes">';
-        foreach ($flashMessages as $key => $message) {
+        foreach ($flashMessages as $key => $messages) {
             $cssClasses = 'alert alert-'.(isset($this->map[$key]) ? $this->map[$key] : $key);
-            echo '<div class="'.$cssClasses.'">'.$message.'</div>';
+            if (!is_array($messages)) {
+                $messages = [$messages];
+            }
+            foreach ($messages as $message) {
+                echo '<div class="'.$cssClasses.'">'.$message.'</div>';
+            }
         }
         echo '</div>';
     }
