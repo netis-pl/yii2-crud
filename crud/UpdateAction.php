@@ -172,7 +172,7 @@ class UpdateAction extends Action
         $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
         foreach ($_POST as $key => $value) {
             if($key === 'createResponseButton') {
-                $response->getHeaders()->set('Location', str_replace("view","update", Url::toRoute([$this->viewAction, 'id' => $id, 're' => true] , true)));
+                $response->getHeaders()->set('Location', str_replace("view","update", Url::toRoute([$this->viewAction, 'id' => $id, 're' => $value] , true)));
             }
         }
 
@@ -265,6 +265,7 @@ class UpdateAction extends Action
                     'data-pjax-url' => Url::toRoute($createRoute),
                     'data-mode'     => FormBuilder::MODAL_MODE_NEW_RECORD,
                     'class'         => 'btn btn-default',
+                    'id'            => 'createRelation-'. $relationName,
                 ]);
             }
 
@@ -275,10 +276,9 @@ class UpdateAction extends Action
                     'name'  => 'createResponseButton',
                     'type'  => 'submit',
                     'class' => 'btn btn-default',
+                    'value' => $relationName,
                 ]);
         }
-
-
 
         if ($searchRoute !== null) {
             $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [

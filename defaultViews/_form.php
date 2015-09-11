@@ -21,6 +21,15 @@ $controller = $this->context;
 $action = $controller->action;
 $view = $this;
 
+foreach($_GET as $key => $value) {
+    if($key == 're')
+    {
+        $this->registerJs(
+            '$("document").ready(function(){ $("#createRelation-'.$value.'").click(); });'
+        );
+    }
+}
+
 if (!isset($defaultWidth)) {
     $defaultWidth = Yii::$app->request->getIsAjax() ? 12 : 4;
 }
