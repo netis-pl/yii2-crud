@@ -73,7 +73,7 @@ class AuthorizerBehavior extends Behavior
 
         $schema = $owner->getDb()->getSchema();
         $t = $schema->quoteSimpleTableName('t');
-        $pks = $owner->getTableSchema()->primaryKey;
+        $pks = $owner->primaryKey();
 
         $pkConditions = [];
         $pkParams = [];

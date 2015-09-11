@@ -183,7 +183,9 @@ trait ActiveSearchTrait
             $subquery = (new Query)
                 ->select(array_keys($relation->link))
                 ->from(['t' => $relationClass::tableName()])
-                ->where(['IN', $relationClass::primaryKey(), $value]);
+                ->where(['IN', array_map(function ($key) {
+                    return 't.' . $key;
+                }, $relationClass::primaryKey()), $value]);
             $linkKeys = array_values($relation->link);
         }
         return ['IN', $linkKeys, $subquery];
@@ -444,7 +446,14 @@ trait ActiveSearchTrait
         if (empty($keys)) {
             return $query->andWhere('1=0');
         }
-        return $query->andWhere(array_merge(['or'], $keys));
+        $prefixer = function ($key) {
+            return 't.' . $key;
+        };
+        $keys = array_map(function ($key) use ($prefixer) {
+            return array_combine(array_map($prefixer, array_keys($key)), array_values($key));
+        }, $keys);
+
+        return $query->andWhere(['in', array_map($prefixer, $this->primaryKey()), $keys]);
     }
 
     /**

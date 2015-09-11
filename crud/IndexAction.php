@@ -8,12 +8,14 @@ namespace netis\utils\crud;
 
 use netis\utils\db\ActiveQuery;
 use netis\utils\db\LabelsBehavior;
+use netis\utils\web\Response;
 use netis\utils\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\grid\ActionColumn;
 use yii\helpers\Html;
+use yii\helpers\Url;
 
 class IndexAction extends Action
 {
@@ -35,6 +37,10 @@ class IndexAction extends Action
      * @var bool should a serial column be used
      */
     public $useSerialColumn = true;
+    /**
+     * @var bool should a checkbox column be used
+     */
+    public $useCheckboxColumn = false;
 
 
     /**
@@ -56,6 +62,7 @@ class IndexAction extends Action
         return [
             'dataProvider' => $dataProvider,
             'columns' => $this->getIndexGridColumns($model, $this->getFields($model, 'grid')),
+            'buttons' => $this->getDefaultGridButtons($dataProvider),
             'searchModel' => $searchModel,
             'searchFields' => FormBuilder::getFormFields($searchModel, array_merge(
                 $this->getFields($searchModel, 'searchForm'),
@@ -128,6 +135,15 @@ class IndexAction extends Action
             $extraColumns[] = [
                 'class'         => 'yii\grid\SerialColumn',
                 'headerOptions' => ['class' => 'column-serial'],
+            ];
+        }
+        if ($this->useCheckboxColumn) {
+            //$classParts = explode('\\', $this->modelClass);
+            $extraColumns[] = [
+                'class'         => 'yii\grid\CheckboxColumn',
+                'headerOptions' => ['class' => 'column-checkbox'],
+                'multiple'      => true,
+                //'name'          => end($classParts).'[]',
             ];
         }
 
@@ -225,5 +241,36 @@ class IndexAction extends Action
             ];
         }
         return $sort;
+    }
+
+    /**
+     * Creates default buttons to perform actions on grid items.
+     * @param \yii\data\BaseDataProvider $dataProvider
+     * @return array each button is an array of keys: icon, label, url, options
+     */
+    protected function getDefaultGridButtons($dataProvider)
+    {
+        /** @var \yii\filters\ContentNegotiator $negotiator */
+        $negotiator = $this->controller->getBehavior('contentNegotiator');
+        return [
+            [
+                'icon' => 'glyphicon glyphicon-file',
+                'label' => 'XLS',
+                'url' => Url::current([
+                    $negotiator->formatParam                 => Response::FORMAT_XLS,
+                    $dataProvider->pagination->pageSizeParam => -1,
+                ]),
+                'options' => ['class' => 'btn btn-default', 'data-pjax' => 0],
+            ],
+            [
+                'icon' => 'glyphicon glyphicon-file',
+                'label' => 'CSV',
+                'url' => Url::current([
+                    $negotiator->formatParam                 => Response::FORMAT_CSV,
+                    $dataProvider->pagination->pageSizeParam => -1,
+                ]),
+                'options' => ['class' => 'btn btn-default', 'data-pjax' => 0],
+            ],
+        ];
     }
 }
