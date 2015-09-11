@@ -21,13 +21,10 @@ $controller = $this->context;
 $action = $controller->action;
 $view = $this;
 
-foreach($_GET as $key => $value) {
-    if($key == 'addRelated')
-    {
-        $this->registerJs(
-            '$("document").ready(function(){ $("#createRelation-'.$value.'").click(); });'
-        );
-    }
+if (isset($_GET['addRelated'])) {
+    $this->registerJs(
+        '$("document").ready(function(){ $("#createRelation-' . $_GET['addRelated'] . '").click(); });'
+    );
 }
 
 if (!isset($defaultWidth)) {
