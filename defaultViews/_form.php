@@ -22,12 +22,6 @@ $controller = $this->context;
 $action = $controller->action;
 $view = $this;
 
-if (isset($_GET[UpdateAction::ADD_RELATED_NAME])) {
-    $this->registerJs(
-        '$("document").ready(function(){ $("#createRelation-' . $_GET[UpdateAction::ADD_RELATED_NAME] . '").click(); });' //Update::
-    );
-}
-
 if (!isset($defaultWidth)) {
     $defaultWidth = Yii::$app->request->getIsAjax() ? 12 : 4;
 }
@@ -83,3 +77,9 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '
     <?php ActiveForm::end(); ?>
 
 </div>
+
+<?php if (isset($_GET[UpdateAction::ADD_RELATED_NAME])) {
+    $this->registerJs(
+        '$("#createRelation-' . $_GET[UpdateAction::ADD_RELATED_NAME] . '").click();'
+    );
+} ?>
