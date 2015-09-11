@@ -22,7 +22,7 @@ $action = $controller->action;
 $view = $this;
 
 foreach($_GET as $key => $value) {
-    if($key == 'modalResponse')
+    if($key == 'addRelated')
     {
         $this->registerJs(
             '$("document").ready(function(){ $("#createRelation-'.$value.'").click(); });'

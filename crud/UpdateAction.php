@@ -174,7 +174,7 @@ class UpdateAction extends Action
 
         $response->getHeaders()->set('Location',
             isset($_POST['createResponseButton']) ?
-                Url::current(['id' => $id, 'modalResponse' => $_POST['createResponseButton']], true) :
+                Url::current(['id' => $id, 'addRelated' => $_POST['createResponseButton']], true) :
                 Url::toRoute([$this->viewAction, 'id' => $id], true));
 
         $response->getHeaders()->set('X-Primary-Key', $id);
