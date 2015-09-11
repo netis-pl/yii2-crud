@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 use netis\utils\widgets\FormBuilder;
+use \netis\utils\crud\UpdateAction;
 
 /* @var $this \netis\utils\web\View */
 /* @var $model yii\db\ActiveRecord */
@@ -21,9 +22,9 @@ $controller = $this->context;
 $action = $controller->action;
 $view = $this;
 
-if (isset($_GET['addRelated'])) {
+if (isset($_GET[UpdateAction::ADD_RELATED_NAME])) {
     $this->registerJs(
-        '$("document").ready(function(){ $("#createRelation-' . $_GET['addRelated'] . '").click(); });'
+        '$("document").ready(function(){ $("#createRelation-' . $_GET[UpdateAction::ADD_RELATED_NAME] . '").click(); });' //Update::
     );
 }
 

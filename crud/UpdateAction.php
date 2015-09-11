@@ -37,6 +37,7 @@ class UpdateAction extends Action
     public $viewAction = 'view';
 
     const NEW_RELATED_BUTTON_NAME = 'createResponseButton';
+    const ADD_RELATED_NAME        = 'addRelated';
 
     /**
      * Updates an existing model or creates a new one if $id is null.
@@ -176,7 +177,7 @@ class UpdateAction extends Action
 
         $response->getHeaders()->set('Location',
             isset($_POST[self::NEW_RELATED_BUTTON_NAME]) ?
-                Url::current(['id' => $id, 'addRelated' => $_POST[self::NEW_RELATED_BUTTON_NAME]], true) :
+                Url::current(['id' => $id, self::ADD_RELATED_NAME => $_POST[self::NEW_RELATED_BUTTON_NAME]], true) :
                 Url::toRoute([$this->viewAction, 'id' => $id], true));
 
         $response->getHeaders()->set('X-Primary-Key', $id);
