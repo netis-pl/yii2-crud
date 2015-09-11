@@ -163,17 +163,16 @@ class UpdateAction extends Action
         } else {
             $message = Yii::t('app', 'Record has been successfully updated.');
         }
-        $this->setFlash('success', $message);
 
         $id = $this->exportKey($model->getPrimaryKey(true));
         $response = Yii::$app->getResponse();
         $response->setStatusCode(201);
 
         $response->getHeaders()->set('Location', Url::toRoute([$this->viewAction, 'id' => $id], true));
-        foreach ($_POST as $key => $value) {
-            if($key === 'createResponseButton') {
-                $response->getHeaders()->set('Location', str_replace("view","update", Url::toRoute([$this->viewAction, 'id' => $id, 're' => $value] , true)));
-            }
+        if(isset($_POST['createResponseButton'])) {
+            $response->getHeaders()->set('Location', Url::current(['id' => $id, 'modalResponse' => $_POST['createResponseButton']], true));
+        } else {
+            $this->setFlash('success', $message);
         }
 
         $response->getHeaders()->set('X-Primary-Key', $id);
