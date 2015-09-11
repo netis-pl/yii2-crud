@@ -9,6 +9,7 @@ namespace netis\utils\crud;
 use netis\utils\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
+use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\Request;
 use yii\web\Response;
@@ -34,6 +35,9 @@ class UpdateAction extends Action
      * when the model is successfully created.
      */
     public $viewAction = 'view';
+
+    const NEW_RELATED_BUTTON_NAME = 'createResponseButton';
+    const ADD_RELATED_NAME        = 'addRelated';
 
     /**
      * Updates an existing model or creates a new one if $id is null.
@@ -162,12 +166,20 @@ class UpdateAction extends Action
         } else {
             $message = Yii::t('app', 'Record has been successfully updated.');
         }
-        $this->setFlash('success', $message);
+
+        if (!isset($_POST[self::NEW_RELATED_BUTTON_NAME])) {
+            $this->setFlash('success', $message);
+        }
 
         $id = $this->exportKey($model->getPrimaryKey(true));
         $response = Yii::$app->getResponse();
         $response->setStatusCode(201);
-        $response->getHeaders()->set('Location',  Url::toRoute([$this->viewAction, 'id' => $id], true));
+
+        $response->getHeaders()->set('Location',
+            isset($_POST[self::NEW_RELATED_BUTTON_NAME]) ?
+                Url::current(['id' => $id, self::ADD_RELATED_NAME => $_POST[self::NEW_RELATED_BUTTON_NAME]], true) :
+                Url::toRoute([$this->viewAction, 'id' => $id], true));
+
         $response->getHeaders()->set('X-Primary-Key', $id);
     }
 
@@ -256,7 +268,18 @@ class UpdateAction extends Action
                 'data-pjax-url' => Url::toRoute($createRoute),
                 'data-mode'     => FormBuilder::MODAL_MODE_NEW_RECORD,
                 'class'         => 'btn btn-default',
+                'id'            => 'createRelation-' . $relationName,
             ]);
+
+        } else {
+
+            $result[] = Html::button('<span class="glyphicon glyphicon-file"></span>',
+                [
+                    'name'  => self::NEW_RELATED_BUTTON_NAME,
+                    'type'  => 'submit',
+                    'class' => 'btn btn-default',
+                    'value' => $relationName,
+                ]);
         }
 
         if ($searchRoute !== null) {

@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 use netis\utils\widgets\FormBuilder;
+use \netis\utils\crud\UpdateAction;
 
 /* @var $this \netis\utils\web\View */
 /* @var $model yii\db\ActiveRecord */
@@ -76,3 +77,9 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '
     <?php ActiveForm::end(); ?>
 
 </div>
+
+<?php if (isset($_GET[UpdateAction::ADD_RELATED_NAME])) {
+    $this->registerJs(
+        '$("#createRelation-' . $_GET[UpdateAction::ADD_RELATED_NAME] . '").click();'
+    );
+} ?>
