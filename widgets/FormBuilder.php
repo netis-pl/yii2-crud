@@ -605,9 +605,14 @@ JavaScript;
         if (isset($data['model'])) {
             $model = $data['model'];
         }
+        if (!isset($data['options'])) {
+            $data['options'] = [];
+        }
         $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
-        $field = $form->field($model, $data['attribute']);
+        $errorOptions = ArrayHelper::remove($data['options'], 'error', []);
+        $field = $form->field($model, $data['attribute'], isset($data['formMethod']) ? $data['options'] : []);
         $field->label($label, ['class' => 'control-label']);
+        $field->error($errorOptions);
         if (isset($data['formMethod'])) {
             if (is_string($data['formMethod'])) {
                 return call_user_func_array([$field, $data['formMethod']], $data['arguments']);
