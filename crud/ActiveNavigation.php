@@ -196,7 +196,8 @@ class ActiveNavigation extends Behavior
                 'linkOptions' => $enabled ? ['data-confirm' => $confirms['disable']] : [],
             ];
         }
-        if (class_exists('netis\fsm\components\StateAction') && $model instanceof \netis\fsm\components\IStateful
+        if (!$model->isNewRecord && class_exists('netis\fsm\components\StateAction')
+            && $model instanceof \netis\fsm\components\IStateful
             && $privs['state']
         ) {
             $transitions = $model->getTransitionsGroupedByTarget();
