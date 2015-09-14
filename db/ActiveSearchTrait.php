@@ -442,7 +442,7 @@ trait ActiveSearchTrait
         if (!isset($params['ids'])) {
             return $query;
         }
-        $keys = Action::importKey($this, Action::explodeEscaped(Action::KEYS_SEPARATOR, $params['ids']));
+        $keys = Action::importKey(self::primaryKey(), Action::explodeKeys($params['ids']));
         if (empty($keys)) {
             return $query->andWhere('1=0');
         }
@@ -453,7 +453,7 @@ trait ActiveSearchTrait
             return array_combine(array_map($prefixer, array_keys($key)), array_values($key));
         }, $keys);
 
-        return $query->andWhere(['in', array_map($prefixer, $this->primaryKey()), $keys]);
+        return $query->andWhere(['in', array_map($prefixer, self::primaryKey()), $keys]);
     }
 
     /**

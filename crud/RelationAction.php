@@ -45,7 +45,9 @@ class RelationAction extends IndexAction
                     if (!empty($relationName) && $model->$relationName !== null && trim($id) !== '') {
                         $relation = $model->getRelation($relationName);
                         if ($relation->multiple) {
-                            if (Action::importKey($relation->modelClass, $id)
+                            /** @var \yii\db\ActiveRecord $relationClass */
+                            $relationClass = $relation->modelClass;
+                            if (Action::importKey($relationClass::primaryKey(), $id)
                                 === $model->getAttributes(array_keys($relation->link))
                             ) {
                                 $options['checked']  = true;

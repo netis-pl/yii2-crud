@@ -102,7 +102,7 @@ class Action extends \yii\rest\Action
         /* @var $modelClass ActiveRecordInterface */
         $modelClass = $this->modelClass;
         $model = null;
-        if (($key = $this->importKey($modelClass, $id)) !== false) {
+        if (($key = $this->importKey($modelClass::primaryKey(), $id)) !== false) {
             $model = $modelClass::findOne($key);
         }
 
@@ -123,35 +123,34 @@ class Action extends \yii\rest\Action
     }
 
     /**
-     * Deserializes the models primary key.
+     * Deserializes the model key.
      * If importing multiple keys, they can be split into an array
-     * using Action::explodeEscaped(Action::KEYS_SEPARATOR, $inputString).
-     * @param ActiveRecordInterface $modelClass
+     * using Action::explodeKeys($inputString).
+     * @param array $keyNames
      * @param array|string $key
      * @return array
      */
-    public static function importKey($modelClass, $key)
+    public static function importKey($keyNames, $key)
     {
-        $keys = $modelClass::primaryKey();
-        if (count($keys) <= 1) {
+        if (count($keyNames) <= 1) {
             return is_array($key)
-                ? array_filter(array_map(function ($k) use ($keys) {
-                    return empty($k) ? false : [reset($keys) => $k];
+                ? array_filter(array_map(function ($k) use ($keyNames) {
+                    return empty($k) ? false : [reset($keyNames) => $k];
                 }, $key))
-                : [reset($keys) => $key];
+                : [reset($keyNames) => $key];
         }
         if (is_array($key)) {
-            return array_filter(array_map(function ($k) use ($keys) {
+            return array_filter(array_map(function ($k) use ($keyNames) {
                 $values = self::explodeEscaped(self::COMPOSITE_KEY_SEPARATOR, $k);
-                if (count($keys) === count($values)) {
-                    return array_combine($keys, $values);
+                if (count($keyNames) === count($values)) {
+                    return array_combine($keyNames, $values);
                 }
                 return false;
             }, $key));
         } else {
             $values = self::explodeEscaped(self::COMPOSITE_KEY_SEPARATOR, $key);
-            if (count($keys) === count($values)) {
-                return array_combine($keys, $values);
+            if (count($keyNames) === count($values)) {
+                return array_combine($keyNames, $values);
             }
         }
         return false;

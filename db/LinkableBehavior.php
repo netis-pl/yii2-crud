@@ -246,11 +246,11 @@ class LinkableBehavior extends Behavior
                 continue;
             }
             if (!is_array($keys) || isset($keys[0])) {
-                $addKeys = Action::importKey($owner, Action::explodeEscaped(Action::KEYS_SEPARATOR, $keys));
+                $addKeys = Action::importKey($owner::primaryKey(), Action::explodeKeys($keys));
                 $removeKeys = null;
             } elseif (is_array($keys) && isset($keys['add']) && isset($keys['remove'])) {
-                $addKeys = Action::importKey($owner, Action::explodeEscaped(Action::KEYS_SEPARATOR, $keys['add']));
-                $removeKeys = Action::importKey($owner, Action::explodeEscaped(Action::KEYS_SEPARATOR, $keys['remove']));
+                $addKeys = Action::importKey($owner::primaryKey(), Action::explodeKeys($keys['add']));
+                $removeKeys = Action::importKey($owner::primaryKey(), Action::explodeKeys($keys['remove']));
             } else {
                 throw new InvalidCallException('Relation keys must be either a string, a numeric array or an array with \'add\' and \'remove\' keys.');
                 continue;

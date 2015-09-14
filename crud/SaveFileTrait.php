@@ -46,7 +46,7 @@ trait SaveFileTrait
     }
 
     /**
-     * @param string $fileClass Namespace of file class
+     * @param \yii\db\ActiveRecord $fileClass Namespace of file class
      * @param array  $files     UploadedFile instances
      *
      * @return bool
@@ -55,7 +55,7 @@ trait SaveFileTrait
     public function deleteFiles($fileClass, $files)
     {
         foreach ($files as $id) {
-            $document = $fileClass::findOne(Action::importKey($fileClass, $id));
+            $document = $fileClass::findOne(Action::importKey($fileClass::primaryKey(), $id));
             if (!Yii::$app->user->can("$fileClass.delete", ['model' => $document])) {
                 throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
             }

@@ -209,6 +209,7 @@ class UpdateAction extends Action
     {
         /** @var ActiveRecord $relatedModel */
         $relatedModel = $relation['model'];
+        $relatedPk = $relatedModel::primaryKey();
         /** @var \yii\db\ActiveQuery $query */
         $query = $relation['dataProvider']->query;
 
@@ -219,13 +220,13 @@ class UpdateAction extends Action
             array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
         ];
         if (!empty($selection['add'])) {
-            $conditions[] = ['in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['add'])];
+            $conditions[] = ['in', $relatedPk, self::importKey($relatedPk, $selection['add'])];
         }
         if (!empty($selection['remove'])) {
             $conditions[] = [
                 'and',
                 $fkCondition,
-                ['not in', $relatedModel::primaryKey(), self::importKey($relatedModel, $selection['remove'])]
+                ['not in', $relatedPk, self::importKey($relatedPk, $selection['remove'])]
             ];
         } else {
             $conditions[] = $fkCondition;
