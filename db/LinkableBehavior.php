@@ -129,9 +129,14 @@ class LinkableBehavior extends Behavior
             ->where($this->buildKeyInCondition('in', $prefixedPrimaryKeys, $keys))
             ->andWhere($this->buildKeyInCondition('not in', $prefixedPrimaryKeys, $alreadyLinked));
         if ($removeKeys === null) {
-            $subquery->leftJoin($viaTable.' j', array_combine($prefixedForeignKeys, array_map(function ($k) {
-                return new Expression($k);
-            }, $prefixedPrimaryKeys)));
+            $subquery->leftJoin($viaTable.' j', array_merge(
+                array_combine(array_map(function ($c) {
+                    return 'j.'.$c;
+                }, array_keys($viaRelation->link)), $owner->getAttributes(array_values($viaRelation->link))),
+                array_combine($prefixedForeignKeys, array_map(function ($k) {
+                    return new Expression($k);
+                }, $prefixedPrimaryKeys))
+            ));
             $subquery->andWhere(array_fill_keys($prefixedForeignKeys, null));
         }
         list ($subquery, $params) = $owner::getDb()->getQueryBuilder()->build($subquery);
