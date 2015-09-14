@@ -51,19 +51,19 @@ class UpdateAction extends Action
 
         $wasNew = $model->isNewRecord;
 
-        if ($this->load($model, Yii::$app->getRequest())) {
-            if (($response = $this->validateAjax($model)) !== false) {
-                return $response;
+        $loaded = $this->load($model, Yii::$app->getRequest());
+        // always call this to validate every AJAX call, even if it's a GET
+        if (($response = $this->validateAjax($model)) !== false) {
+            return $response;
+        }
+        if ($loaded && $this->beforeSave($model)) {
+            $trx = $model->getDb()->beginTransaction();
+            if (!$this->save($model)) {
+                throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
             }
-            if ($this->beforeSave($model)) {
-                $trx = $model->getDb()->beginTransaction();
-                if (!$this->save($model)) {
-                    throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
-                }
-                $trx->commit();
+            $trx->commit();
 
-                $this->afterSave($model, $wasNew);
-            }
+            $this->afterSave($model, $wasNew);
         }
 
         return $this->getResponse($model);

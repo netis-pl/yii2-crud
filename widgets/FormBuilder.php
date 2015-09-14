@@ -706,7 +706,7 @@ JavaScript;
                     continue;
                 }
 
-                if(static::hasRequiredFields($model, $row)) {
+                if (static::hasRequiredFields($model, $row)) {
                     return true;
                 }
             }
