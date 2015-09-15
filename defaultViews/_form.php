@@ -61,9 +61,11 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '
 
     <?= $form->errorSummary($model); ?>
 
-    <fieldset class="well">
-    <?= isset($formBody) ? $formBody : FormBuilder::renderRow($this, $model, $form, $fields, $defaultWidth); ?>
-    </fieldset>
+    <?php if (!empty($fields)): ?>
+        <fieldset class="well">
+            <?= isset($formBody) ? $formBody : FormBuilder::renderRow($this, $model, $form, $fields, $defaultWidth); ?>
+        </fieldset>
+    <?php endif; ?>
 
     <?= $this->render('_relations', [
         'model' => $model,
