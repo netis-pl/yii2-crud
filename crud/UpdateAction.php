@@ -195,7 +195,7 @@ class UpdateAction extends Action
 
         return [
             'model' => $model,
-            'fields' => [$fields],
+            'fields' => empty($fields) ? [] : [$fields],
             'relations' => $this->getModelRelations($model, $this->getExtraFields($model)),
         ];
     }
