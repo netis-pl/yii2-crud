@@ -52,13 +52,6 @@ DESC;
             [['searchNs'], 'required'],
             [
                 ['searchModelClass'],
-                'compare',
-                'compareAttribute' => 'modelClass',
-                'operator' => '!==',
-                'message' => 'Search Model Class must not be equal to Model Class.'
-            ],
-            [
-                ['searchModelClass'],
                 'match',
                 'pattern' => '/^[\w\\\\]*$/',
                 'message' => 'Only word characters and backslashes are allowed.'
@@ -69,7 +62,7 @@ DESC;
                 'pattern' => '/^[\w\\\\]+$/',
                 'message' => 'Only word characters and backslashes are allowed.',
             ],
-            [['searchModelClass'], 'validateNewClass'],
+            [['searchModelClass'], 'validateModelClass'],
             [['searchNs'], 'validateNamespace'],
             [['singularModelClass'], 'boolean'],
         ]);
