@@ -6,6 +6,7 @@
 
 namespace netis\utils\crud;
 
+
 use yii\base\InvalidParamException;
 use yii\db\ActiveQuery;
 use yii\db\Schema;
@@ -17,7 +18,8 @@ use yii\web\IdentityInterface;
  * - ability to cast to string
  * - added relations() method to return list of relations
  * - added attributeFormats() to return default attribute formats
- * @package netis\utils\crud
+ *
+*@package netis\utils\crud
  * @method bool isRelated(array $relations, IdentityInterface $user = null)
  * @method array getCheckedRelations()
  * @method bool saveRelations(array $data, string $formName = null)
@@ -32,9 +34,20 @@ use yii\web\IdentityInterface;
  * @method array getRecordedVersions()
  * @method \netis\utils\db\ActiveQuery getRelation($name, $throwException = true)
  * @method static \netis\utils\db\ActiveQuery find()
+ * @method array filteringRules() {@link FilterAttributeValuesTrait::filteringRules()}
+ * @method array filteringScenarios() {@link FilterAttributeValuesTrait::filteringScenarios()}
+ * @method string[] activeFilterAttributes() {@link FilterAttributeValuesTrait::activeFilterAttributes()}
+ * @method void filterAttributes(array $attributeNames = null) {@link FilterAttributeValuesTrait::filterAttributes(array $attributeNames = null)}
+ * @method void beforeFilter() {@link FilterAttributeValuesTrait::beforeFilter()}
+ * @method void afterFilter() {@link FilterAttributeValuesTrait:afterFilter()}
+ * @method \ArrayObject|\yii\validators\Validator[] getFilterValidators() {@link FilterAttributeValuesTrait:getFilterValidators()}
+ * @method \yii\validators\Validator[] getActiveFilters() {@link FilterAttributeValuesTrait:getActiveFilters()}
+ * @method array createFilters() {@link FilterAttributeValuesTrait:createFilters()}
  */
 class ActiveRecord extends \yii\db\ActiveRecord
 {
+    use FilterAttributeValuesTrait;
+
     /**
      * The name of the create scenario.
      */
@@ -43,6 +56,14 @@ class ActiveRecord extends \yii\db\ActiveRecord
      * The name of the update scenario.
      */
     const SCENARIO_UPDATE = 'update';
+    /**
+     * @event ModelEvent an event raised at the beginning of [[filter()]].
+     */
+    const EVENT_BEFORE_FILTER = 'beforeFilter';
+    /**
+     * @event ModelEvent an event raised at the beginning of [[filter()]].
+     */
+    const EVENT_AFTER_FILTER = 'afterFilter';
 
     /**
      * @inheritdoc
@@ -249,5 +270,18 @@ class ActiveRecord extends \yii\db\ActiveRecord
             return $formats[$neededAttribute];
         }
         return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function load($data, $formName = null)
+    {
+        if (!parent::load($data, $formName)) {
+            return false;
+        }
+
+        $this->filterAttributes();
+        return true;
     }
 }
