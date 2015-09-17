@@ -37,7 +37,7 @@ use yii\web\IdentityInterface;
  * @method array filteringRules() {@link FilterAttributeValuesTrait::filteringRules()}
  * @method array filteringScenarios() {@link FilterAttributeValuesTrait::filteringScenarios()}
  * @method string[] activeFilterAttributes() {@link FilterAttributeValuesTrait::activeFilterAttributes()}
- * @method void filter(array $attributeNames = null) {@link FilterAttributeValuesTrait::filter(array $attributeNames = null)}
+ * @method void filterAttributes(array $attributeNames = null) {@link FilterAttributeValuesTrait::filterAttributes(array $attributeNames = null)}
  * @method void beforeFilter() {@link FilterAttributeValuesTrait::beforeFilter()}
  * @method void afterFilter() {@link FilterAttributeValuesTrait:afterFilter()}
  * @method \ArrayObject|\yii\validators\Validator[] getFilterValidators() {@link FilterAttributeValuesTrait:getFilterValidators()}
@@ -63,7 +63,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     /**
      * @event ModelEvent an event raised at the beginning of [[filter()]].
      */
-    const EVENT_AFTER_FILTER = 'beforeFilter';
+    const EVENT_AFTER_FILTER = 'afterFilter';
 
     /**
      * @inheritdoc
@@ -281,7 +281,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
             return false;
         }
 
-        $this->filter();
+        $this->filterAttributes();
         return true;
     }
 }

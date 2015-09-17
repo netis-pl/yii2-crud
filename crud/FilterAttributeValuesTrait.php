@@ -117,7 +117,7 @@ trait FilterAttributeValuesTrait
      * If this parameter is empty, it means any attribute listed in the applicable
      * filtering rules should be filtered.
      */
-    public function filter($attributeNames = null)
+    public function filterAttributes($attributeNames = null)
     {
         $this->beforeFilter();
 
