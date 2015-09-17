@@ -18,7 +18,8 @@ use yii\web\IdentityInterface;
  * - ability to cast to string
  * - added relations() method to return list of relations
  * - added attributeFormats() to return default attribute formats
- * @package netis\utils\crud
+ *
+*@package netis\utils\crud
  * @method bool isRelated(array $relations, IdentityInterface $user = null)
  * @method array getCheckedRelations()
  * @method bool saveRelations(array $data, string $formName = null)
@@ -36,7 +37,7 @@ use yii\web\IdentityInterface;
  * @method array filteringRules() {@link FilterAttributeValuesTrait::filteringRules()}
  * @method array filteringScenarios() {@link FilterAttributeValuesTrait::filteringScenarios()}
  * @method string[] activeFilterAttributes() {@link FilterAttributeValuesTrait::activeFilterAttributes()}
- * @method void filterAttributeValues(array $attributeNames = null) {@link FilterAttributeValuesTrait::filterAttributeValues(array $attributeNames = null)}
+ * @method void filter(array $attributeNames = null) {@link FilterAttributeValuesTrait::filter(array $attributeNames = null)}
  * @method void beforeFilter() {@link FilterAttributeValuesTrait::beforeFilter()}
  * @method void afterFilter() {@link FilterAttributeValuesTrait:afterFilter()}
  * @method \ArrayObject|\yii\validators\Validator[] getFilterValidators() {@link FilterAttributeValuesTrait:getFilterValidators()}
@@ -280,7 +281,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
             return false;
         }
 
-        $this->filterAttributeValues();
+        $this->filter();
         return true;
     }
 }

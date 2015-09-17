@@ -116,20 +116,17 @@ trait FilterAttributeValuesTrait
      * @param array $attributeNames list of attribute names that should be filtered.
      * If this parameter is empty, it means any attribute listed in the applicable
      * filtering rules should be filtered.
-     * @throws InvalidParamException if the current scenario is unknown.
      */
-    public function filterAttributeValues($attributeNames = null)
+    public function filter($attributeNames = null)
     {
         $this->beforeFilter();
 
-        $scenarios = $this->filteringScenarios();
-        $scenario = $this->getScenario();
-        if (!isset($scenarios[$scenario])) {
-            throw new InvalidParamException("Unknown scenario: $scenario");
-        }
-
         if ($attributeNames === null) {
             $attributeNames = $this->activeFilterAttributes();
+        }
+
+        if (empty($attributeNames)) {
+            return;
         }
 
         foreach ($this->getActiveFilters() as $validator) {
