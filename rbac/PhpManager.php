@@ -10,7 +10,7 @@ namespace netis\utils\rbac;
  * Class DbManager tracks traversed path in the auth item tree.
  * @package netis\utils\rbac
  */
-class PhpManager extends \yii\rbac\PhpManager implements IAuthManager
+class PhpManager extends \yii\rbac\PhpManager implements TraceableAuthManager
 {
     use AuthManagerTrait;
 }

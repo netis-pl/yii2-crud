@@ -1,7 +1,7 @@
 <?php
 namespace netis\utils\rbac;
 
-interface IAuthManager
+interface TraceableAuthManager
 {
     /**
      * Returns a list of auth items between the one checked and the one assigned to the user,

@@ -117,8 +117,8 @@ class AuthorizerBehavior extends Behavior
     public function getCheckedRelations()
     {
         $authManager = \Yii::$app->getAuthManager();
-        if (!($authManager instanceof IAuthManager)) {
-            throw new Exception('AuthManager must implements netis\utils\rbac\IAuthManager');
+        if (!($authManager instanceof TraceableAuthManager)) {
+            throw new Exception('TraceableAuthManager must implements netis\utils\rbac\IAuthManager');
         }
         $groups = array_map(
             function ($name) use ($authManager) {
