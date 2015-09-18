@@ -8,6 +8,7 @@ namespace netis\utils\rbac;
 
 use yii\base\Behavior;
 use netis\utils\crud\ActiveRecord;
+use yii\base\Exception;
 use yii\web\IdentityInterface;
 
 /**
@@ -111,10 +112,14 @@ class AuthorizerBehavior extends Behavior
      * Returns values of the 'relations' data param stored in auth items
      * traversed by last call to \netis\utils\rbac\DbManager::checkAccess().
      * @return array
+     * @throws Exception
      */
     public function getCheckedRelations()
     {
         $authManager = \Yii::$app->getAuthManager();
+        if (!($authManager instanceof TraceableAuthManager)) {
+            throw new Exception('TraceableAuthManager must implements netis\utils\rbac\IAuthManager');
+        }
         $groups = array_map(
             function ($name) use ($authManager) {
                 return ($authItem = $authManager->getPermission($name)) !== null
