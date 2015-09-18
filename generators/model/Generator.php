@@ -123,7 +123,8 @@ DESC;
                 'queryClassName' => $queryClassName,
                 'tableSchema' => $tableSchema,
                 'labels' => $this->generateLabels($tableSchema),
-                'rules' => $this->generateRules($tableSchema),
+                'rules' => $this->generateRules($tableSchema, false, false),
+                'filterRules' => $this->generateRules($tableSchema, false, true),
                 'relations' => isset($relations[$tableName]) ? $relations[$tableName] : [],
                 'behaviors' => $this->generateBehaviors($tableSchema),
             ];
@@ -149,7 +150,8 @@ DESC;
                     'modelClassName' => $modelClassName,
                     'queryClassName' => $queryClassName ? $queryClassName : 'ActiveQuery',
                     'labels' => $this->generateLabels($tableSchema),
-                    'rules' => $this->generateRules($tableSchema, true),
+                    'rules' => $this->generateRules($tableSchema, true, false),
+                    'filterRules' => $this->generateRules($tableSchema, true, true),
                     'relations' => isset($relations[$tableName]) ? $relations[$tableName] : [],
                 ];
                 $files[] = new CodeFile(
@@ -228,7 +230,12 @@ DESC;
                     $leftRelationName = $this->generateRelationName($relationNames, $table, $fks[0], false);
                     $relationNames[$table->fullName][$leftRelationName] = true;
                     $hasMany = $this->isManyRelation($table, $fks);
-                    $rightRelationName = $this->generateRelationName($relationNames, $refTableSchema, $className, $hasMany);
+                    $rightRelationName = $this->generateRelationName(
+                        $relationNames,
+                        $refTableSchema,
+                        $className,
+                        $hasMany
+                    );
                     $relationNames[$refTableSchema->fullName][$rightRelationName] = true;
 
                     $relations[$table->fullName][$leftRelationName][0] =
@@ -261,7 +268,7 @@ DESC;
             $attributesCount = count($uniqueColumns);
 
             if ($attributesCount == 1) {
-                $rules[] = "[['" . $uniqueColumns[0] . "'], 'unique']";
+                $rules[] = "[['" . $uniqueColumns[0] . "'], 'unique'],";
             } elseif ($attributesCount > 1) {
                 $labels = array_intersect_key($this->generateLabels($table), array_flip($uniqueColumns));
                 $lastLabel = array_pop($labels);
@@ -273,7 +280,7 @@ DESC;
                         'labels' => '{$labels}',
                         'lastLabel' => '{$lastLabel}'
                     ],
-                ]";
+                ],";
             }
         }
 
@@ -301,7 +308,8 @@ DESC;
                 $targetAttributes[] = "'$key' => '$value'";
             }
             $targetAttributes = implode(', ', $targetAttributes);
-            $rules[] = "[['$attributes'], 'exist', 'skipOnError' => true, 'targetClass' => $refClassName::className(), 'targetAttribute' => [$targetAttributes]]";
+            $rules[] = "[['$attributes'], 'exist', 'skipOnError' => true, "
+                . "'targetClass' => $refClassName::className(), 'targetAttribute' => [$targetAttributes]],";
         }
         return $rules;
     }
@@ -568,16 +576,13 @@ DESC;
     }
 
     /**
-     * Generates validation rules for the specified table.
      * @param \yii\db\TableSchema $table the table schema
      * @param bool $isSearchScenario if false, special columns will be unsafe (no rules)
-     * @return array the generated validation rules
+     * @param array $rules default rules
+     * @return array contains two arrays: rules and column behaviors (indexed by column name)
      */
-    public function generateRules($table, $isSearchScenario = false)
+    private function generateColumnRules($table, $isSearchScenario = false, $rules = [])
     {
-        /** @var array $rules predefine only rules with names different than the validator */
-        $rules = $this->getDefaultRules();
-
         $foreignKeys = [];
         foreach ($table->foreignKeys as $foreignKey) {
             array_shift($foreignKey);
@@ -618,19 +623,57 @@ DESC;
                 isset($foreignKeys[$column->name])
             );
         }
+        return [$rules, $columnBehaviors];
+    }
+
+    /**
+     * Generates validation rules for the specified table.
+     * @param \yii\db\TableSchema $table the table schema
+     * @param bool $isSearchScenario if false, special columns will be unsafe (no rules)
+     * @param bool $filters if false, skip filters, if true, return only filters, if null, return all rules
+     * @return array the generated validation rules
+     */
+    public function generateRules($table, $isSearchScenario = false, $filters = null)
+    {
+        list ($rules, $columnBehaviors) = $this->generateColumnRules(
+            $table,
+            $isSearchScenario,
+            $this->getDefaultRules()
+        );
+
+        // remove or leave only filters
+        if ($filters !== null) {
+            foreach ($rules as $ruleName => $rule) {
+                if (!isset($rule['attributes']) || empty($rule['attributes'])) {
+                    continue;
+                }
+                $attributes = $rule['attributes'];
+                $validator = isset($rule['validator']) ? $rule['validator'] : $ruleName;
+                $isFilterRule = in_array($validator, ['filter', 'trim', 'default']);
+                if (($filters === true && !$isFilterRule) || ($filters === false && $isFilterRule)) {
+                    if ($filters !== true) {
+                        $rules['safe']['attributes'] = array_merge($rules['safe']['attributes'], $attributes);
+                    }
+                    unset($rules[$ruleName]);
+                    continue;
+                }
+            }
+        }
 
         // remove safe attributes that have any other rules without a specific scenario
-        $safeAttributes = [];
-        foreach ($rules as $rule) {
-            if (isset($rule['on']) || !isset($rule['attributes']) || empty($rule['attributes'])) {
-                continue;
+        if (isset($rules['safe'])) {
+            $safeAttributes = [];
+            foreach ($rules as $rule) {
+                if (isset($rule['on']) || !isset($rule['attributes']) || empty($rule['attributes'])) {
+                    continue;
+                }
+                $safeAttributes += $rule['attributes'];
             }
-            $safeAttributes += $rule['attributes'];
-        }
-        $safeAttributes = array_flip($safeAttributes);
-        foreach ($rules['safe']['attributes'] as $key => $attribute) {
-            if (isset($safeAttributes[$attribute])) {
-                unset($rules['safe']['attributes'][$key]);
+            $safeAttributes = array_flip($safeAttributes);
+            foreach ($rules['safe']['attributes'] as $key => $attribute) {
+                if (isset($safeAttributes[$attribute])) {
+                    unset($rules['safe']['attributes'][$key]);
+                }
             }
         }
 
@@ -652,14 +695,14 @@ DESC;
             }
             if ($ruleName === 'formatTimestamp') {
                 foreach ($attributes as $attribute) {
-                    $result[] = "[['$attribute'], '$validator'{$params}, 'timestampAttribute' => '$attribute']";
+                    $result[] = "[['$attribute'], '$validator'{$params}, 'timestampAttribute' => '$attribute'],";
                 }
             } else {
-                $result[] = "[['" . implode("', '", $attributes) . "'], '$validator'{$params}]";
+                $result[] = "[['" . implode("', '", $attributes) . "'], '$validator'{$params}],";
             }
         }
 
-        if (!$isSearchScenario) {
+        if (!$isSearchScenario && $filters !== true) {
             try {
                 $result = array_merge($result, $this->generateUniqueRules($table));
             } catch (NotSupportedException $e) {
@@ -674,7 +717,6 @@ DESC;
     /**
      * Generates behaviors for the specified table, detecting special columns.
      * @param \yii\db\TableSchema $table the table schema
-     * @param string $className
      * @return array the generated behaviors as name => options
      */
     public function generateBehaviors($table)

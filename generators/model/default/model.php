@@ -12,6 +12,7 @@ use yii\helpers\Inflector;
 /* @var $tableSchema yii\db\TableSchema */
 /* @var $labels string[] list of attribute labels (name => label) */
 /* @var $rules string[] list of validation rules */
+/* @var $filterRules string[] list of filtering rules */
 /* @var $relations array list of relations (name => relation declaration) */
 /* @var $behaviors array list of behaviors (name => behavior declaration) */
 
@@ -71,9 +72,17 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
     /**
      * @inheritdoc
      */
+    public function filteringRules()
+    {
+        return [<?= "\n            " . implode("\n            ", $filterRules) . "\n        " ?>];
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function rules()
     {
-        return [<?= "\n            " . implode(",\n            ", $rules) . "\n        " ?>];
+        return [<?= "\n            " . implode("\n            ", $rules) . "\n        " ?>];
     }
 
     /**
