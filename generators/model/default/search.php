@@ -51,11 +51,9 @@ class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelCla
     /**
      * @inheritdoc
      */
-    public function rules()
+    public function filteringRules()
     {
-         return [
-              <?= implode("\n            ", $filterRules) ?>,
-         ];
+        return [<?= "\n            " . implode("\n            ", $filterRules) . "\n        " ?>];
     }
 
     /**
@@ -63,9 +61,7 @@ class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelCla
      */
     public function rules()
     {
-        return [
-            <?= implode("\n            ", $rules) ?>,
-        ];
+        return [<?= "\n            " . implode("\n            ", $rules) . "\n        " ?>];
     }
 
     /**
