@@ -15,9 +15,6 @@ namespace netis\utils\crud;
  */
 interface BulkActionInterface
 {
-    const STEP_PREPARE = 'prepare';
-    const STEP_RUN = 'runBatch';
-
     /**
      * Method defines steps for bulk action. It should return array in format:
      * ```
@@ -27,7 +24,7 @@ interface BulkActionInterface
      *
      * @return array
      */
-    public function getSteps();
+    public function steps();
 
     /**
      * Renders a configuration form.

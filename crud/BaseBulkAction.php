@@ -35,7 +35,7 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
     /**
      * @inheritdoc
      */
-    public function getSteps()
+    public function steps()
     {
         return [
             'prepare' => [$this, 'prepare'],
@@ -57,7 +57,7 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
             call_user_func($this->checkAccess, $this->authAction);
         }
 
-        $steps = $this->getSteps();
+        $steps = $this->steps();
         if (!isset($steps[$step])) {
             throw new InvalidConfigException('Step is not defined in class');
         }
