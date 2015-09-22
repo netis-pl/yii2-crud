@@ -19,7 +19,7 @@ use yii\web\IdentityInterface;
  * - added relations() method to return list of relations
  * - added attributeFormats() to return default attribute formats
  *
-*@package netis\utils\crud
+ * @package netis\utils\crud
  * @method bool isRelated(array $relations, IdentityInterface $user = null)
  * @method array getCheckedRelations()
  * @method bool saveRelations(array $data, string $formName = null)

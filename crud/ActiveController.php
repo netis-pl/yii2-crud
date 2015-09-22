@@ -6,7 +6,7 @@
 
 namespace netis\utils\crud;
 
-use netis\utils\db\ActiveSearchTrait;
+use netis\utils\db\ActiveSearchInterface;
 use netis\utils\web\Response;
 use Yii;
 use yii\base\Exception;
@@ -429,7 +429,7 @@ class ActiveController extends \yii\rest\ActiveController
     }
 
     /**
-     * @return ActiveSearchTrait
+     * @return ActiveSearchInterface
      */
     public function getSearchModel()
     {

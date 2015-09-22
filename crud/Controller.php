@@ -6,7 +6,7 @@
 
 namespace netis\utils\crud;
 
-use netis\utils\db\ActiveSearchTrait;
+use netis\utils\db\ActiveSearchInterface;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\filters\AccessControl;
@@ -66,7 +66,7 @@ class Controller extends \yii\web\Controller
      */
     public function actionIndex()
     {
-        /** @var ActiveSearchTrait $searchModel */
+        /** @var ActiveSearchInterface $searchModel */
         $searchModel = new $this->searchModelClass();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 

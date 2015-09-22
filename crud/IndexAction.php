@@ -7,6 +7,7 @@
 namespace netis\utils\crud;
 
 use netis\utils\db\ActiveQuery;
+use netis\utils\db\ActiveSearchInterface;
 use netis\utils\db\LabelsBehavior;
 use netis\utils\web\Response;
 use netis\utils\widgets\FormBuilder;
@@ -192,7 +193,7 @@ class IndexAction extends Action
         ];
 
         $params = Yii::$app->request->queryParams;
-        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+        if ($model instanceof ActiveSearchInterface && $model instanceof ActiveRecord) {
             // add extra authorization conditions
             $query->authorized($model, $model->getCheckedRelations(), Yii::$app->user->getIdentity());
 
