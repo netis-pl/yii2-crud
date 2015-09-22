@@ -5,7 +5,7 @@ use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 
 /* @var $this yii\web\View */
-/* @var $model netis\utils\db\ActiveSearchTrait */
+/* @var $model netis\utils\db\ActiveSearchInterface */
 /* @var $fields array */
 /* @var $form yii\bootstrap\ActiveForm */
 /* @var $formBody string if set, allows to override only the form part */
