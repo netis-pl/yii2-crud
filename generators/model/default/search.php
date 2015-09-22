@@ -12,6 +12,7 @@ use yii\helpers\Inflector;
 /* @var $queryClassName string query model class name */
 /* @var $labels string[] list of attribute labels (name => label) */
 /* @var $rules string[] list of validation rules */
+/* @var $filterRules string[] list of filtering rules */
 /* @var $relations array list of relations (name => relation declaration) */
 
 $modelFullClassName = $modelClassName;
@@ -51,11 +52,17 @@ class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelCla
     /**
      * @inheritdoc
      */
+    public function filteringRules()
+    {
+        return [<?= "\n            " . implode("\n            ", $filterRules) . "\n        " ?>];
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function rules()
     {
-        return [
-            <?= implode(",\n            ", $rules) ?>,
-        ];
+        return [<?= "\n            " . implode("\n            ", $rules) . "\n        " ?>];
     }
 
     /**
