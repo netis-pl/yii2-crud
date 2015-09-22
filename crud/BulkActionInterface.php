@@ -36,5 +36,5 @@ interface BulkActionInterface
      * or are performed by a background worker or redirects to the post summary.
      * May also ask for confirmation as an extra failsafe.
      */
-    public function runBatch();
+    public function execute();
 }
