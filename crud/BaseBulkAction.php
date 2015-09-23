@@ -87,16 +87,11 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
 
     public function getDataProvider(ActiveRecord $model, Query $query)
     {
-        $defaultOrder = null;
-        foreach ($model->primaryKey() as $column) {
-            $defaultOrder[$column] = SORT_ASC;
-        }
-
         return new ActiveDataProvider([
             'query' => $query,
             'pagination' => false,
             'sort' => [
-                'defaultOrder' => $defaultOrder,
+                'defaultOrder' => array_fill_keys($model->primaryKey(), SORT_ASC),
             ],
         ]);
     }
