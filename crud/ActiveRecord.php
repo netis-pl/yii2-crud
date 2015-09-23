@@ -27,8 +27,8 @@ use yii\web\IdentityInterface;
  * @method string getCrudLabel(string $operation = null)
  * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, string $relation)
  * @method string getLocalLabel($attribute, $language = null)
- * @method null beginChangeset()
- * @method null endChangeset()
+ * @method null beginChangeset() {@link \nineinchnick\audit\behaviors\TrackableBehavior::beginChangeset()}
+ * @method null endChangeset() {@link \nineinchnick\audit\behaviors\TrackableBehavior::endChangeset()}
  * @method ActiveRecord loadVersion(integer $version_id)
  * @method array getAttributeVersions(string $attribute)
  * @method array getRecordedVersions()
