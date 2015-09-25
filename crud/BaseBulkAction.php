@@ -18,7 +18,7 @@ use yii\db\Query;
  */
 abstract class BaseBulkAction extends Action implements BulkActionInterface
 {
-    public $authAction = false;
+    public $authItem = false;
 
     /**
      * @inheritdoc
@@ -53,8 +53,8 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
      */
     public function run($step)
     {
-        if ($this->authAction !== false && $this->checkAccess) {
-            call_user_func($this->checkAccess, $this->authAction);
+        if ($this->authItem !== false && $this->checkAccess) {
+            call_user_func($this->checkAccess, $this->authItem);
         }
 
         $steps = $this->steps();
