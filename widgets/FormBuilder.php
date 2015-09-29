@@ -14,6 +14,7 @@ use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
+use yii\helpers\Json;
 use yii\helpers\Url;
 use yii\web\JsExpression;
 
@@ -37,8 +38,12 @@ class FormBuilder
             depth = 0;
         }
         var markup = [];
-        window.Select2.util.markMatch(result, query.term, markup, escapeMarkup);
+        window.Select2.util.markMatch(result._label, query.term, markup, escapeMarkup);
         return markup.join("");
+    };
+
+    s2helper.formatSelection = function (item) {
+        return item._label;
     };
 
     // generates query params
@@ -192,7 +197,7 @@ JavaScript;
         $isMany = $activeRelation->multiple;
         $foreignKeys = array_values($activeRelation->link);
         $foreignKey = reset($foreignKeys);
-        /** @var \yii\db\ActiveRecord $relModel */
+        /** @var \netis\utils\crud\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
         $primaryKey = $relModel::primaryKey();
         if (($labelAttributes = $relModel->getBehavior('labels')->attributes) !== null) {
@@ -249,9 +254,21 @@ JavaScript;
                 $relQuery->defaultOrder();
             }
             $flippedPrimaryKey = array_flip($primaryKey);
-            $items = ArrayHelper::map($relQuery->select($fields)->asArray()->all(), function ($item) use ($flippedPrimaryKey) {
-                return Action::exportKey(array_intersect_key($item, $flippedPrimaryKey));
-            }, $labelField);
+            $items = ArrayHelper::map(
+                $relQuery
+                    ->from($relModel::tableName() . ' t')
+                    ->authorized($relModel, $relModel->getCheckedRelations(), Yii::$app->user->getIdentity())
+                    ->all(),
+                function ($item) use ($fields, $flippedPrimaryKey) {
+                    /** @var \netis\utils\crud\ActiveRecord $item */
+                    return Action::exportKey(array_intersect_key($item->toArray($fields, []), $flippedPrimaryKey));
+                },
+                function ($item) use ($fields) {
+                    /** @var \netis\utils\crud\ActiveRecord $item */
+                    $data = $item->toArray($fields, []);
+                    return $data['_label'];
+                }
+            );
         }
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
@@ -264,18 +281,15 @@ JavaScript;
             $createLabel = Yii::t('app', 'Create new');
             $searchUrl = $searchRoute === null ? null : Url::toRoute($searchRoute);
             $createUrl = $createRoute === null ? null : Url::toRoute($createRoute);
-            if ($indexRoute === null) {
-                array_unshift($items, array_merge(array_fill_keys($primaryKey, -2), [$labelField => $createLabel]));
-                array_unshift($items, array_merge(array_fill_keys($primaryKey, -1), [$labelField => $searchLabel]));
-            } else {
+            if ($indexRoute !== null) {
                 $script = <<<JavaScript
 function (data, page) {
-    var keys = $jsPrimaryKey, values = [];
+    var keys = $jsPrimaryKey, values = {};
     if ('$searchUrl') {
         for (var i = 0; i < keys.length; i++) {
             values[keys[i]] = '\\\\-1';
         }
-        values.$labelField = '-- $searchLabel --';
+        values._label = '-- $searchLabel --';
         data.items.unshift(values);
     }
     if ('$createUrl') {
@@ -283,7 +297,7 @@ function (data, page) {
         for (var i = 0; i < keys.length; i++) {
             values[keys[i]] = '\\\\-2';
         }
-        values.$labelField = '-- $createLabel --';
+        values._label = '-- $createLabel --';
         data.items.unshift(values);
     }
     return s2helper.results(data, page);
@@ -327,10 +341,8 @@ JavaScript;
                 'items' => $items,
                 'clientOptions' => array_merge(
                     $indexRoute === null ? [] : [
-                        'formatResult' => new JsExpression('function (result, container, query, escapeMarkup, depth) {
-    return s2helper.formatResult(result.'.$labelField.', container, query, escapeMarkup, depth);
-    }'),
-                        'formatSelection' => new JsExpression('function (item) { return item.'.$labelField.'; }'),
+                        'formatResult' => new JsExpression('s2helper.formatResult'),
+                        'formatSelection' => new JsExpression('s2helper.formatSelection'),
                     ],
                     $items === null ? ['id' => new JsExpression($jsId)] : [],
                     [

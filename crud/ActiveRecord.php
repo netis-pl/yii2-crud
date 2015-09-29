@@ -284,4 +284,25 @@ class ActiveRecord extends \yii\db\ActiveRecord
         $this->filterAttributes();
         return true;
     }
+
+    /**
+     * Adds _label field to serialized array if netis\utils\db\LabelsBehavior is configured
+     *
+     * @inheritdoc
+     */
+    public function toArray(array $fields = [], array $expand = [], $recursive = true)
+    {
+        $data = parent::toArray($fields, $expand, $recursive);
+
+        /** @var \netis\utils\db\LabelsBehavior $labelsBehavior */
+        if (($labelsBehavior = $this->getBehavior('labels')) === null) {
+            return $data;
+        }
+
+        $attributes = $this->getAttributes($labelsBehavior->attributes);
+
+        $data['_label'] = implode($labelsBehavior->separator, $attributes);
+
+        return $data;
+    }
 }

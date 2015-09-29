@@ -188,7 +188,9 @@ trait ActiveSearchTrait
                 }, $relationClass::primaryKey()), $value]);
             $linkKeys = array_values($relation->link);
         }
-        return ['IN', $linkKeys, $subquery];
+        return ['IN', array_map(function ($key) {
+            return 't.' . $key;
+        }, $linkKeys), $subquery];
     }
 
     /**
