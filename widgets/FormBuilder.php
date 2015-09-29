@@ -276,13 +276,12 @@ JavaScript;
         }
         $ajaxResults = new JsExpression('s2helper.results');
         $clientEvents = null;
-        if ($searchRoute !== null || $createRoute !== null) {
+        if ($indexRoute !== null && ($searchRoute !== null || $createRoute !== null)) {
             $searchLabel = Yii::t('app', 'Advanced search');
             $createLabel = Yii::t('app', 'Create new');
             $searchUrl = $searchRoute === null ? null : Url::toRoute($searchRoute);
             $createUrl = $createRoute === null ? null : Url::toRoute($createRoute);
-            if ($indexRoute !== null) {
-                $script = <<<JavaScript
+            $script = <<<JavaScript
 function (data, page) {
     var keys = $jsPrimaryKey, values = {};
     if ('$searchUrl') {
@@ -303,8 +302,7 @@ function (data, page) {
     return s2helper.results(data, page);
 }
 JavaScript;
-                $ajaxResults = new JsExpression($script);
-            }
+            $ajaxResults = new JsExpression($script);
             $createKey = Action::exportKey(array_fill_keys($primaryKey, -2));
             $searchKey = Action::exportKey(array_fill_keys($primaryKey, -1));
             $script = <<<JavaScript
