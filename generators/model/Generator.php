@@ -275,12 +275,12 @@ DESC;
                 $labels = implode(', ', $labels);
                 $columnsList = implode("', '", $uniqueColumns);
                 $rules[] = "[
-                    ['" . $columnsList . "'], 'unique', 'targetAttribute' => ['" . $columnsList . "'],
-                    'message' => Yii::t('app', 'The combination of {labels} and {lastLabel} has already been taken.', [
-                        'labels' => '{$labels}',
-                        'lastLabel' => '{$lastLabel}'
-                    ],
-                ],";
+                ['" . $columnsList . "'], 'unique', 'targetAttribute' => ['" . $columnsList . "'],
+                'message' => Yii::t('app', 'The combination of {labels} and {lastLabel} has already been taken.', [
+                    'labels' => '{$labels}',
+                    'lastLabel' => '{$lastLabel}',
+                ]),
+            ],";
             }
         }
 
