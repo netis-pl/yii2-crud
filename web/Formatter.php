@@ -168,7 +168,7 @@ class Formatter extends \yii\i18n\Formatter
 
     /**
      * Formats the value as a link to a matching controller.
-     * @param Model $value the value to be formatted.
+     * @param Model|Model[] $value the value to be formatted.
      * @param array $options the tag options in terms of name-value pairs. See [[Html::a()]].
      * @param string $action name of the action to link to
      * @param string|callable $label if not null, will be used instead of casting the value to string, should be encoded
