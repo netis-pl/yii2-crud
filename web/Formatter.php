@@ -508,6 +508,17 @@ class Formatter extends \yii\i18n\Formatter
     }
 
     /**
+     * A wrapper for filterDecimal using precision of 3, commonly used for metric units of measure.
+     * Does nothing if $value is not a string.
+     * @param string $value the value to be filtered
+     * @return int
+     */
+    public function filterDecimal3($value)
+    {
+        return is_string($value) ? $this->filterDecimal($value, null, 3, 1000) : $value;
+    }
+
+    /**
      * A wrapper for filterDecimal using precision of 5, commonly used for quantities.
      * Does nothing if $value is not a string.
      * @param string $value the value to be filtered
