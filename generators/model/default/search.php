@@ -28,17 +28,16 @@ echo "<?php\n";
 
 namespace <?= $generator->searchNs ?>;
 
+use netis\utils\db\ActiveSearchInterface;
 use Yii;
 use yii\base\Model;
 use <?= ltrim($modelFullClassName, '\\') . (isset($modelAlias) ? " as $modelAlias" : "") ?>;
 use <?= ($queryClassName === 'ActiveQuery' ? 'yii\db' : $generator->queryNs) . '\\' . $queryClassName ?>;
-use netis\utils\db\ActiveSearchInterface;
 
 /**
  * <?= $className ?> represents the model behind the search form about `<?= $modelFullClassName ?>`.
  */
 class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelClass ?> implements ActiveSearchInterface
-
 {
     use \netis\utils\db\ActiveSearchTrait;
 
