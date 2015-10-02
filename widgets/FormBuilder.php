@@ -202,10 +202,8 @@ JavaScript;
         $primaryKey = $relModel::primaryKey();
         if (($labelAttributes = $relModel->getBehavior('labels')->attributes) !== null) {
             $fields = array_merge($primaryKey, $labelAttributes);
-            $labelField = reset($labelAttributes);
         } else {
             $fields = $primaryKey;
-            $labelField = reset($primaryKey);
         }
         $jsPrimaryKey = json_encode($primaryKey);
         $jsSeparator = \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR;
@@ -281,12 +279,14 @@ JavaScript;
             $createLabel = Yii::t('app', 'Create new');
             $searchUrl = $searchRoute === null ? null : Url::toRoute($searchRoute);
             $createUrl = $createRoute === null ? null : Url::toRoute($createRoute);
+            $createKey = 'create_item';
+            $searchKey = 'search_item';
             $script = <<<JavaScript
 function (data, page) {
     var keys = $jsPrimaryKey, values = {};
     if ('$searchUrl') {
         for (var i = 0; i < keys.length; i++) {
-            values[keys[i]] = '\\\\-1';
+            values[keys[i]] = '$searchKey';
         }
         values._label = '-- $searchLabel --';
         data.items.unshift(values);
@@ -294,7 +294,7 @@ function (data, page) {
     if ('$createUrl') {
         values = [];
         for (var i = 0; i < keys.length; i++) {
-            values[keys[i]] = '\\\\-2';
+            values[keys[i]] = '$createKey';
         }
         values._label = '-- $createLabel --';
         data.items.unshift(values);
@@ -303,28 +303,29 @@ function (data, page) {
 }
 JavaScript;
             $ajaxResults = new JsExpression($script);
-            $createKey = Action::exportKey(array_fill_keys($primaryKey, -2));
-            $searchKey = Action::exportKey(array_fill_keys($primaryKey, -1));
             $script = <<<JavaScript
 function (event) {
     var isSearch = true, isCreate = true;
     if (event.val != '$searchKey') {
         isSearch = false;
     }
+
     if (event.val != '$createKey') {
         isCreate = false;
     }
-    if (isSearch || isCreate) {
-        $(event.target).select2('close');
-        $('#relationModal').data('target', $(event.target).attr('id'));
-        $('#relationModal').data('title', '$label');
-        $('#relationModal').data('relation', '$relation');
-        $('#relationModal').data('pjax-url', isSearch ? '$searchUrl' : '$createUrl');
-        $('#relationModal').modal('show');
-        event.preventDefault();
-        return false;
+
+    if (!isSearch && !isCreate) {
+        return true;
     }
-    return true;
+
+    $(event.target).select2('close');
+    $('#relationModal').data('target', $(event.target).attr('id'));
+    $('#relationModal').data('title', '$label');
+    $('#relationModal').data('relation', '$relation');
+    $('#relationModal').data('pjax-url', isSearch ? '$searchUrl' : '$createUrl');
+    $('#relationModal').modal('show');
+    event.preventDefault();
+    return false;
 }
 JavaScript;
             $clientEvents = [
