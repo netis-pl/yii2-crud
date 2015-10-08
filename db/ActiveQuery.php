@@ -36,7 +36,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
     {
         return [
             'authorizer' => [
-                'class' => 'netis\utils\rbac\AuthorizerQueryBehavior',
+                'class' => 'netis\rbac\AuthorizerQueryBehavior',
             ],
         ];
     }

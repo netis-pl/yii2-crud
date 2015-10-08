@@ -6,12 +6,12 @@
 
 namespace netis\utils\web;
 
-use netis\utils\rbac\DbManager;
+use netis\rbac\DbManager;
 use yii\web\IdentityInterface;
 
 /**
  * @inheritdoc
- * When caching is enabled, caches also auth items path if \netis\utils\rbac\DbManager is used.
+ * When caching is enabled, caches also auth items path if \netis\rbac\DbManager is used.
  * @package netis\utils\web
  */
 class User extends \yii\web\User
