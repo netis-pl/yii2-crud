@@ -20,7 +20,7 @@
     "maddoger/yii2-select2": "1.4.*",
     "omnilight/yii2-bootstrap-datepicker": "1.0.*",
     "nineinchnick/yii2-audit": "1.0.*",
-    "netis-pl/yii2-relauth": "1.0.*",
+    "netis/yii2-relauth": "1.0.*",
     "cogpowered/FineDiff": "0.3.*",
     "mpdf/mpdf": "6.0.*",
     "phpoffice/phpexcel": "1.8.*"
