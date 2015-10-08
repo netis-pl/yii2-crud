@@ -352,9 +352,10 @@ class ActiveNavigation extends Behavior
                         unset($item['linkOptions']['data-method']);
                     }
                 }
+                $encode = isset($item['encode']) ? $item['encode'] : true;
+                $label = $encode ? \yii\helpers\Html::encode($item['label']) : $item['label'];
                 if (isset($item['icon'])) {
-                    $item['label'] = '<i class="glyphicon glyphicon-'.$item['icon'].'"></i> '
-                        . \yii\helpers\Html::encode($item['label']);
+                    $item['label'] = '<i class="glyphicon glyphicon-'.$item['icon'].'"></i> '. $label;
                     $item['encode'] = false;
                     unset($item['icon']);
                 }

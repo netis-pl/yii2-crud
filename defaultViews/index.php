@@ -13,6 +13,9 @@ use yii\widgets\Pjax;
 /* @var $controller netis\utils\crud\ActiveController */
 
 $controller = $this->context;
+if (!isset($gridOptions) || !is_array($gridOptions)) {
+    $gridOptions = [];
+}
 
 if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
     $this->title                 = $searchModel->getCrudLabel('relation');
@@ -55,12 +58,12 @@ HTML;
 ]); ?>
 
 <?php Pjax::begin(['id' => 'indexPjax']); ?>
-<?= GridView::widget([
+<?= GridView::widget(array_merge([
     'id'             => 'indexGrid',
     'dataProvider'   => $dataProvider,
 //    'filterModel'    => $searchModel,
     'filterSelector' => '#indexGrid-quickSearch',
     'columns'        => $columns,
     'layout'         => $layout,
-]); ?>
+], $gridOptions)); ?>
 <?php Pjax::end(); ?>
