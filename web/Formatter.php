@@ -233,17 +233,18 @@ class Formatter extends \yii\i18n\Formatter
     /**
      * Formats the value as a multiplied number.
      *
-     * @param mixed $value the value to be formatted.
+     * @param mixed   $value the value to be formatted.
      * @param integer $divisor
+     * @param null|integer    $decimals
+     *
      * @return string the formatted result.
-     * @throws InvalidParamException if the input value is not numeric or the formatting failed.
      */
-    public function asMultiplied($value, $divisor)
+    public function asMultiplied($value, $divisor, $decimals = null)
     {
         if ($value === null) {
             return $this->nullDisplay;
         }
-        return $this->normalizeNumericValue($value) / (double)$divisor;
+        return $this->asDecimal($this->normalizeNumericValue($value) / (double)$divisor, $decimals);
     }
 
     /**
