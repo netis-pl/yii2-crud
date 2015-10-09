@@ -106,6 +106,13 @@ class ActiveQuery extends \yii\db\ActiveQuery
         return [];
     }
 
+    /**
+     * Returns counters for all defined countable queries {@link ActiveQuery::countableQueries()}.
+     *
+     * @param ActiveQuery|null $baseQuery
+     *
+     * @return array|bool
+     */
     public function getCounters($baseQuery = null)
     {
         if ($this->counters !== null) {
@@ -119,12 +126,24 @@ class ActiveQuery extends \yii\db\ActiveQuery
         }
         $params = [];
         $select = [];
+        $joins = [];
         foreach ($this->countableQueries() as $queryName) {
+            /** @var ActiveQuery $query */
             $query     = clone $baseQuery;
             $query->$queryName();
             $params    = array_merge($params, $query->params);
             $condition = $queryBuilder->buildCondition($query->where, $params);
-            $select[]  = "COUNT(id) FILTER (WHERE $condition) AS \"$queryName\"";
+            $select[]  = "COUNT(t.id) FILTER (WHERE $condition) AS \"$queryName\"";
+            if ($query->join === null) {
+                continue;
+            }
+
+            foreach ($query->join as $join) {
+                if (in_array($join, $joins)) {
+                    continue;
+                }
+                $joins[] = $join;
+            }
         }
         if (empty($select)) {
             return $this->counters = [];
@@ -132,6 +151,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
 
         // allow to modify query before calling this method, for example add auth conditions
         $baseQuery = clone $this;
+        $baseQuery->join = $joins;
         return $this->counters = $baseQuery
             ->select($select)
             ->from(['t' => $modelClass::tableName()])
