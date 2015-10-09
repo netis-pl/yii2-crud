@@ -127,6 +127,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
         $params = [];
         $select = [];
         $joins = [];
+        $joinWith = [];
         foreach ($this->countableQueries() as $queryName) {
             /** @var ActiveQuery $query */
             $query     = clone $baseQuery;
@@ -134,7 +135,9 @@ class ActiveQuery extends \yii\db\ActiveQuery
             $params    = array_merge($params, $query->params);
             $condition = $queryBuilder->buildCondition($query->where, $params);
             $select[]  = "COUNT(t.id) FILTER (WHERE $condition) AS \"$queryName\"";
-            if ($query->join === null) {
+
+            $joinWith = array_merge($joinWith, is_array($query->joinWith) ? $query->joinWith : []);
+            if (!is_array($query->join)) {
                 continue;
             }
 
@@ -152,6 +155,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
         // allow to modify query before calling this method, for example add auth conditions
         $baseQuery = clone $this;
         $baseQuery->join = $joins;
+        $baseQuery->joinWith = $joinWith;
         return $this->counters = $baseQuery
             ->select($select)
             ->from(['t' => $modelClass::tableName()])
