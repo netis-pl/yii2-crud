@@ -10,7 +10,7 @@ use yii\widgets\DetailView;
  * @var $relations array
  * @var $controller netis\utils\crud\ActiveController
  * @var $detailsBody string if set, allows to override only the details part
- * @var $showTitle boolean if set, allows to enable/disable <h1> title for page
+ * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
 
 $controller = $this->context;
@@ -33,7 +33,7 @@ if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
 
 ?>
 
-<?php if (!isset($showTitle) || $showTitle) :?>
+<?php if (!isset($showTitle) || $showTitle): ?>
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
 

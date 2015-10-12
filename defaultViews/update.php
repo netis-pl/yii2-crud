@@ -8,6 +8,7 @@ use yii\helpers\Html;
  * @var $fields array
  * @var $relations array
  * @var $controller netis\utils\crud\ActiveController
+ * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
 
 $controller = $this->context;
@@ -38,7 +39,7 @@ $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, 
 $this->params['menu'] = $controller->getMenu($controller->action, $model);
 ?>
 
-<?php if (!isset($showTitle) || $showTitle) :?>
+<?php if (!isset($showTitle) || $showTitle): ?>
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
 
