@@ -13,6 +13,7 @@ use yii\helpers\Url;
  * @var mixed $targetState
  * @var array $states
  * @var $controller netis\utils\crud\ActiveController
+ * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
 
 $controller = $this->context;
@@ -37,7 +38,7 @@ $format = $model->getAttributeFormat($model->getStateAttributeName());
 
 ?>
 
-<?php if (!isset($showTitle) || $showTitle) :?>
+<?php if (!isset($showTitle) || $showTitle): ?>
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
 <?= netis\utils\web\Alerts::widget() ?>

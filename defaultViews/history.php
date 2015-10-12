@@ -11,6 +11,7 @@ use yii\widgets\Pjax;
  * @var $dataProvider yii\data\ActiveDataProvider
  * @var $controller netis\utils\crud\ActiveController
  * @var $searchModel nineinchnick\audit\models\ActionSearch
+ * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
 
 $controller = $this->context;
@@ -49,7 +50,7 @@ $this->registerCss($css);
 $diff = new cogpowered\FineDiff\Diff(new cogpowered\FineDiff\Granularity\Word);
 ?>
 
-<?php if (!isset($showTitle) || $showTitle) :?>
+<?php if (!isset($showTitle) || $showTitle): ?>
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
 
