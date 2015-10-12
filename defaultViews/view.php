@@ -3,12 +3,15 @@
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
-/* @var $this \netis\utils\web\View */
-/* @var $model yii\db\ActiveRecord */
-/* @var $attributes array */
-/* @var $relations array */
-/* @var $controller netis\utils\crud\ActiveController */
-/* @var $detailsBody string if set, allows to override only the details part */
+/**
+ * @var $this \netis\utils\web\View
+ * @var $model yii\db\ActiveRecord
+ * @var $attributes array
+ * @var $relations array
+ * @var $controller netis\utils\crud\ActiveController
+ * @var $detailsBody string if set, allows to override only the details part
+ * @var $showTitle boolean if set, allows to enable/disable <h1> title for page
+ */
 
 $controller = $this->context;
 $this->title = $model->getCrudLabel('read').': '.$model->__toString();
@@ -30,7 +33,9 @@ if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
 
 ?>
 
-<h1><span><?= Html::encode($this->title) ?></span></h1>
+<?php if (!isset($showTitle) || $showTitle) :?>
+    <h1><span><?= Html::encode($this->title) ?></span></h1>
+<?php endif;?>
 
 <?= netis\utils\web\Alerts::widget() ?>
 

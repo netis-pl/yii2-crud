@@ -5,11 +5,13 @@ use yii\db\ActiveRecord;
 use yii\helpers\Html;
 use yii\widgets\Pjax;
 
-/* @var $this yii\web\View */
-/* @var $model ActiveRecord */
-/* @var $dataProvider yii\data\ActiveDataProvider */
-/* @var $controller netis\utils\crud\ActiveController */
-/* @var $searchModel nineinchnick\audit\models\ActionSearch */
+/**
+ * @var $this yii\web\View
+ * @var $model ActiveRecord
+ * @var $dataProvider yii\data\ActiveDataProvider
+ * @var $controller netis\utils\crud\ActiveController
+ * @var $searchModel nineinchnick\audit\models\ActionSearch
+ */
 
 $controller = $this->context;
 
@@ -47,7 +49,10 @@ $this->registerCss($css);
 $diff = new cogpowered\FineDiff\Diff(new cogpowered\FineDiff\Granularity\Word);
 ?>
 
-<h1><span><?= Html::encode($this->title) ?></span></h1>
+<?php if (!isset($showTitle) || $showTitle) :?>
+    <h1><span><?= Html::encode($this->title) ?></span></h1>
+<?php endif;?>
+
 <?= netis\utils\web\Alerts::widget() ?>
 
 

@@ -4,13 +4,15 @@ use yii\helpers\Html;
 use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
 
-/* @var $this yii\web\View */
-/* @var $dataProvider yii\data\ActiveDataProvider */
-/* @var $columns array */
-/* @var $buttons array each entry is an array with keys: icon, label, url, options */
-/* @var $searchModel \yii\base\Model */
-/* @var $searchFields array*/
-/* @var $controller netis\utils\crud\ActiveController */
+/**
+ * @var $this netis\utils\web\View
+ * @var $dataProvider yii\data\ActiveDataProvider
+ * @var $columns array
+ * @var $buttons array each entry is an array with keys: icon, label, url, options
+ * @var $searchModel \yii\base\Model
+ * @var $searchFields array
+ * @var $controller netis\utils\crud\ActiveController
+ */
 
 $controller = $this->context;
 if (!isset($gridOptions) || !is_array($gridOptions)) {
@@ -50,7 +52,10 @@ HTML;
 
 ?>
 
-<h1><span><?= Html::encode($this->title) ?></span></h1>
+<?php if (!isset($showTitle) || $showTitle) :?>
+    <h1><span><?= Html::encode($this->title) ?></span></h1>
+<?php endif;?>
+
 <?= netis\utils\web\Alerts::widget() ?>
 <?= $this->render('_search', [
     'model' => $searchModel,

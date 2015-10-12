@@ -3,15 +3,17 @@
 use yii\helpers\Html;
 use yii\helpers\Url;
 
-/* @var $this yii\web\View */
-/* @var $model netis\utils\crud\ActiveRecord */
-/* @var $fields array */
-/* @var $relations array */
-/* @var array $stateChange contains state and targets keys */
-/* @var mixed $sourceState */
-/* @var mixed $targetState */
-/* @var array $states */
-/* @var $controller netis\utils\crud\ActiveController */
+/**
+ * @var $this netis\utils\web\View
+ * @var $model netis\utils\crud\ActiveRecord
+ * @var $fields array
+ * @var $relations array
+ * @var array $stateChange contains state and targets keys
+ * @var mixed $sourceState
+ * @var mixed $targetState
+ * @var array $states
+ * @var $controller netis\utils\crud\ActiveController
+ */
 
 $controller = $this->context;
 $id = \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true));
@@ -35,11 +37,12 @@ $format = $model->getAttributeFormat($model->getStateAttributeName());
 
 ?>
 
-<h1><span><?= Html::encode($this->title) ?></span></h1>
-
+<?php if (!isset($showTitle) || $showTitle) :?>
+    <h1><span><?= Html::encode($this->title) ?></span></h1>
+<?php endif;?>
 <?= netis\utils\web\Alerts::widget() ?>
 
-<?php if ($targetState === null && is_array($states)): ?>
+<?php if ($targetState === null && is_array($states)) : ?>
 
 <?php
 foreach ($states as $state) {
@@ -53,7 +56,7 @@ foreach ($states as $state) {
 }
 ?>
 
-<?php else: ?>
+<?php else : ?>
 
 <?= $this->render('_form', [
     'model' => $model,
