@@ -22,6 +22,13 @@ class Formatter extends \yii\i18n\Formatter
      * Defaults to `['From infinity', 'To infinity']`, where both will be translated according to [[locale]].
      */
     public $infinityFormat;
+
+    /**
+     * @var string|null how to format currencies (e.g. {value} {currency}). If null (default) uses intl extension
+     *                  to format currency.
+     */
+    public $currencyFormat = null;
+
     /**
      * @var EnumCollection dictionaries used when formatting an enum value.
      */
@@ -211,6 +218,18 @@ class Formatter extends \yii\i18n\Formatter
         return implode(', ', $result);
     }
 
+    public function asCurrency($value, $currency = null, $options = [], $textOptions = [])
+    {
+        if ($this->currencyFormat === null) {
+            return parent::asCurrency($value, $currency, $options, $textOptions);
+        }
+
+        return strtr($this->currencyFormat, [
+            '{value}' => $this->asDecimal($value, 2, $options, $textOptions),
+            '{currency}' => $currency,
+        ]);
+    }
+
     /**
      * Formats the value as a currency number. The value is assumed to be a subunit and is multiplied by 100.
      *
@@ -218,7 +237,7 @@ class Formatter extends \yii\i18n\Formatter
      * @param string $currency the 3-letter ISO 4217 currency code indicating the currency to use.
      * If null, [[currencyCode]] will be used.
      * @param array $options optional configuration for the number formatter.
-     * This parameterwill be merged with [[numberFormatterOptions]].
+     * This parameter will be merged with [[numberFormatterOptions]].
      * @param array $textOptions optional configuration for the number formatter.
      * This parameter will be merged with [[numberFormatterTextOptions]].
      * @return string the formatted result.
@@ -227,7 +246,7 @@ class Formatter extends \yii\i18n\Formatter
      */
     public function asMinorCurrency($value, $currency = null, $options = [], $textOptions = [])
     {
-        return parent::asCurrency($value / 100.0, $currency, $options, $textOptions);
+        return $this->asCurrency($value / 100.0, $currency, $options, $textOptions);
     }
 
     /**
