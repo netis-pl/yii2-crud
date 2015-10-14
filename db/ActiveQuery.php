@@ -25,6 +25,10 @@ class ActiveQuery extends \yii\db\ActiveQuery
      */
     public $quickSearchPhrase;
     /**
+     * @var string[] Currently used named queries.
+     */
+    private $activeQueries = [];
+    /**
      * @var array Holds values of record counts for various named queries.
      */
     private $counters = null;
@@ -90,22 +94,32 @@ class ActiveQuery extends \yii\db\ActiveQuery
 
     /**
      * @param string|array $queries query names as comma separated string or an array
+     * @param bool $onlyPublic only allow queries returned by publicQueries() method
      * @return $this
      */
-    public function applyNamedQueries($queries)
+    public function setActiveQueries($queries, $onlyPublic = true)
     {
-        $availableQueries = $this->publicQueries();
+        $availableQueries = $onlyPublic ? $this->publicQueries() : [];
         if (!is_array($queries)) {
             $queries = explode(',', $queries);
         }
         $queries = array_filter(array_map('trim', $queries));
         foreach ($queries as $namedQuery) {
-            if (!in_array($namedQuery, $availableQueries)) {
+            if ($onlyPublic || !in_array($namedQuery, $availableQueries)) {
                 continue;
             }
             call_user_func([$this, $namedQuery]);
         }
+        $this->activeQueries = array_merge($this->activeQueries, $queries);
         return $this;
+    }
+
+    /**
+     * @return string[] List of named queries applied to this query.
+     */
+    public function getActiveQueries()
+    {
+        return $this->activeQueries;
     }
 
     /**

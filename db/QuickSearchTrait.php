@@ -203,7 +203,7 @@ trait QuickSearchTrait
      * @param \yii\db\ActiveQuery $query
      * @return \yii\db\ActiveQuery
      */
-    protected function getQuickSearchFilters(\yii\db\ActiveQuery $query)
+    protected function addQuickSearchConditions(\yii\db\ActiveQuery $query)
     {
         if (!$query instanceof ActiveQuery) {
             return $query;

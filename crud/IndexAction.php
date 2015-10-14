@@ -60,6 +60,18 @@ class IndexAction extends Action
         // prepared here because it modifies $model
         $dataProvider = $this->prepareDataProvider($searchModel);
 
+        /**
+         * create an alias for the collection created by applying
+         * * query conditions based on named queries, quicksearch and full search
+         * * sorting
+         * use that alias in single-model actions to determine scope
+         *
+         * other data needed to be persistent and/or configurable:
+         * * column order/visibility
+         * * grouping
+         * * aux aggregates
+         */
+
         return [
             'dataProvider' => $dataProvider,
             'columns' => $this->getIndexGridColumns($model, $this->getFields($model, 'grid')),
@@ -83,16 +95,12 @@ class IndexAction extends Action
             return call_user_func($this->prepareDataProvider, $this);
         }
 
-        /** @var ActiveQuery $query */
-        $query = $model::find();
-
-        $params = Yii::$app->request->queryParams;
-        if ($model instanceof ActiveSearchInterface && $model instanceof ActiveRecord) {
-            return $model->search($params, $query);
+        if ($model instanceof ActiveSearchInterface) {
+            return $model->search(Yii::$app->request->queryParams);
         }
 
         return new ActiveDataProvider([
-            'query' => $query,
+            'query' => $model::find(),
             'pagination' => [
                 'pageSizeLimit' => [-1, 0x7FFFFFFF],
                 'defaultPageSize' => 25,

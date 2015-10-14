@@ -40,12 +40,14 @@ trait ActiveSearchTrait
 
         if ($query instanceof ActiveQuery) {
             if (isset($params['query']) && !isset($params['ids'])) {
-                $query->applyNamedQueries($params['query']);
+                $query->setActiveQueries($params['query']);
             }
             if (isset($params['search'])) {
                 $query->quickSearchPhrase = $params['search'];
             }
         }
+
+        $this->addConditions($params, $query);
 
         if (is_array($sort)) {
             $sort = array_merge($this->getSort($query), $sort);
@@ -63,8 +65,6 @@ trait ActiveSearchTrait
             'pagination' => $pagination,
         ]);
 
-        $this->getSearchFilters($params, $query);
-
         return $dataProvider;
     }
 
@@ -74,7 +74,7 @@ trait ActiveSearchTrait
      * @param \yii\db\ActiveQuery $query
      * @return \yii\db\ActiveQuery
      */
-    protected function getSearchFilters(array $params, \yii\db\ActiveQuery $query)
+    protected function addConditions(array $params, \yii\db\ActiveQuery $query)
     {
         // set from with an alias
         if (empty($query->from)) {
@@ -84,10 +84,15 @@ trait ActiveSearchTrait
             $query->from = [$tableName.' t'];
         }
         if ($query instanceof ActiveQuery) {
-            $this->getQuickSearchFilters($query);
+            $this->addQuickSearchConditions($query);
         }
-        $this->getAttributesSearchFilters($params, $query);
-        $this->getKeysSearchFilters($params, $query);
+        if (!$this->load($params) && $this->validate()) {
+            $this->addAttributesSearchConditions($query);
+        }
+        if (isset($params['ids'])) {
+            $keys = Action::importKey(self::primaryKey(), Action::explodeKeys($params['ids']));
+            $this->addKeysSearchConditions($keys, $query);
+        }
         return $query;
     }
 
@@ -129,6 +134,14 @@ trait ActiveSearchTrait
 
     /**
      * @inheritdoc
+     */
+    public function formName()
+    {
+        return 'search';
+    }
+
+    /**
+     * @inheritdoc
      * HasOne relations are never safe, even if they have validation rules.
      */
     public function safeAttributes()
@@ -153,17 +166,11 @@ trait ActiveSearchTrait
 
     /**
      * Use a distinct compare value for each column. Primary and foreign keys support multiple values.
-     * @param array $params
      * @param \yii\db\ActiveQuery $query
      * @return \yii\db\ActiveQuery
      */
-    protected function getAttributesSearchFilters(array $params, \yii\db\ActiveQuery $query)
+    protected function addAttributesSearchConditions(\yii\db\ActiveQuery $query)
     {
-        if (!$this->load($params)) {
-            return $query;
-        }
-        $this->validate();
-
         $tablePrefix = $this->getDb()->getSchema()->quoteSimpleTableName('t');
         $conditions = ['and'];
         $formats = $this->attributeFormats();
@@ -199,16 +206,12 @@ trait ActiveSearchTrait
 
     /**
      * If the 'ids' param is set, extracts primary keys from it and adds them as a query condition.
-     * @param array $params
+     * @param array $keys
      * @param \yii\db\ActiveQuery $query
      * @return \yii\db\ActiveQuery
      */
-    protected function getKeysSearchFilters(array $params, \yii\db\ActiveQuery $query)
+    protected function addKeysSearchConditions($keys, \yii\db\ActiveQuery $query)
     {
-        if (!isset($params['ids'])) {
-            return $query;
-        }
-        $keys = Action::importKey(self::primaryKey(), Action::explodeKeys($params['ids']));
         if (empty($keys)) {
             return $query->andWhere('1=0');
         }
