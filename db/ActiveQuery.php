@@ -89,6 +89,26 @@ class ActiveQuery extends \yii\db\ActiveQuery
     }
 
     /**
+     * @param string|array $queries query names as comma separated string or an array
+     * @return $this
+     */
+    public function applyNamedQueries($queries)
+    {
+        $availableQueries = $this->publicQueries();
+        if (!is_array($queries)) {
+            $queries = explode(',', $queries);
+        }
+        $queries = array_filter(array_map('trim', $queries));
+        foreach ($queries as $namedQuery) {
+            if (!in_array($namedQuery, $availableQueries)) {
+                continue;
+            }
+            call_user_func([$this, $namedQuery]);
+        }
+        return $this;
+    }
+
+    /**
      * Returns list of named queries safe for usage by end users.
      * @return string[]
      */

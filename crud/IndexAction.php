@@ -73,6 +73,34 @@ class IndexAction extends Action
     }
 
     /**
+     * Prepares the data provider that should return the requested collection of the models.
+     * @param \yii\db\ActiveRecord $model
+     * @return ActiveDataProvider
+     */
+    protected function prepareDataProvider($model)
+    {
+        if ($this->prepareDataProvider !== null) {
+            return call_user_func($this->prepareDataProvider, $this);
+        }
+
+        /** @var ActiveQuery $query */
+        $query = $model::find();
+
+        $params = Yii::$app->request->queryParams;
+        if ($model instanceof ActiveSearchInterface && $model instanceof ActiveRecord) {
+            return $model->search($params, $query);
+        }
+
+        return new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSizeLimit' => [-1, 0x7FFFFFFF],
+                'defaultPageSize' => 25,
+            ],
+        ]);
+    }
+
+    /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
      * @param array $fields
@@ -171,77 +199,6 @@ class IndexAction extends Action
             );
         }
         return parent::getAttributeColumn($model, $field, $format);
-    }
-
-    /**
-     * Prepares the data provider that should return the requested collection of the models.
-     * @param \yii\base\Model
-     * @return ActiveDataProvider
-     */
-    protected function prepareDataProvider($model)
-    {
-        if ($this->prepareDataProvider !== null) {
-            return call_user_func($this->prepareDataProvider, $this);
-        }
-
-        /** @var ActiveQuery $query */
-        $query = $model::find();
-        $sort = $this->getSort($query);
-        $pagination = [
-            'pageSizeLimit' => [-1, 0x7FFFFFFF],
-            'defaultPageSize' => 25,
-        ];
-
-        $params = Yii::$app->request->queryParams;
-        if ($model instanceof ActiveSearchInterface && $model instanceof ActiveRecord) {
-            // add extra authorization conditions
-            $query->authorized($model, $model->getCheckedRelations(), Yii::$app->user->getIdentity());
-
-            if (isset($params['query']) && !isset($params['ids']) && $query instanceof \netis\utils\db\ActiveQuery) {
-                $availableQueries = $query->publicQueries();
-                if (!is_array($params['query'])) {
-                    $params['query'] = explode(',', $params['query']);
-                }
-                foreach ($params['query'] as $namedQuery) {
-                    if (($namedQuery = trim($namedQuery)) === '' || !in_array($namedQuery, $availableQueries)) {
-                        continue;
-                    }
-                    call_user_func([$query, $namedQuery]);
-                }
-            }
-            return $model->search($params, $query, $sort, $pagination);
-        }
-
-        return new ActiveDataProvider([
-            'query' => $query,
-            'sort' => $sort,
-            'pagination' => $pagination,
-        ]);
-    }
-
-    /**
-     * Creates a Sort object configuration using query default order.
-     * @param ActiveQuery $query
-     * @return array
-     */
-    private function getSort($query)
-    {
-        /* @var $model \netis\utils\crud\ActiveRecord */
-        $model = new $query->modelClass;
-        $defaults = $query instanceof ActiveQuery ? $query->getDefaultOrderColumns() : [];
-        $sort = [
-            'enableMultiSort' => true,
-            'attributes' => [],
-            'defaultOrder' => $defaults,
-        ];
-
-        foreach ($model->attributes() as $attribute) {
-            $sort['attributes'][$attribute] = [
-                'asc' => array_merge([$attribute => SORT_ASC], $defaults),
-                'desc' => array_merge([$attribute => SORT_DESC], $defaults),
-            ];
-        }
-        return $sort;
     }
 
     /**
