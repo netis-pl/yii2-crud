@@ -7,6 +7,7 @@
 namespace netis\utils\crud;
 
 use netis\utils\db\ActiveQuery;
+use netis\utils\db\ActiveSearchInterface;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -16,7 +17,7 @@ use yii\web\Response;
 
 class Action extends \yii\rest\Action
 {
-    const COMPOSITE_KEY_SEPARATOR = '-';
+    const COMPOSITE_KEY_SEPARATOR = ';';
     const KEYS_SEPARATOR = ',';
 
     /**
@@ -63,6 +64,10 @@ class Action extends \yii\rest\Action
      * @var string view name used when rendering a HTML response, defaults to current action id
      */
     public $viewName;
+    /**
+     * @var ActiveQuery cached query
+     */
+    private $query;
 
     /**
      * @inheritdoc
@@ -645,5 +650,85 @@ class Action extends \yii\rest\Action
         }
 
         return $columns;
+    }
+
+    /**
+     * Returns an ActiveQuery configured using request query params and current user identity.
+     * @param \yii\db\ActiveRecord $model
+     * @return \yii\db\ActiveQuery
+     */
+    public function getQuery($model)
+    {
+        if ($this->query !== null) {
+            return $this->query;
+        }
+
+        $this->query = $model::find();
+
+        $params = Yii::$app->request->queryParams;
+        if (isset($params['query']) && !isset($params['ids'])) {
+            $this->query->setActiveQueries($params['query']);
+        }
+        if (isset($params['search'])) {
+            $this->query->quickSearchPhrase = $params['search'];
+        }
+
+        // add extra authorization conditions
+        if ($model->getBehavior('authorizer')) {
+            $this->query->authorized($model, $model->getCheckedRelations(), Yii::$app->user->getIdentity());
+        }
+
+        if ($model instanceof ActiveSearchInterface) {
+            $model->addConditions($this->query);
+        }
+
+        return $this->query;
+    }
+
+    /**
+     * Prepares the data provider that should return the requested collection of the models.
+     * @param \yii\db\ActiveRecord $model
+     * @return ActiveDataProvider
+     */
+    protected function prepareDataProvider($model)
+    {
+        $query = $this->getQuery($model);
+
+        if ($model instanceof ActiveSearchInterface) {
+            return $model->search($query);
+        }
+
+        return new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSizeLimit' => [-1, 0x7FFFFFFF],
+                'defaultPageSize' => 25,
+            ],
+        ]);
+    }
+
+    /**
+     * @return ActiveSearchInterface
+     */
+    public function getSearchModel()
+    {
+        if ($this->controller instanceof ActiveController) {
+            $model = $this->controller->getSearchModel();
+        } else {
+            $model = new $this->modelClass();
+        }
+
+        $params = Yii::$app->request->queryParams;
+        $scope = $model->formName();
+        if (($scope === '' && is_array($params))
+            || ($scope !== '' && isset($params[$scope]) && is_array($params[$scope]))
+        ) {
+            $model->load($params);
+        }
+        if (isset($params['ids'])) {
+            $keys = Action::importKey($model::primaryKey(), Action::explodeKeys($params['ids']));
+            $model->setAttributes($keys);
+        }
+        return $model;
     }
 }

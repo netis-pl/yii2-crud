@@ -6,6 +6,7 @@
 
 namespace netis\utils\crud;
 
+use netis\utils\db\ActiveQuery;
 use Yii;
 use yii\base\Behavior;
 
@@ -23,6 +24,31 @@ class ActiveNavigation extends Behavior
      * @var bool Whether to create drop down menu for transitions.
      */
     public $useDropDownMenuForTransitions = true;
+    /**
+     * @var array Cached index  route
+     */
+    private $indexRoute;
+
+    /**
+     * @param \yii\base\Action $action
+     * @return array
+     */
+    private function getIndexRoute($action)
+    {
+        if ($this->indexRoute !== null) {
+            return $this->indexRoute;
+        }
+
+        if ($action instanceof Action) {
+            $searchModel = $action->getSearchModel();
+            /** @var ActiveQuery $query */
+            $query = $action->getQuery($searchModel);
+            if ($query instanceof ActiveQuery) {
+                return $this->indexRoute = ['index', 'query' => implode(',', $query->getActiveQueries())];
+            }
+        }
+        return $this->indexRoute = ['index'];
+    }
 
     /**
      * @param Action $action
@@ -32,7 +58,12 @@ class ActiveNavigation extends Behavior
     public function getBreadcrumbs(Action $action, $model)
     {
         $breadcrumbs = [];
-        $id = $model === null || $model->isNewRecord ? null : $action->exportKey($model->getPrimaryKey(true));
+        $id = null;
+        if ($model !== null && !$model->isNewRecord) {
+            $id = $action instanceof Action
+                ? $action->exportKey($model->getPrimaryKey(true))
+                : implode(';', $model->getPrimaryKey(true));
+        }
 
         if ($action->id == 'index') {
             $breadcrumbs[] = $model->getCrudLabel();
@@ -40,7 +71,7 @@ class ActiveNavigation extends Behavior
         if ($action->id == 'update') {
             $breadcrumbs[] = [
                 'label' => $model->getCrudLabel('index'),
-                'url' => ['index'],
+                'url' => $this->getIndexRoute($action),
             ];
             if (!$model->isNewRecord) {
                 $breadcrumbs[] = [
@@ -55,7 +86,7 @@ class ActiveNavigation extends Behavior
         if ($action->id == 'view' || $action->id == 'print') {
             $breadcrumbs[] = [
                 'label' => $model->getCrudLabel('index'),
-                'url' => ['index'],
+                'url' => $this->getIndexRoute($action),
             ];
             $breadcrumbs[] = $model->__toString();
         }
@@ -81,7 +112,7 @@ class ActiveNavigation extends Behavior
                 $menu['index'] = [
                     'label'       => Yii::t('app', 'List'),
                     'icon'        => 'list-alt',
-                    'url'         => ['index'],
+                    'url'         => $this->getIndexRoute($action),
                     'linkOptions' => $action->id === 'update' ? ['data-confirm' => $confirms['leave']] : [],
                     'active'      => $action->id === 'index',
                 ];
@@ -137,7 +168,9 @@ class ActiveNavigation extends Behavior
         $menu = [];
         $id = null;
         if (!$model->isNewRecord) {
-            $id = $action instanceof Action ? $action->exportKey($model->getPrimaryKey(true)) : implode('-', $model->getPrimaryKey(true));
+            $id = $action instanceof Action
+                ? $action->exportKey($model->getPrimaryKey(true))
+                : implode(';', $model->getPrimaryKey(true));
         }
 
         if ($privs['read'] && $defaultActions['history']

@@ -6,11 +6,8 @@
 
 namespace netis\utils\db;
 
-use netis\utils\crud\Action;
-use netis\utils\crud\ActiveRecord;
-use netis\utils\web\EnumCollection;
-use netis\utils\web\Formatter;
 use Yii;
+use netis\utils\crud\ActiveRecord;
 use yii\data\ActiveDataProvider;
 use yii\data\Pagination;
 use yii\data\Sort;
@@ -22,35 +19,20 @@ trait ActiveSearchTrait
     /**
      * Creates data provider instance with search query applied
      *
-     * @param array $params
      * @param \yii\db\ActiveQuery $query
      * @param Sort|array $sort
      * @param Pagination|array $pagination
      * @return ActiveDataProvider
      */
-    public function search($params, \yii\db\ActiveQuery $query = null, $sort = [], $pagination = [])
+    public function search(\yii\db\ActiveQuery $query = null, $sort = [], $pagination = [])
     {
         if ($query === null) {
             /** @var ActiveQuery $query */
             $query = self::find();
         }
 
-        // add extra authorization conditions
-        $query->authorized($this, $this->getCheckedRelations(), Yii::$app->user->getIdentity());
-
-        if ($query instanceof ActiveQuery) {
-            if (isset($params['query']) && !isset($params['ids'])) {
-                $query->setActiveQueries($params['query']);
-            }
-            if (isset($params['search'])) {
-                $query->quickSearchPhrase = $params['search'];
-            }
-        }
-
-        $this->addConditions($params, $query);
-
         if (is_array($sort)) {
-            $sort = array_merge($this->getSort($query), $sort);
+            $sort = array_merge($this->getSortConfig($query, $this->attributes()), $sort);
         }
         if (is_array($pagination)) {
             $pagination = array_merge([
@@ -69,12 +51,11 @@ trait ActiveSearchTrait
     }
 
     /**
-     * Parse $params data and build filters.
-     * @param array $params
+     * Build filters based on this model attributes and other query options.
      * @param \yii\db\ActiveQuery $query
      * @return \yii\db\ActiveQuery
      */
-    protected function addConditions(array $params, \yii\db\ActiveQuery $query)
+    public function addConditions(\yii\db\ActiveQuery $query)
     {
         // set from with an alias
         if (empty($query->from)) {
@@ -86,22 +67,19 @@ trait ActiveSearchTrait
         if ($query instanceof ActiveQuery) {
             $this->addQuickSearchConditions($query);
         }
-        if (!$this->load($params) && $this->validate()) {
+        if ($this->validate()) {
             $this->addAttributesSearchConditions($query);
-        }
-        if (isset($params['ids'])) {
-            $keys = Action::importKey(self::primaryKey(), Action::explodeKeys($params['ids']));
-            $this->addKeysSearchConditions($keys, $query);
         }
         return $query;
     }
 
     /**
      * Creates a Sort object configuration using query default order.
-     * @param ActiveQuery $query
+     * @param \yii\db\ActiveQuery $query
+     * @param array $attributes
      * @return array
      */
-    private function getSort($query)
+    public function getSortConfig(\yii\db\ActiveQuery $query, array $attributes)
     {
         $defaults = $query instanceof ActiveQuery ? $query->getDefaultOrderColumns() : [];
         $sort = [
@@ -110,7 +88,7 @@ trait ActiveSearchTrait
             'defaultOrder' => $defaults,
         ];
 
-        foreach ($this->attributes() as $attribute) {
+        foreach ($attributes as $attribute) {
             $sort['attributes'][$attribute] = [
                 'asc' => array_merge([$attribute => SORT_ASC], $defaults),
                 'desc' => array_merge([$attribute => SORT_DESC], $defaults),
@@ -162,66 +140,5 @@ trait ActiveSearchTrait
         // end of copy
 
         return array_diff($attributes, $hasOneRelations);
-    }
-
-    /**
-     * Use a distinct compare value for each column. Primary and foreign keys support multiple values.
-     * @param \yii\db\ActiveQuery $query
-     * @return \yii\db\ActiveQuery
-     */
-    protected function addAttributesSearchConditions(\yii\db\ActiveQuery $query)
-    {
-        $tablePrefix = $this->getDb()->getSchema()->quoteSimpleTableName('t');
-        $conditions = ['and'];
-        $formats = $this->attributeFormats();
-        $attributes = $this->attributes();
-        $relations = $this->relations();
-        $validAttributes = array_diff($attributes, array_keys($this->getErrors()));
-        $attributeValues = $this->getAttributes($validAttributes);
-        $hasILike = $this->getDb()->driverName === 'pgsql';
-        /** @var EnumCollection $enums */
-        $enums = Yii::$app->formatter instanceof Formatter ? Yii::$app->formatter->getEnums() : null;
-        foreach ($validAttributes as $attribute) {
-            $value = $attributeValues[$attribute];
-            if (empty($value) || !isset($formats[$attribute])
-                || ($enums !== null && !is_array($formats[$attribute]) && $enums->has($formats[$attribute]))
-            ) {
-                continue;
-            }
-
-            if (in_array($attribute, $relations)) {
-                // only hasMany relations should be ever marked as valid attributes
-                $conditions[] = $this->getRelationCondition($attribute, $value);
-            } else {
-                $conditions[] = $this->getAttributeCondition($attribute, $value, $formats, $tablePrefix, $hasILike);
-            }
-        }
-        // don't clear attributes to allow rendering filled search form
-        //$this->setAttributes(array_fill_keys($attributes, null));
-        if ($conditions !== ['or']) {
-            $query->andWhere($conditions);
-        }
-        return $query;
-    }
-
-    /**
-     * If the 'ids' param is set, extracts primary keys from it and adds them as a query condition.
-     * @param array $keys
-     * @param \yii\db\ActiveQuery $query
-     * @return \yii\db\ActiveQuery
-     */
-    protected function addKeysSearchConditions($keys, \yii\db\ActiveQuery $query)
-    {
-        if (empty($keys)) {
-            return $query->andWhere('1=0');
-        }
-        $prefixer = function ($key) {
-            return 't.' . $key;
-        };
-        $keys = array_map(function ($key) use ($prefixer) {
-            return array_combine(array_map($prefixer, array_keys($key)), array_values($key));
-        }, $keys);
-
-        return $query->andWhere(['in', array_map($prefixer, self::primaryKey()), $keys]);
     }
 }

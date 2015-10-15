@@ -13,6 +13,8 @@ use Yii;
 
 trait QuickSearchTrait
 {
+    use AttributeSearchTrait;
+
     /**
      * Assigns specified token to specified attributes and validates
      * current model to filter the values. Then, creates search condition.
@@ -25,7 +27,6 @@ trait QuickSearchTrait
     {
         /** @var \yii\db\Schema $schema */
         $schema = $this->getDb()->getSchema();
-
         $tablePrefix = $schema->quoteSimpleTableName($tablePrefix === null ? 't' : $tablePrefix);
         $conditions = ['or'];
         $formats = $this->attributeFormats();
@@ -35,8 +36,9 @@ trait QuickSearchTrait
         );
         // to support searching in enums token must be first translated to matching values
         $plainAttributes = [];
+        $formatter = Yii::$app->formatter;
         /** @var EnumCollection $enums */
-        $enums = Yii::$app->formatter instanceof Formatter ? Yii::$app->formatter->getEnums() : null;
+        $enums = $formatter instanceof Formatter ? $formatter->getEnums() : null;
         foreach ($attributes as $attribute) {
             if (!isset($formats[$attribute]) || $enums === null
                 || is_array($formats[$attribute]) || !$enums->has($formats[$attribute])
@@ -66,7 +68,6 @@ trait QuickSearchTrait
             'application.model.NetActiveRecord'
         );
         $attributeValues = $this->getAttributes($validAttributes);
-        $hasILike = $this->getDb()->driverName === 'pgsql';
         foreach ($validAttributes as $attribute) {
             $value = $attributeValues[$attribute];
             if (empty($value) || !isset($formats[$attribute])
@@ -75,7 +76,7 @@ trait QuickSearchTrait
                 continue;
             }
 
-            $conditions[] = $this->getAttributeCondition($attribute, $value, $formats, $tablePrefix, $hasILike);
+            $conditions[] = $this->getAttributeCondition($attribute, $value, $formats, $tablePrefix, $this->getDb());
         }
         $this->setAttributes($oldAttributes);
 
@@ -106,12 +107,16 @@ trait QuickSearchTrait
              * - for MANY_MANY join only to pivot table and check its fk agains subquery
              */
             $query->joinWith([$relationName => function ($query) {
+                /** @var \yii\db\ActiveQuery $query */
                 return $query->select(false);
             }]);
             $query->distinct = true;
             $conditions = ['and'];
+            /** @var ActiveSearchInterface $searchModel */
+            $searchModel = $relation['searchModel'];
             foreach ($tokens as $token) {
-                if (($condition = $relation['searchModel']->processSearchToken($token, $relation['attributes'], $relationName)) !== null) {
+                $condition = $searchModel->processSearchToken($token, $relation['attributes'], $relationName);
+                if ($condition !== null) {
                     $conditions[] = $condition;
                 }
             }
@@ -125,16 +130,15 @@ trait QuickSearchTrait
 
     /**
      * Gets the AR model and search model for specified relation.
-     * @param string $relationName
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @param string $scenario
      * @return array contains: model, searchModel and empty attributes array
      */
-    protected function getQuickSearchRelation($relationName)
+    protected function getQuickSearchRelation($activeRelation, $scenario)
     {
-        /** @var \yii\db\ActiveQuery $activeRelation */
-        $activeRelation = $this->getRelation($relationName);
         /** @var ActiveRecord $relationModel */
         $relationModel = new $activeRelation->modelClass();
-        $relationModel->scenario = $this->scenario;
+        $relationModel->scenario = $scenario;
 
         $parts = explode('\\', $activeRelation->modelClass);
         $modelClass = array_pop($parts);
@@ -182,9 +186,10 @@ trait QuickSearchTrait
             }
 
             if (!isset($relationAttributes[$relationName])) {
-                $relationAttributes[$relationName] = $this->getQuickSearchRelation($relationName);
+                $relationAttributes[$relationName] = $this->getQuickSearchRelation($this->getRelation($relationName), $this->scenario);
             }
             if ($attribute === null) {
+                /** @var \yii\db\ActiveRecord $relationModel */
                 $relationModel = $relationAttributes[$relationName]['model'];
                 /** @var LabelsBehavior $labelsBehavior */
                 $labelsBehavior = $relationModel->getBehavior('labels');

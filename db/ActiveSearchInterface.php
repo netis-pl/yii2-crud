@@ -16,19 +16,28 @@ interface ActiveSearchInterface
     /**
      * Creates data provider instance with search query applied.
      *
-     * The following keys of $params should be supported:
-     * * ids - one or more primary key values
-     * * search - a search phrase applied to all possible attributes (if type matches)
-     * * query - one or more named queries, if the $query object supports them
-     * * model class name - a search form with fields for model attributes
-     *
-     * @param array $params
      * @param \yii\db\ActiveQuery $query
      * @param Sort|array $sort
      * @param Pagination|array $pagination
      * @return ActiveDataProvider
      */
-    public function search($params, \yii\db\ActiveQuery $query = null, $sort = [], $pagination = []);
+    public function search(\yii\db\ActiveQuery $query = null, $sort = [], $pagination = []);
+
+    /**
+     * Parse $params data and build filters.
+     *
+     * @param \yii\db\ActiveQuery $query
+     * @return \yii\db\ActiveQuery
+     */
+    public function addConditions(\yii\db\ActiveQuery $query);
+
+    /**
+     * Creates a Sort object configuration using query default order.
+     * @param \yii\db\ActiveQuery $query
+     * @param array $attributes
+     * @return array
+     */
+    public function getSortConfig(\yii\db\ActiveQuery $query, array $attributes);
 
     /**
      * @inheritdoc

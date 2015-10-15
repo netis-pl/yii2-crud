@@ -54,11 +54,13 @@ class IndexAction extends Action
             // using the "authorized" query
             call_user_func($this->checkAccess, 'read');
         }
-        $controller = $this->controller;
         $model = new $this->modelClass();
-        $searchModel = $controller instanceof ActiveController ? $controller->getSearchModel() : $model;
-        // prepared here because it modifies $model
-        $dataProvider = $this->prepareDataProvider($searchModel);
+        $searchModel = $this->getSearchModel();
+        if ($this->prepareDataProvider !== null) {
+            $dataProvider = call_user_func($this->prepareDataProvider, $this);
+        } else {
+            $dataProvider = $this->prepareDataProvider($searchModel);
+        }
 
         /**
          * create an alias for the collection created by applying
@@ -82,30 +84,6 @@ class IndexAction extends Action
                 $this->getExtraFields($searchModel, 'searchForm')
             ), true),
         ];
-    }
-
-    /**
-     * Prepares the data provider that should return the requested collection of the models.
-     * @param \yii\db\ActiveRecord $model
-     * @return ActiveDataProvider
-     */
-    protected function prepareDataProvider($model)
-    {
-        if ($this->prepareDataProvider !== null) {
-            return call_user_func($this->prepareDataProvider, $this);
-        }
-
-        if ($model instanceof ActiveSearchInterface) {
-            return $model->search(Yii::$app->request->queryParams);
-        }
-
-        return new ActiveDataProvider([
-            'query' => $model::find(),
-            'pagination' => [
-                'pageSizeLimit' => [-1, 0x7FFFFFFF],
-                'defaultPageSize' => 25,
-            ],
-        ]);
     }
 
     /**
