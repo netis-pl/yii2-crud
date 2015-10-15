@@ -64,7 +64,7 @@ trait AttributeSearchTrait
      */
     protected function getAttributeCondition($attribute, $value, $formats, $tablePrefix, $db)
     {
-        $hasILike = $db->driverName === 'pgsql';
+        $likeOp = $db->driverName === 'pgsql' ? 'ILIKE' : 'LIKE';
         $columnName = $tablePrefix . '.' . $db->getSchema()->quoteSimpleColumnName($attribute);
         switch ($formats[$attribute]) {
             default:
@@ -86,12 +86,12 @@ trait AttributeSearchTrait
                 if (is_array($value)) {
                     return [$columnName => $value];
                 }
-                return [$hasILike ? 'ilike' : 'like', $columnName, $value];
+                return [$likeOp, $columnName, $value];
             case 'json':
                 $subquery = (new Query())
                     ->select(1)
                     ->from('json_array_elements(' . $columnName . ') a')
-                    ->where([$hasILike ? 'ilike' : 'like', 'a::text', $value]);
+                    ->where([$likeOp, 'a::text', $value]);
                 return ['exists', $subquery];
         }
     }
