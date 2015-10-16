@@ -57,14 +57,24 @@ class FormBuilder
     };
 
     s2helper.initSingle = function (element, callback) {
-        $.getJSON(element.data('select2').opts.ajax.url, {ids: element.val()}, function (data) {
+        var params = {
+            search: {
+                id: element.val()
+            }
+        }
+        $.getJSON(element.data('select2').opts.ajax.url, params, function (data) {
             if (typeof data.items[0] != 'undefined')
                 callback(data.items[0]);
         });
     };
 
     s2helper.initMulti = function (element, callback) {
-        $.getJSON(element.data('select2').opts.ajax.url, {ids: element.val()}, function (data) {callback(data.items);});
+        var params = {
+            search: {
+                id: element.val()
+            }
+        }
+        $.getJSON(element.data('select2').opts.ajax.url, params, function (data) {callback(data.items);});
     };
 }( window.s2helper = window.s2helper || {}, jQuery ));
 JavaScript;
