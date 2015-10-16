@@ -48,7 +48,7 @@ trait AttributeSearchTrait
         }
         // don't clear attributes to allow rendering filled search form
         //$this->setAttributes(array_fill_keys($attributes, null));
-        if ($conditions !== ['or']) {
+        if ($conditions !== ['and']) {
             $query->andWhere($conditions);
         }
         return $query;

@@ -105,7 +105,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
         }
         $queries = array_filter(array_map('trim', $queries));
         foreach ($queries as $namedQuery) {
-            if ($onlyPublic || !in_array($namedQuery, $availableQueries)) {
+            if ($onlyPublic && !in_array($namedQuery, $availableQueries)) {
                 continue;
             }
             call_user_func([$this, $namedQuery]);
