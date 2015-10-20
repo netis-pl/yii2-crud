@@ -71,18 +71,16 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
 
     /**
      * Processes a filter form and row selection submitted via GET into a CDbCriteria object.
+     * @param \yii\db\ActiveRecord $model
      * @return Query
      */
-    public function getQuery()
+    public function getQuery($model)
     {
-        /* @var $modelClass ActiveRecordInterface */
-        $modelClass = $this->modelClass;
-        $query = $modelClass::find()->where([
+        return parent::getQuery($model)->andWhere([
             'in',
-            $modelClass::primaryKey(),
-            self::importKey($modelClass::primaryKey(), \Yii::$app->request->getQueryParam('keys'))
+            $model::primaryKey(),
+            self::importKey($model::primaryKey(), \Yii::$app->request->getQueryParam('keys'))
         ]);
-        return $query;
     }
 
     public function getDataProvider(ActiveRecord $model, Query $query)
