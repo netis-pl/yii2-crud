@@ -343,8 +343,8 @@ JavaScript;
             ];
         }
 
-        $allowClear = $multiple || $isMany
-            ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
+        $allowClear = $multiple || $isMany ? true : !$model->isAttributeRequired($foreignKey)
+            && (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
 
         if (!$allowClear && trim($value) === '') {
             Yii::$app->user->can($activeRelation->modelClass . '.read');
