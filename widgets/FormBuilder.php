@@ -342,6 +342,23 @@ JavaScript;
                 'select2-selecting' => new JsExpression($script),
             ];
         }
+
+        $allowClear = $multiple || $isMany
+            ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
+
+        if (!$allowClear && trim($value) === '') {
+            Yii::$app->user->can($activeRelation->modelClass . '.read');
+            $relQuery = $relModel::find()
+                ->select($primaryKey)
+                ->from($relModel::tableName() . ' t')
+                ->authorized($relModel, $relModel->getCheckedRelations(), Yii::$app->user->getIdentity())
+                ->asArray();
+            if ($relQuery->count() === 1) {
+                $value = $relQuery->one();
+                $value = Action::implodeEscaped(Action::KEYS_SEPARATOR, $value);
+            }
+        }
+
         return [
             'widgetClass' => 'maddoger\widgets\Select2',
             'attribute' => $isMany ? $relation : $foreignKey,
@@ -356,8 +373,7 @@ JavaScript;
                     $items === null ? ['id' => new JsExpression($jsId)] : [],
                     [
                         'width' => '100%',
-                        'allowClear' => $multiple || $isMany
-                            ? true : (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull),
+                        'allowClear' => $allowClear,
                         'closeOnSelect' => true,
                     ],
                     $multiple && $items === null ? ['multiple' => true] : [],
