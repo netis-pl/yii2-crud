@@ -395,7 +395,7 @@ JavaScript;
                 'options' => array_merge([
                     'class' => 'select2',
                     'value' => $value,
-                    'placeholder' => strip_tags(Yii::$app->formatter->nullDisplay),
+                    'placeholder' => self::getPrompt(),
                 ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
             ],
         ];
@@ -534,7 +534,7 @@ JavaScript;
                 ];
                 if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
                     $field['arguments'][] = [
-                        'prompt' =>  strip_tags($formatter->nullDisplay),
+                        'prompt' => self::getPrompt(),
                     ];
                 }
                 break;
@@ -750,5 +750,22 @@ JavaScript;
 
         }
         return false;
+    }
+
+    public static function getPrompt()
+    {
+        $prompt = null;
+        $formatter = Yii::$app->formatter;
+        if ($formatter instanceof \netis\utils\web\Formatter) {
+            $prompt = $formatter->dropDownPrompt;
+        } else {
+            $prompt = strip_tags($formatter->nullDisplay);
+        }
+
+        if (trim($prompt) === '') {
+            throw new InvalidConfigException('Prompt value cannot be empty string!');
+        }
+
+        return trim($prompt);
     }
 }

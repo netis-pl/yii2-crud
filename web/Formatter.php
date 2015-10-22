@@ -30,6 +30,12 @@ class Formatter extends \yii\i18n\Formatter
     public $currencyFormat = null;
 
     /**
+     * @var string|null string to use as dropDown and select2 prompt. If null {@link Formatter::nullDisplay} will be used.
+     * If {@link Formatter::nullDisplay} is also empty then string '(not set)' translated to {@link Formatter::locale} will be used.
+     */
+    public $dropDownPrompt = null;
+
+    /**
      * @var EnumCollection dictionaries used when formatting an enum value.
      */
     private $enums;
@@ -51,6 +57,14 @@ class Formatter extends \yii\i18n\Formatter
             ];
         }
         $this->_intlLoaded = extension_loaded('intl');
+        
+        if ($this->dropDownPrompt === null) {
+            $this->dropDownPrompt = strip_tags($this->nullDisplay);
+        }
+
+        if (trim($this->dropDownPrompt) === '') {
+            $this->dropDownPrompt = Yii::t('yii', '(not set)', [], $this->locale);
+        }
     }
 
     /**
