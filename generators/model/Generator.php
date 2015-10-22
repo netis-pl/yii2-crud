@@ -593,7 +593,7 @@ DESC;
         $behaviors = $this->generateBehaviors($table);
         $columnBehaviors = [];
         foreach ($table->columns as $column) {
-            if ($column->autoIncrement) {
+            if ($column->autoIncrement && !$isSearchScenario) {
                 continue;
             }
 
@@ -620,7 +620,7 @@ DESC;
                 $rules,
                 $column,
                 $columnBehaviors[$column->name],
-                isset($foreignKeys[$column->name])
+                isset($foreignKeys[$column->name]) || ($isSearchScenario && in_array($column->name, $table->primaryKey))
             );
         }
         return [$rules, $columnBehaviors];
