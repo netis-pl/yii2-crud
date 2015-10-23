@@ -57,7 +57,7 @@ class Formatter extends \yii\i18n\Formatter
             ];
         }
         $this->_intlLoaded = extension_loaded('intl');
-        
+
         if ($this->dropDownPrompt === null) {
             $this->dropDownPrompt = strip_tags($this->nullDisplay);
         }

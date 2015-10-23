@@ -85,6 +85,8 @@ class ViewAction extends Action
             if (!Yii::$app->user->can($relation->modelClass . '.read')) {
                 continue;
             }
+            //create and cache proper query for breadcrumbs and maybe other things
+            $this->getQuery($this->getSearchModel());
             $result[$field] = [
                 'attribute' => $field,
                 'format'    => 'crudLink',

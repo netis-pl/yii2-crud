@@ -466,7 +466,8 @@ JavaScript;
      */
     protected static function addFormField($formFields, $model, $attribute, $dbColumns, $hiddenAttributes, $formats, $multiple = false)
     {
-        if (isset($hiddenAttributes[$attribute])) {
+        $attributeName = Html::getAttributeName($attribute);
+        if (isset($hiddenAttributes[$attributeName])) {
             $formFields[$attribute] = Html::activeHiddenInput($model, $attribute);
             return $formFields;
         }
@@ -474,7 +475,7 @@ JavaScript;
             'attribute' => $attribute,
             'arguments' => [],
         ];
-        $format = is_array($formats[$attribute]) ? $formats[$attribute][0] : $formats[$attribute];
+        $format = is_array($formats[$attributeName]) ? $formats[$attributeName][0] : $formats[$attributeName];
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
 
@@ -494,12 +495,12 @@ JavaScript;
                 break;
             case 'multiplied':
             case 'integer':
-                $value = $model->getAttribute($attribute);
+                $value = Html::getAttributeValue($model, $attribute);
                 $field['formMethod'] = 'textInput';
                 $field['arguments'] = [
                     [
                         'value' => $format === 'multiplied'
-                            ? ($value === null ? null : $formatter->asMultiplied($value, $formats[$attribute][1]))
+                            ? ($value === null ? null : $formatter->asMultiplied($value, $formats[$attributeName][1]))
                             : $value,
                     ],
                 ];
@@ -508,13 +509,13 @@ JavaScript;
                 $field['formMethod'] = 'textInput';
                 $field['arguments'] = [
                     [
-                        'value' => Html::encode($model->getAttribute($attribute)),
+                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
                     ],
                 ];
                 break;
             case 'datetime':
             case 'date':
-                $value                = $model->getAttribute($attribute);
+                $value                = Html::getAttributeValue($model, $attribute);
                 $field['widgetClass'] = 'omnilight\widgets\DatePicker';
                 $field['options']     = [
                     'model'     => $model,
@@ -530,9 +531,9 @@ JavaScript;
                 $field['formMethod'] = 'dropDownList';
                 $field['arguments'] = [
                     // first argument is the items array
-                    $formatter->getEnums()->get($formats[$attribute][1]),
+                    $formatter->getEnums()->get($formats[$attributeName][1]),
                 ];
-                if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->allowNull) {
+                if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->allowNull) {
                     $field['arguments'][] = [
                         'prompt' => self::getPrompt(),
                     ];
@@ -544,7 +545,7 @@ JavaScript;
                 $field['formMethod'] = 'textarea';
                 $field['arguments'] = [
                     [
-                        'value' => Html::encode($model->getAttribute($attribute)),
+                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
                         'cols' => '80',
                         'rows' => '10',
                     ],
@@ -554,7 +555,7 @@ JavaScript;
                 $field['formMethod'] = 'fileInput';
                 $field['arguments'] = [
                     [
-                        'value' => $model->getAttribute($attribute),
+                        'value' => Html::getAttributeValue($model, $attribute),
                     ],
                 ];
                 break;
@@ -563,13 +564,13 @@ JavaScript;
                 $field['formMethod'] = 'textInput';
                 $field['arguments'] = [
                     [
-                        'value' => Html::encode($model->getAttribute($attribute)),
+                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
                     ],
                 ];
-                if (isset($dbColumns[$attribute]) && $dbColumns[$attribute]->type === 'string'
-                    && $dbColumns[$attribute]->size !== null
+                if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->type === 'string'
+                    && $dbColumns[$attributeName]->size !== null
                 ) {
-                    $field['arguments'][0]['maxlength'] = $dbColumns[$attribute]->size;
+                    $field['arguments'][0]['maxlength'] = $dbColumns[$attributeName]->size;
                 }
                 break;
         }
@@ -610,13 +611,15 @@ JavaScript;
                 $formFields[$key] = call_user_func($field, $model);
                 continue;
             }
-            if (in_array($field, $relations)) {
+            $attributeName = Html::getAttributeName($field);
+
+            if (in_array($attributeName, $relations)) {
                 $formFields = static::addRelationField(
                     $formFields, $model, $field, $dbColumns,
                     $hiddenAttributes, $attributes, $multiple
                 );
-            } elseif (in_array($field, $attributes)) {
-                if (in_array($field, $keys) || (in_array($field, $behaviorAttributes))) {
+            } elseif (in_array($attributeName, $attributes)) {
+                if (in_array($attributeName, $keys) || (in_array($attributeName, $behaviorAttributes))) {
                     continue;
                 }
                 $formFields = static::addFormField(
@@ -645,7 +648,8 @@ JavaScript;
         if (!isset($data['options'])) {
             $data['options'] = [];
         }
-        $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($name));
+        $attributeName = Html::getAttributeName($name);
+        $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($attributeName));
         $errorOptions = ArrayHelper::remove($data['options'], 'error', []);
         $field = $form->field($model, $data['attribute'], isset($data['formMethod']) ? $data['options'] : []);
         $field->label($label, ['class' => 'control-label']);
@@ -682,7 +686,7 @@ JavaScript;
         $result[] = $oneColumn ? '' : '<div class="row">';
         $columnWidth = ceil($topColumnWidth / count($fields));
         foreach ($fields as $name => $column) {
-            $result[] = $oneColumn ? '' : '<div class="col-lg-' . $columnWidth . '">';
+            $result[] = $oneColumn ? '' : '<div class="col-sm-' . $columnWidth . '">';
             if (is_string($column)) {
                 $result[] = $column;
             } elseif (!is_numeric($name) && isset($column['attribute'])) {
