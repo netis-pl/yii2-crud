@@ -14,9 +14,9 @@ use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
-use yii\helpers\Json;
 use yii\helpers\Url;
 use yii\web\JsExpression;
+use yii\widgets\ActiveField;
 
 class FormBuilder
 {
@@ -121,32 +121,6 @@ JavaScript;
 
     /**
      * @param \yii\db\ActiveRecord $model
-     * @param string $relation
-     * @param array $dbColumns
-     * @param \yii\db\ActiveQuery $activeRelation
-     * @param bool $multiple true for multiple values inputs, usually used for search forms
-     * @return array
-     */
-    protected static function getHasOneRelationField($model, $relation, $dbColumns, $activeRelation, $multiple = false)
-    {
-        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple);
-    }
-
-    /**
-     * To enable this, override and return getRelationWidget().
-     * @param \yii\db\ActiveRecord $model
-     * @param string $relation
-     * @param array $dbColumns
-     * @param \yii\db\ActiveQuery $activeRelation
-     * @return array
-     */
-    protected static function getHasManyRelationField($model, $relation, $dbColumns, $activeRelation)
-    {
-        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, true);
-    }
-
-    /**
-     * @param \yii\db\ActiveRecord $model
      * @param \yii\db\ActiveRecord $relatedModel
      * @param \yii\db\ActiveQuery $relation
      * @return array array with three arrays: create, search and index routes
@@ -195,12 +169,149 @@ JavaScript;
     }
 
     /**
+     * @param bool $isMany
+     * @param \yii\db\ActiveRecord $model
+     * @param string $relation
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @param array $primaryKey
+     * @param array $foreignKeys
+     * @return string
+     * @throws Exception
+     */
+    protected static function getRelationValue($isMany, $model, $relation, $activeRelation, $primaryKey, $foreignKeys)
+    {
+        if ($isMany) {
+            if (property_exists($model, $relation)) {
+                // special case for search models, where there is a relation property defined that holds the keys
+                $value = $model->$relation;
+            } else {
+                $value = array_map(
+                    '\netis\utils\crud\Action::exportKey',
+                    $activeRelation->select($primaryKey)->asArray()->all()
+                );
+            }
+            if (is_array($value)) {
+                $value = Action::implodeEscaped(Action::KEYS_SEPARATOR, $value);
+            }
+            return $value;
+        }
+        // special case for search models, where fks holds array of keys
+        $foreignKey = reset($foreignKeys);
+        if (!is_array($model->getAttribute($foreignKey))) {
+            return Action::exportKey($model->getAttributes($foreignKeys));
+        }
+        if (count($foreignKeys) > 1) {
+            throw new Exception('Composite foreign keys are not supported for searching.');
+        }
+        return Action::implodeEscaped(Action::KEYS_SEPARATOR, $model->getAttribute($foreignKey));
+    }
+
+    /**
+     * @param \netis\utils\crud\ActiveRecord $relModel
+     * @param array $flippedPrimaryKey
+     * @param array $fields
+     * @return array
+     */
+    protected static function getRelationItems($relModel, $flippedPrimaryKey, $fields)
+    {
+        $relQuery = $relModel::find();
+        if ($relQuery instanceof ActiveQuery) {
+            $relQuery->defaultOrder();
+        }
+        return ArrayHelper::map(
+            $relQuery
+                ->from($relModel::tableName() . ' t')
+                ->authorized($relModel, $relModel->getCheckedRelations(), Yii::$app->user->getIdentity())
+                ->all(),
+            function ($item) use ($fields, $flippedPrimaryKey) {
+                /** @var \netis\utils\crud\ActiveRecord $item */
+                return Action::exportKey(array_intersect_key($item->toArray($fields, []), $flippedPrimaryKey));
+            },
+            function ($item) use ($fields) {
+                /** @var \netis\utils\crud\ActiveRecord $item */
+                $data = $item->toArray($fields, []);
+                return $data['_label'];
+            }
+        );
+    }
+
+    /**
+     * @param string $searchRoute
+     * @param string $createRoute
+     * @param string $jsPrimaryKey
+     * @param string $label
+     * @param string $relation
+     * @return array holds ajaxResults JS callback and clientEvents array
+     */
+    protected static function getRelationAjaxOptions($searchRoute, $createRoute, $jsPrimaryKey, $label, $relation)
+    {
+        $searchLabel = Yii::t('app', 'Advanced search');
+        $createLabel = Yii::t('app', 'Create new');
+        $searchUrl = $searchRoute === null ? null : Url::toRoute($searchRoute);
+        $createUrl = $createRoute === null ? null : Url::toRoute($createRoute);
+        $createKey = 'create_item';
+        $searchKey = 'search_item';
+        $script = <<<JavaScript
+function (data, page) {
+    var keys = $jsPrimaryKey, values = {};
+    if ('$searchUrl') {
+        for (var i = 0; i < keys.length; i++) {
+            values[keys[i]] = '$searchKey';
+        }
+        values._label = '-- $searchLabel --';
+        data.items.unshift(values);
+    }
+    if ('$createUrl') {
+        values = [];
+        for (var i = 0; i < keys.length; i++) {
+            values[keys[i]] = '$createKey';
+        }
+        values._label = '-- $createLabel --';
+        data.items.unshift(values);
+    }
+    return s2helper.results(data, page);
+}
+JavaScript;
+        $ajaxResults = new JsExpression($script);
+        $script = <<<JavaScript
+function (event) {
+    var isSearch = true, isCreate = true;
+    if (event.val != '$searchKey') {
+        isSearch = false;
+    }
+
+    if (event.val != '$createKey') {
+        isCreate = false;
+    }
+
+    if (!isSearch && !isCreate) {
+        return true;
+    }
+
+    $(event.target).select2('close');
+    $('#relationModal').data('target', $(event.target).attr('id'));
+    $('#relationModal').data('title', '$label');
+    $('#relationModal').data('relation', '$relation');
+    $('#relationModal').data('pjax-url', isSearch ? '$searchUrl' : '$createUrl');
+    $('#relationModal').modal('show');
+    event.preventDefault();
+    return false;
+}
+JavaScript;
+        $clientEvents = [
+            'select2-selecting' => new JsExpression($script),
+        ];
+
+        return [$ajaxResults, $clientEvents];
+    }
+
+    /**
      * @param \yii\db\ActiveRecord $model
      * @param string $relation
      * @param array $dbColumns
      * @param \yii\db\ActiveQuery $activeRelation
      * @param bool $multiple true for multiple values inputs, usually used for search forms
-     * @return array
+     * @return ActiveField
      */
     protected static function getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple = false)
     {
@@ -226,126 +337,13 @@ function(object){
     return netis.implodeEscaped('$jsSeparator', values);
 }
 JavaScript;
-        if ($isMany) {
-            if (property_exists($model, $relation)) {
-                // special case for search models, where there is a relation property defined that holds the keys
-                $value = $model->$relation;
-            } else {
-                $value = array_map(
-                    '\netis\utils\crud\Action::exportKey',
-                    $activeRelation->select($primaryKey)->asArray()->all()
-                );
-            }
-            if (is_array($value)) {
-                $value = Action::implodeEscaped(Action::KEYS_SEPARATOR, $value);
-            }
-        } else {
-            // special case for search models, where fks holds array of keys
-            if (is_array($model->getAttribute($foreignKey))) {
-                if (count($foreignKeys) > 1) {
-                    throw new Exception('Composite foreign keys are not supported for searching.');
-                }
-                $value = Action::implodeEscaped(Action::KEYS_SEPARATOR, $model->getAttribute($foreignKey));
-            } else {
-                $value = Action::exportKey($model->getAttributes($foreignKeys));
-            }
-        }
-        list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
-            $model,
-            $relModel,
-            $activeRelation
-        );
-        $items = null;
-        if ($indexRoute === null) {
-            $relQuery = $relModel::find();
-            if ($relQuery instanceof ActiveQuery) {
-                $relQuery->defaultOrder();
-            }
-            $flippedPrimaryKey = array_flip($primaryKey);
-            $items = ArrayHelper::map(
-                $relQuery
-                    ->from($relModel::tableName() . ' t')
-                    ->authorized($relModel, $relModel->getCheckedRelations(), Yii::$app->user->getIdentity())
-                    ->all(),
-                function ($item) use ($fields, $flippedPrimaryKey) {
-                    /** @var \netis\utils\crud\ActiveRecord $item */
-                    return Action::exportKey(array_intersect_key($item->toArray($fields, []), $flippedPrimaryKey));
-                },
-                function ($item) use ($fields) {
-                    /** @var \netis\utils\crud\ActiveRecord $item */
-                    $data = $item->toArray($fields, []);
-                    return $data['_label'];
-                }
-            );
-        }
-        $label = null;
-        if ($model instanceof \netis\utils\crud\ActiveRecord) {
-            $label = $model->getRelationLabel($activeRelation, $relation);
-        }
-        $ajaxResults = new JsExpression('s2helper.results');
-        $clientEvents = null;
-        if ($indexRoute !== null && ($searchRoute !== null || $createRoute !== null)) {
-            $searchLabel = Yii::t('app', 'Advanced search');
-            $createLabel = Yii::t('app', 'Create new');
-            $searchUrl = $searchRoute === null ? null : Url::toRoute($searchRoute);
-            $createUrl = $createRoute === null ? null : Url::toRoute($createRoute);
-            $createKey = 'create_item';
-            $searchKey = 'search_item';
-            $script = <<<JavaScript
-function (data, page) {
-    var keys = $jsPrimaryKey, values = {};
-    if ('$searchUrl') {
-        for (var i = 0; i < keys.length; i++) {
-            values[keys[i]] = '$searchKey';
-        }
-        values._label = '-- $searchLabel --';
-        data.items.unshift(values);
-    }
-    if ('$createUrl') {
-        values = [];
-        for (var i = 0; i < keys.length; i++) {
-            values[keys[i]] = '$createKey';
-        }
-        values._label = '-- $createLabel --';
-        data.items.unshift(values);
-    }
-    return s2helper.results(data, page);
-}
-JavaScript;
-            $ajaxResults = new JsExpression($script);
-            $script = <<<JavaScript
-function (event) {
-    var isSearch = true, isCreate = true;
-    if (event.val != '$searchKey') {
-        isSearch = false;
-    }
-
-    if (event.val != '$createKey') {
-        isCreate = false;
-    }
-
-    if (!isSearch && !isCreate) {
-        return true;
-    }
-
-    $(event.target).select2('close');
-    $('#relationModal').data('target', $(event.target).attr('id'));
-    $('#relationModal').data('title', '$label');
-    $('#relationModal').data('relation', '$relation');
-    $('#relationModal').data('pjax-url', isSearch ? '$searchUrl' : '$createUrl');
-    $('#relationModal').modal('show');
-    event.preventDefault();
-    return false;
-}
-JavaScript;
-            $clientEvents = [
-                'select2-selecting' => new JsExpression($script),
-            ];
-        }
 
         $allowClear = $multiple || $isMany ? true : !$model->isAttributeRequired($foreignKey)
             && (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
 
+        $value = self::getRelationValue($isMany, $model, $relation, $activeRelation, $primaryKey, $foreignKeys);
+
+        // check if only one option is available and if yes - set it as selected value
         if (!$allowClear && trim($value) === '') {
             Yii::$app->user->can($activeRelation->modelClass . '.read');
             $relQuery = $relModel::find()
@@ -359,46 +357,106 @@ JavaScript;
             }
         }
 
-        return [
-            'widgetClass' => 'maddoger\widgets\Select2',
+        list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
+            $model,
+            $relModel,
+            $activeRelation
+        );
+
+        $items = $indexRoute !== null ? null : self::getRelationItems($relModel, array_flip($primaryKey), $fields);
+
+        $label = null;
+        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+            $label = $model->getRelationLabel($activeRelation, $relation);
+        }
+        $ajaxResults = new JsExpression('s2helper.results');
+        $clientEvents = null;
+        if ($indexRoute !== null && ($searchRoute !== null || $createRoute !== null)) {
+            list ($ajaxResults, $clientEvents) = self::getRelationAjaxOptions(
+                $searchRoute,
+                $createRoute,
+                $jsPrimaryKey,
+                $label,
+                $relation
+            );
+        }
+
+        $widgetOptions = [
+            'class' => 'maddoger\widgets\Select2',
+            'model' => $model,
             'attribute' => $isMany ? $relation : $foreignKey,
-            'options' => [
-                'label' => $label,
-                'items' => $items,
-                'clientOptions' => array_merge(
-                    $indexRoute === null ? [] : [
-                        'formatResult' => new JsExpression('s2helper.formatResult'),
-                        'formatSelection' => new JsExpression('s2helper.formatSelection'),
+            'items' => $items,
+            'clientOptions' => array_merge(
+                $indexRoute === null ? [] : [
+                    'formatResult' => new JsExpression('s2helper.formatResult'),
+                    'formatSelection' => new JsExpression('s2helper.formatSelection'),
+                ],
+                $items === null ? ['id' => new JsExpression($jsId)] : [],
+                [
+                    'width' => '100%',
+                    'allowClear' => $allowClear,
+                    'closeOnSelect' => true,
+                ],
+                $multiple && $items === null ? ['multiple' => true] : [],
+                $indexRoute === null ? [] : [
+                    'ajax' => [
+                        'url' => Url::toRoute(array_merge($indexRoute, [
+                            '_format' => 'json',
+                            'fields' => implode(',', $fields),
+                        ])),
+                        'dataFormat' => 'json',
+                        'quietMillis' => 300,
+                        'data' => new JsExpression('s2helper.data'),
+                        'results' => $ajaxResults,
                     ],
-                    $items === null ? ['id' => new JsExpression($jsId)] : [],
-                    [
-                        'width' => '100%',
-                        'allowClear' => $allowClear,
-                        'closeOnSelect' => true,
-                    ],
-                    $multiple && $items === null ? ['multiple' => true] : [],
-                    $indexRoute === null ? [] : [
-                        'ajax' => [
-                            'url' => Url::toRoute(array_merge($indexRoute, [
-                                '_format' => 'json',
-                                'fields' => implode(',', $fields),
-                            ])),
-                            'dataFormat' => 'json',
-                            'quietMillis' => 300,
-                            'data' => new JsExpression('s2helper.data'),
-                            'results' => $ajaxResults,
-                        ],
-                        'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
-                    ]
-                ),
-                'clientEvents' => $clientEvents,
-                'options' => array_merge([
-                    'class' => 'select2',
-                    'value' => $value,
-                    'placeholder' => self::getPrompt(),
-                ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
-            ],
+                    'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
+                ]
+            ),
+            'clientEvents' => $clientEvents,
+            'options' => array_merge([
+                'class' => 'select2',
+                'value' => $value,
+                'placeholder' => self::getPrompt(),
+            ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
         ];
+        $field = Yii::createObject([
+            'class' => '\yii\widgets\ActiveField',
+            'model' => $model,
+            'attribute' => $relation,
+            'labelOptions' => [
+                'label' => $label,
+            ],
+            'parts' => [
+                '{input}' => \maddoger\widgets\Select2::widget($widgetOptions),
+            ],
+        ]);
+        return $field;
+    }
+
+    /**
+     * @param \yii\db\ActiveRecord $model
+     * @param string $relation
+     * @param array $dbColumns
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @param bool $multiple true for multiple values inputs, usually used for search forms
+     * @return ActiveField
+     */
+    protected static function getHasOneRelationField($model, $relation, $dbColumns, $activeRelation, $multiple = false)
+    {
+        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple);
+    }
+
+    /**
+     * To enable this, override and return getRelationWidget().
+     * @param \yii\db\ActiveRecord $model
+     * @param string $relation
+     * @param array $dbColumns
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @return ActiveField
+     */
+    protected static function getHasManyRelationField($model, $relation, $dbColumns, $activeRelation)
+    {
+        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, true);
     }
 
     /**
@@ -471,107 +529,87 @@ JavaScript;
             $formFields[$attribute] = Html::activeHiddenInput($model, $attribute);
             return $formFields;
         }
-        $field = [
-            'attribute' => $attribute,
-            'arguments' => [],
-        ];
         $format = is_array($formats[$attributeName]) ? $formats[$attributeName][0] : $formats[$attributeName];
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
 
+        /** @var \yii\bootstrap\ActiveField $field */
+        $field = Yii::createObject([
+            'class' => '\yii\bootstrap\ActiveField',
+            'model' => $model,
+            'attribute' => $attributeName,
+            'form' => new \yii\bootstrap\ActiveForm,
+        ]);
+
         switch ($format) {
             case 'boolean':
                 if ($multiple) {
-                    $field['formMethod'] = function ($field, $arguments) use ($formatter) {
-                        return $field->inline()->radioList([
-                            '0' => $formatter->booleanFormat[0],
-                            '1' => $formatter->booleanFormat[1],
-                            '' => Yii::t('app', 'Any'),
-                        ]);
-                    };
+                    $field->inline()->radioList([
+                        '0' => $formatter->booleanFormat[0],
+                        '1' => $formatter->booleanFormat[1],
+                        '' => Yii::t('app', 'Any'),
+                    ]);
                 } else {
-                    $field['formMethod'] = 'checkbox';
+                    $field->checkbox();
                 }
                 break;
             case 'multiplied':
             case 'integer':
                 $value = Html::getAttributeValue($model, $attribute);
-                $field['formMethod'] = 'textInput';
-                $field['arguments'] = [
-                    [
-                        'value' => $format === 'multiplied'
-                            ? ($value === null ? null : $formatter->asMultiplied($value, $formats[$attributeName][1]))
-                            : $value,
-                    ],
-                ];
+                $field->inputOptions['value'] = $format === 'multiplied'
+                    ? ($value === null ? null : $formatter->asMultiplied($value, $formats[$attributeName][1]))
+                    : $value;
                 break;
             case 'time':
-                $field['formMethod'] = 'textInput';
-                $field['arguments'] = [
-                    [
-                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
-                    ],
-                ];
+                $field->inputOptions['value'] = Html::encode(Html::getAttributeValue($model, $attribute));
                 break;
             case 'datetime':
             case 'date':
-                $value                = Html::getAttributeValue($model, $attribute);
-                $field['widgetClass'] = 'omnilight\widgets\DatePicker';
-                $field['options']     = [
-                    'model'     => $model,
-                    'attribute' => $attribute,
+                $value = Html::getAttributeValue($model, $attribute);
+                $field->parts['{input}'] = \omnilight\widgets\DatePicker::widget([
+                    'model' => $model,
+                    'attribute' => $attributeName,
                     'options'   => [
                         'class' => 'form-control',
                         'value' => ($value === null ? null : $formatter->asDate($value)),
                     ],
-                ];
+                ]);
                 break;
             case 'enum':
                 //! @todo move to default case, check if enum with such name exists and add items to arguments
-                $field['formMethod'] = 'dropDownList';
-                $field['arguments'] = [
-                    // first argument is the items array
-                    $formatter->getEnums()->get($formats[$attributeName][1]),
-                ];
+                $items = $formatter->getEnums()->get($formats[$attributeName][1]);
+                $options = [];
                 if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->allowNull) {
-                    $field['arguments'][] = [
-                        'prompt' => self::getPrompt(),
-                    ];
+                    $options['prompt'] = self::getPrompt();
                 }
+                $field->dropDownList($items, $options);
                 break;
             case 'flags':
                 throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
             case 'paragraphs':
-                $field['formMethod'] = 'textarea';
-                $field['arguments'] = [
-                    [
-                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
-                        'cols' => '80',
-                        'rows' => '10',
-                    ],
+                $options = [
+                    'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
+                    'cols' => '80',
+                    'rows' => '10',
                 ];
+                $field->textarea($options);
                 break;
             case 'file':
-                $field['formMethod'] = 'fileInput';
-                $field['arguments'] = [
-                    [
-                        'value' => Html::getAttributeValue($model, $attribute),
-                    ],
-                ];
+                $field->fileInput([
+                    'value' => Html::getAttributeValue($model, $attribute),
+                ]);
                 break;
             default:
             case 'text':
-                $field['formMethod'] = 'textInput';
-                $field['arguments'] = [
-                    [
-                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
-                    ],
+                $options = [
+                    'value' => Html::getAttributeValue($model, $attribute),
                 ];
                 if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->type === 'string'
                     && $dbColumns[$attributeName]->size !== null
                 ) {
-                    $field['arguments'][0]['maxlength'] = $dbColumns[$attributeName]->size;
+                    $options['maxlength'] = $dbColumns[$attributeName]->size;
                 }
+                $field->textInput($options);
                 break;
         }
         $formFields[$attribute] = $field;
@@ -579,7 +617,7 @@ JavaScript;
     }
 
     /**
-     * Retrieves form fields configuration.
+     * Retrieves form fields configuration. Fields can be config arrays, ActiveField objects or closures.
      * @param \yii\base\Model $model
      * @param array $fields
      * @param bool $multiple true for multiple values inputs, usually used for search forms
@@ -604,7 +642,7 @@ JavaScript;
 
         $formFields = [];
         foreach ($fields as $key => $field) {
-            if (is_array($field)) {
+            if (is_array($field) || is_object($field)) {
                 $formFields[$key] = $field;
                 continue;
             } elseif (!is_string($field) && is_callable($field)) {
@@ -633,39 +671,16 @@ JavaScript;
     }
 
     /**
-     * @param \yii\web\View $view
-     * @param \yii\db\ActiveRecord $model
      * @param \yii\widgets\ActiveForm $form
-     * @param string $name
-     * @param array $data
+     * @param \yii\widgets\ActiveField $field
      * @return string
      */
-    public static function renderControlGroup($view, $model, $form, $name, $data)
+    public static function renderField($form, $field)
     {
-        if (isset($data['model'])) {
-            $model = $data['model'];
+        if ($field instanceof ActiveField) {
+            $field->form = $form;
         }
-        if (!isset($data['options'])) {
-            $data['options'] = [];
-        }
-        $attributeName = Html::getAttributeName($name);
-        $label = ArrayHelper::remove($data['options'], 'label', $model->getAttributeLabel($attributeName));
-        $errorOptions = ArrayHelper::remove($data['options'], 'error', []);
-        $field = $form->field($model, $data['attribute'], isset($data['formMethod']) ? $data['options'] : []);
-        $field->label($label, ['class' => 'control-label']);
-        $field->error($errorOptions);
-        if (isset($data['formMethod'])) {
-            if (is_string($data['formMethod'])) {
-                return call_user_func_array([$field, $data['formMethod']], $data['arguments']);
-            } else {
-                return call_user_func($data['formMethod'], $field, $data['arguments']);
-            }
-        }
-        $errorClass = $model->getErrors($data['attribute']) !== [] ? 'error' : '';
-        $field
-            ->error(['class' => 'help-block help-block-error'])
-            ->widget($data['widgetClass'], $data['options']);
-        return $field;
+        return (string)$field;
     }
 
     /**
@@ -685,18 +700,14 @@ JavaScript;
         $oneColumn = false; // optionally: count($fields) == 1;
         $result[] = $oneColumn ? '' : '<div class="row">';
         $columnWidth = ceil($topColumnWidth / count($fields));
-        foreach ($fields as $name => $column) {
+        foreach ($fields as $column) {
             $result[] = $oneColumn ? '' : '<div class="col-sm-' . $columnWidth . '">';
-            if (is_string($column)) {
-                $result[] = $column;
-            } elseif (!is_numeric($name) && isset($column['attribute'])) {
-                $result[] = static::renderControlGroup($view, $model, $form, $name, $column);
+            if (!is_array($column)) {
+                $result[] = static::renderField($form, $column);
             } else {
-                foreach ($column as $name2 => $row) {
-                    if (is_string($row)) {
-                        $result[] = $row;
-                    } elseif (!is_numeric($name2) && isset($row['attribute'])) {
-                        $result[] = static::renderControlGroup($view, $model, $form, $name2, $row);
+                foreach ($column as $row) {
+                    if (!is_array($row)) {
+                        $result[] = static::renderField($form, $row);
                     } else {
                         $result[] = static::renderRow($view, $model, $form, $row);
                     }
@@ -717,31 +728,17 @@ JavaScript;
      */
     public static function hasRequiredFields($model, $fields)
     {
-        foreach ($fields as $name => $column) {
-            if (is_string($column)) {
-                if ($model->isAttributeRequired($column)) {
+        foreach ($fields as $column) {
+            if (!is_array($column)) {
+                if ($column instanceof ActiveField && $model->isAttributeRequired($column->attribute)) {
                     return true;
                 }
                 continue;
             }
 
-            if (!is_numeric($name) && isset($column['attribute'])) {
-                if ($model->isAttributeRequired($column['attribute'])) {
-                    return true;
-                }
-                continue;
-            }
-
-            foreach ($column as $name2 => $row) {
-                if (is_string($row)) {
-                    if ($model->isAttributeRequired($row)) {
-                        return true;
-                    }
-                    continue;
-                }
-
-                if (!is_numeric($name2) && isset($row['attribute'])) {
-                    if ($model->isAttributeRequired($row['attribute'])) {
+            foreach ($column as $row) {
+                if (!is_array($row)) {
+                    if ($row instanceof ActiveField && $model->isAttributeRequired($row->attribute)) {
                         return true;
                     }
                     continue;

@@ -20,6 +20,10 @@ use yii\helpers\Url;
 
 class IndexAction extends Action
 {
+    const SEARCH_QUICK_SEARCH = 1;
+    const SEARCH_COLUMN_HEADERS = 2;
+    const SEARCH_ADVANCED_FORM = 4;
+
     /**
      * @var callable a PHP callable that will be called to prepare a data provider that
      * should return a collection of the models. If not set, [[prepareDataProvider()]] will be used instead.

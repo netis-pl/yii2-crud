@@ -1,5 +1,6 @@
 <?php
 
+use netis\utils\crud\IndexAction;
 use yii\helpers\Html;
 use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
@@ -13,6 +14,7 @@ use yii\widgets\Pjax;
  * @var $searchFields array
  * @var $controller netis\utils\crud\ActiveController
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
+ * @var $searchModes integer combination of IndexAction::SEARCH_* constants - what kind of search options are available
  */
 
 $controller = $this->context;
@@ -28,21 +30,46 @@ if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
     $this->title = Yii::t('app', 'Browse');
 }
 
-$searchLabel = Yii::t('app', 'Advanced search');
+if (!isset($searchModes)) {
+    $searchModes = IndexAction::SEARCH_ADVANCED_FORM | IndexAction::SEARCH_QUICK_SEARCH;
+}
+
+if ($searchModes & IndexAction::SEARCH_ADVANCED_FORM) {
+    array_unshift($buttons, [
+        'label' => Yii::t('app', 'Advanced search'),
+        'url' => '#advancedSearch',
+        'options' => [
+            'class' => 'btn btn-default',
+            'data-toggle' => 'collapse',
+            'aria-expanded' => false,
+            'aria-controls' => 'advancedSearch',
+        ]
+    ]);
+}
 $buttonsTemplate = implode("\n        ", array_map(function ($button) {
     $icon = isset($button['icon']) ? '<i class="'.$button['icon'].'"></i> ' : '';
     return Html::a($icon . $button['label'], $button['url'], $button['options']);
 }, $buttons));
 
-$layout = <<<HTML
+if ($searchModes & IndexAction::SEARCH_QUICK_SEARCH) {
+    $gridOptions['filterSelector'] = '#indexGrid-quickSearch';
+    $buttonsTemplate = <<<HTML
 <div class="row">
     <div class="col-md-3">{quickSearch}</div>
     <div class="col-md-9">
-        <a class="btn btn-default" data-toggle="collapse" href="#advancedSearch"
-           aria-expanded="false" aria-controls="advancedSearch">$searchLabel</a>
         $buttonsTemplate
     </div>
 </div>
+HTML;
+} else {
+    if ($searchModes & IndexAction::SEARCH_COLUMN_HEADERS) {
+        $gridOptions['filterModel'] = $searchModel;
+    }
+    $buttonsTemplate = $buttonsTemplate . '<br/><br/>';
+}
+
+$layout = <<<HTML
+$buttonsTemplate
 {items}
 <div class="row">
     <div class="col-md-4">{pager}</div>
@@ -51,25 +78,23 @@ $layout = <<<HTML
 </div>
 HTML;
 
-?>
+if (!isset($showTitle) || $showTitle) {
+    echo '<h1><span>' . Html::encode($this->title) . '</span></h1>';
+}
 
-<?php if (!isset($showTitle) || $showTitle): ?>
-    <h1><span><?= Html::encode($this->title) ?></span></h1>
-<?php endif;?>
+echo netis\utils\web\Alerts::widget();
+if ($searchModes & IndexAction::SEARCH_ADVANCED_FORM) {
+    echo $this->render('_search', [
+        'model'  => $searchModel,
+        'fields' => $searchFields,
+    ]);
+}
 
-<?= netis\utils\web\Alerts::widget() ?>
-<?= $this->render('_search', [
-    'model' => $searchModel,
-    'fields' => $searchFields,
-]); ?>
-
-<?php Pjax::begin(['id' => 'indexPjax']); ?>
-<?= GridView::widget(array_merge([
+Pjax::begin(['id' => 'indexPjax']);
+echo GridView::widget(array_merge([
     'id'             => 'indexGrid',
     'dataProvider'   => $dataProvider,
-//    'filterModel'    => $searchModel,
-    'filterSelector' => '#indexGrid-quickSearch',
     'columns'        => $columns,
     'layout'         => $layout,
-], $gridOptions)); ?>
-<?php Pjax::end(); ?>
+], $gridOptions));
+Pjax::end();
