@@ -1,6 +1,7 @@
 <?php
 
 use netis\utils\crud\IndexAction;
+use netis\utils\widgets\FormBuilder;
 use yii\helpers\Html;
 use netis\utils\widgets\GridView;
 use yii\widgets\Pjax;
@@ -33,7 +34,9 @@ if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
 if (!isset($searchModes)) {
     $searchModes = IndexAction::SEARCH_ADVANCED_FORM | IndexAction::SEARCH_QUICK_SEARCH;
 }
-
+if ($searchModes & IndexAction::SEARCH_COLUMN_HEADERS) {
+    $gridOptions['filterModel'] = $searchModel;
+}
 if ($searchModes & IndexAction::SEARCH_ADVANCED_FORM) {
     array_unshift($buttons, [
         'label' => Yii::t('app', 'Advanced search'),
@@ -62,9 +65,6 @@ if ($searchModes & IndexAction::SEARCH_QUICK_SEARCH) {
 </div>
 HTML;
 } else {
-    if ($searchModes & IndexAction::SEARCH_COLUMN_HEADERS) {
-        $gridOptions['filterModel'] = $searchModel;
-    }
     $buttonsTemplate = $buttonsTemplate . '<br/><br/>';
 }
 
@@ -88,6 +88,9 @@ if ($searchModes & IndexAction::SEARCH_ADVANCED_FORM) {
         'model'  => $searchModel,
         'fields' => $searchFields,
     ]);
+} elseif ($searchModes & IndexAction::SEARCH_COLUMN_HEADERS) {
+    FormBuilder::registerSelect($this);
+    echo FormBuilder::registerRelations($this);
 }
 
 Pjax::begin(['id' => 'indexPjax']);

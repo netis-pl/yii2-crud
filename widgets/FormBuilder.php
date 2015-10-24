@@ -533,12 +533,15 @@ JavaScript;
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
 
+        $stubForm = new \stdClass();
+        $stubForm->layout = 'default';
         /** @var \yii\bootstrap\ActiveField $field */
         $field = Yii::createObject([
             'class' => '\yii\bootstrap\ActiveField',
             'model' => $model,
             'attribute' => $attributeName,
-            'form' => new \yii\bootstrap\ActiveForm,
+            // a workaround, because it's used in the ActiveField constructor (horizontal/vertical layout)
+            'form' => $stubForm,
         ]);
 
         switch ($format) {
@@ -571,8 +574,8 @@ JavaScript;
                     'attribute' => $attributeName,
                     'options'   => [
                         'class' => 'form-control',
-                        'value' => ($value === null ? null : $formatter->asDate($value)),
                     ],
+                    'value' => ($value === null ? null : $formatter->asDate($value)),
                 ]);
                 break;
             case 'enum':

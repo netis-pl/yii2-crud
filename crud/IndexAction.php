@@ -17,6 +17,7 @@ use yii\data\ActiveDataProvider;
 use yii\grid\ActionColumn;
 use yii\helpers\Html;
 use yii\helpers\Url;
+use yii\widgets\ActiveField;
 
 class IndexAction extends Action
 {
@@ -66,28 +67,41 @@ class IndexAction extends Action
             $dataProvider = $this->prepareDataProvider($searchModel);
         }
 
-        /**
-         * create an alias for the collection created by applying
-         * * query conditions based on named queries, quicksearch and full search
-         * * sorting
-         * use that alias in single-model actions to determine scope
-         *
-         * other data needed to be persistent and/or configurable:
-         * * column order/visibility
-         * * grouping
-         * * aux aggregates
-         */
+        $searchFields = FormBuilder::getFormFields($searchModel, array_merge(
+            $this->getFields($searchModel, 'searchForm'),
+            $this->getExtraFields($searchModel, 'searchForm')
+        ), true);
+        $columns = $this->getIndexGridColumns($model, $this->getFields($model, 'grid'));
+        $columns = $this->addColumnFilters($columns, $searchFields);
 
         return [
             'dataProvider' => $dataProvider,
-            'columns' => $this->getIndexGridColumns($model, $this->getFields($model, 'grid')),
+            'columns' => $columns,
             'buttons' => $this->getDefaultGridButtons($dataProvider),
             'searchModel' => $searchModel,
-            'searchFields' => FormBuilder::getFormFields($searchModel, array_merge(
-                $this->getFields($searchModel, 'searchForm'),
-                $this->getExtraFields($searchModel, 'searchForm')
-            ), true),
+            'searchFields' => $searchFields,
         ];
+    }
+
+    private function addColumnFilters($columns, $searchFields)
+    {
+        $filterableColumns = [];
+        foreach ($columns as $key => $column) {
+            if (!is_array($column) || !isset($column['attribute'])) {
+                continue;
+            }
+            $filterableColumns[$column['attribute']] = $key;
+        }
+        foreach ($searchFields as $searchField) {
+            if (!$searchField instanceof ActiveField || !isset($filterableColumns[$searchField->attribute])
+                || !isset($searchField->parts['{input}'])
+            ) {
+                continue;
+            }
+            $key = $filterableColumns[$searchField->attribute];
+            $columns[$key]['filter'] = $searchField->parts['{input}'];
+        }
+        return $columns;
     }
 
     /**
