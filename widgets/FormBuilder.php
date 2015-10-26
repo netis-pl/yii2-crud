@@ -548,7 +548,7 @@ JavaScript;
         $field = Yii::createObject([
             'class' => \yii\bootstrap\ActiveField::className(),
             'model' => $model,
-            'attribute' => $attributeName,
+            'attribute' => $attribute,
             // a workaround, because it's used in the ActiveField constructor (horizontal/vertical layout)
             'form' => $stubForm,
         ]);
