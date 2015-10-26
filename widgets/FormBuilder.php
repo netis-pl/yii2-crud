@@ -17,6 +17,7 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\JsExpression;
 use yii\widgets\ActiveField;
+use yii\widgets\InputWidget;
 
 class FormBuilder
 {
@@ -418,16 +419,15 @@ JavaScript;
      * @param \yii\db\ActiveRecord $model
      * @param string $relation
      * @param \yii\db\ActiveQuery $activeRelation
-     * @param bool $multiple true for multiple values inputs, usually used for search forms
+     * @param array $widgetOptions obtained from getRelationWidgetOptions()
      * @return ActiveField
      */
-    public static function getRelationWidget($model, $relation, $activeRelation, $multiple = false)
+    public static function getRelationWidget($model, $relation, $activeRelation, $widgetOptions)
     {
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, $relation);
         }
-        $widgetOptions = self::getRelationWidgetOptions($model, $relation, $activeRelation, $multiple);
         $field = Yii::createObject([
             'class' => '\yii\widgets\ActiveField',
             'model' => $model,
@@ -436,7 +436,7 @@ JavaScript;
                 'label' => $label,
             ],
             'parts' => [
-                '{input}' => \maddoger\widgets\Select2::widget($widgetOptions),
+                '{input}' => InputWidget::widget($widgetOptions),
             ],
         ]);
         return $field;
@@ -451,7 +451,8 @@ JavaScript;
      */
     protected static function getHasOneRelationField($model, $relation, $activeRelation, $multiple = false)
     {
-        return static::getRelationWidget($model, $relation, $activeRelation, $multiple);
+        $widgetOptions = self::getRelationWidgetOptions($model, $relation, $activeRelation, $multiple);
+        return static::getRelationWidget($model, $relation, $activeRelation, $widgetOptions);
     }
 
     /**
@@ -463,7 +464,8 @@ JavaScript;
      */
     protected static function getHasManyRelationField($model, $relation, $activeRelation)
     {
-        return static::getRelationWidget($model, $relation, $activeRelation, true);
+        $widgetOptions = self::getRelationWidgetOptions($model, $relation, $activeRelation, true);
+        return static::getRelationWidget($model, $relation, $activeRelation, $widgetOptions);
     }
 
     /**
