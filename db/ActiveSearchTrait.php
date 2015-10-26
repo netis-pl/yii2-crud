@@ -67,9 +67,8 @@ trait ActiveSearchTrait
         if ($query instanceof ActiveQuery) {
             $this->addQuickSearchConditions($query);
         }
-        if ($this->validate()) {
-            $this->addAttributesSearchConditions($query);
-        }
+        $this->validate();
+        $this->addAttributesSearchConditions($query);
         return $query;
     }
 

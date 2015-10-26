@@ -635,10 +635,10 @@ class Formatter extends \yii\i18n\Formatter
         try {
             $date = \DateTime::createFromFormat($format, $value, $timeZone);
         } catch (\Exception $e) {
-            return null;
+            return $value;
         }
         if ($date === false) {
-            return null;
+            return $value;
         }
         if ($adjustTimezone) {
             $date->setTimezone(new \DateTimeZone($this->dbTimeZone));
