@@ -24,10 +24,12 @@ if (!isset($gridOptions) || !is_array($gridOptions)) {
 }
 
 if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
-    $this->title                 = $searchModel->getCrudLabel('relation');
+    if ($this->title === null) {
+        $this->title = $searchModel->getCrudLabel('relation');
+    }
     $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $searchModel);
     $this->params['menu']        = $controller->getMenu($controller->action, $searchModel);
-} else {
+} elseif ($this->title === null) {
     $this->title = Yii::t('app', 'Browse');
 }
 
