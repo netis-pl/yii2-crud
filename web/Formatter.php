@@ -12,6 +12,7 @@ use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
 use yii\base\Model;
 use \netis\utils\crud\ActiveRecord;
+use yii\helpers\FormatConverter;
 use yii\helpers\Html;
 
 class Formatter extends \yii\i18n\Formatter
@@ -34,6 +35,23 @@ class Formatter extends \yii\i18n\Formatter
      * If {@link Formatter::nullDisplay} is also empty then string '(not set)' translated to {@link Formatter::locale} will be used.
      */
     public $dropDownPrompt = null;
+
+    /**
+     * @var string
+     */
+    public $dbDateFormat = 'Y-m-d';
+    /**
+     * @var string
+     */
+    public $dbDatetimeFormat = 'Y-m-d H:i:s';
+    /**
+     * @var string
+     */
+    public $dbTimeFormat = 'H:i:s';
+    /**
+     * @var string
+     */
+    public $dbTimeZone = 'UTC';
 
     /**
      * @var EnumCollection dictionaries used when formatting an enum value.
@@ -594,50 +612,76 @@ class Formatter extends \yii\i18n\Formatter
     }
 
     /**
-     * Filters the date using strtotime() and returns it in Y-m-d format.
+     * @param string $value    the value to be filtered
+     * @param string $format   the format the date should be in
+     * @param string $dbFormat the format to convert to
+     * @param bool $adjustTimezone
+     * @return string the formatted result.
+     */
+    private function filterDateTimeValue($value, $format, $dbFormat, $adjustTimezone = true)
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $timeZone = new \DateTimeZone($adjustTimezone ? $this->timeZone : $this->dbTimeZone);
+
+        if (strncmp($format, 'php:', 4) === 0) {
+            $format = substr($format, 4);
+        } else {
+            $format = FormatConverter::convertDateIcuToPhp($format, 'datetime', $this->locale);
+        }
+
+        try {
+            $date = \DateTime::createFromFormat($format, $value, $timeZone);
+        } catch (\Exception $e) {
+            return $value;
+        }
+        if ($date === false) {
+            return $value;
+        }
+        if ($adjustTimezone) {
+            $date->setTimezone(new \DateTimeZone($this->dbTimeZone));
+        }
+
+        return $date->format($dbFormat);
+    }
+
+    /**
+     * Filters the date and returns it in Y-m-d format.
      * @param string $value the value to be filtered
      * @return string
      */
     public function filterDate($value)
     {
-        if ($value === null || (($ts = strtotime($value)) === false)) {
-            return null;
-        }
-
-        return date('Y-m-d', $ts);
+        return $this->filterDateTimeValue($value, $this->dateFormat, $this->dbDateFormat);
     }
 
     /**
-     * Filters the date using strtotime() and returns it in Y-m-d H:i:s format.
+     * Filters the date and returns it in Y-m-d H:i:s format.
      * @param string $value the value to be filtered
      * @return string
      */
     public function filterDatetime($value)
     {
-        if ($value === null || (($ts = strtotime($value)) === false)) {
-            return null;
-        }
-
         $parsed = date_parse($value);
-
-        $date = new \DateTime($value, $parsed['hour'] !== false ? new \DateTimeZone(date_default_timezone_get()) : new \DateTimeZone('UTC'));
-        if($parsed['hour'] !== false) { $date->setTimezone(new \DateTimeZone('UTC')); }
-
-        return $date->format('Y-m-d H:i:s');
+        $hasTime = $parsed !== false && $parsed['hour'] !== false;
+        return $this->filterDateTimeValue(
+            $value,
+            $hasTime ? $this->datetimeFormat : $this->dateFormat,
+            $hasTime ? $this->dbDatetimeFormat : $this->dbDateFormat,
+            $hasTime
+        );
     }
 
     /**
-     * Filters the time using strtotime() and returns it in H:i:s format.
+     * Filters the time and returns it in H:i:s format.
      * @param string $value the value to be filtered
      * @return string
      */
     public function filterTime($value)
     {
-        if ($value === null || (($ts = strtotime($value)) === false)) {
-            return null;
-        }
-
-        return date('H:i:s', $ts);
+        return $this->filterDateTimeValue($value, $this->timeFormat, $this->dbTimeFormat);
     }
 
     /**

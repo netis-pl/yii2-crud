@@ -36,7 +36,7 @@ if (!$model->isNewRecord) {
     $this->title .= ': ' . $model->__toString();
 }
 $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
-$this->params['menu'] = $controller->getMenu($controller->action, $model);
+$this->params['menu']        = $controller->getMenu($controller->action, $model);
 ?>
 
 <?php if (!isset($showTitle) || $showTitle): ?>

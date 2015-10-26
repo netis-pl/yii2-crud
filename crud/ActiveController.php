@@ -433,7 +433,8 @@ class ActiveController extends \yii\rest\ActiveController
      */
     public function getSearchModel()
     {
-        return new $this->searchModelClass();
+        $modelClass = class_exists($this->searchModelClass) ? $this->searchModelClass : $this->modelClass;
+        return new $modelClass;
     }
 
     /**
