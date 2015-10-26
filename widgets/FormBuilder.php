@@ -583,8 +583,8 @@ JavaScript;
                     'attribute' => $attributeName,
                     'options'   => [
                         'class' => 'form-control',
+                        'value' => ($value === null ? null : $formatter->asDate($value)),
                     ],
-                    'value' => ($value === null ? null : $formatter->asDate($value)),
                 ]);
                 break;
             case 'enum':
