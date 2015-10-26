@@ -436,7 +436,7 @@ JavaScript;
                 'label' => $label,
             ],
             'parts' => [
-                '{input}' => InputWidget::widget($widgetOptions),
+                '{input}' => Yii::createObject($widgetOptions)->run(),
             ],
         ]);
         return $field;
