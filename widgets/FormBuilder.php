@@ -546,7 +546,7 @@ JavaScript;
         $stubForm->layout = 'default';
         /** @var \yii\bootstrap\ActiveField $field */
         $field = Yii::createObject([
-            'class' => '\yii\bootstrap\ActiveField',
+            'class' => \yii\bootstrap\ActiveField::className(),
             'model' => $model,
             'attribute' => $attributeName,
             // a workaround, because it's used in the ActiveField constructor (horizontal/vertical layout)
