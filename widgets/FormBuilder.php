@@ -305,19 +305,12 @@ JavaScript;
         return [$ajaxResults, $clientEvents];
     }
 
-    /**
-     * @param \yii\db\ActiveRecord $model
-     * @param string $relation
-     * @param array $dbColumns
-     * @param \yii\db\ActiveQuery $activeRelation
-     * @param bool $multiple true for multiple values inputs, usually used for search forms
-     * @return ActiveField
-     */
-    protected static function getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple = false)
+    public static function getRelationWidgetOptions($model, $relation, $activeRelation, $multiple = false)
     {
         $isMany = $activeRelation->multiple;
         $foreignKeys = array_values($activeRelation->link);
         $foreignKey = reset($foreignKeys);
+        $dbColumns = $model->getTableSchema()->columns;
         /** @var \netis\utils\crud\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
         $primaryKey = $relModel::primaryKey();
@@ -381,7 +374,7 @@ JavaScript;
             );
         }
 
-        $widgetOptions = [
+        return [
             'class' => 'maddoger\widgets\Select2',
             'model' => $model,
             'attribute' => $isMany ? $relation : $foreignKey,
@@ -419,6 +412,22 @@ JavaScript;
                 'placeholder' => self::getPrompt(),
             ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
         ];
+    }
+
+    /**
+     * @param \yii\db\ActiveRecord $model
+     * @param string $relation
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @param bool $multiple true for multiple values inputs, usually used for search forms
+     * @return ActiveField
+     */
+    public static function getRelationWidget($model, $relation, $activeRelation, $multiple = false)
+    {
+        $label = null;
+        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+            $label = $model->getRelationLabel($activeRelation, $relation);
+        }
+        $widgetOptions = self::getRelationWidgetOptions($model, $relation, $activeRelation, $multiple);
         $field = Yii::createObject([
             'class' => '\yii\widgets\ActiveField',
             'model' => $model,
@@ -436,41 +445,38 @@ JavaScript;
     /**
      * @param \yii\db\ActiveRecord $model
      * @param string $relation
-     * @param array $dbColumns
      * @param \yii\db\ActiveQuery $activeRelation
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return ActiveField
      */
-    protected static function getHasOneRelationField($model, $relation, $dbColumns, $activeRelation, $multiple = false)
+    protected static function getHasOneRelationField($model, $relation, $activeRelation, $multiple = false)
     {
-        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, $multiple);
+        return static::getRelationWidget($model, $relation, $activeRelation, $multiple);
     }
 
     /**
      * To enable this, override and return getRelationWidget().
      * @param \yii\db\ActiveRecord $model
      * @param string $relation
-     * @param array $dbColumns
      * @param \yii\db\ActiveQuery $activeRelation
      * @return ActiveField
      */
-    protected static function getHasManyRelationField($model, $relation, $dbColumns, $activeRelation)
+    protected static function getHasManyRelationField($model, $relation, $activeRelation)
     {
-        return static::getRelationWidget($model, $relation, $dbColumns, $activeRelation, true);
+        return static::getRelationWidget($model, $relation, $activeRelation, true);
     }
 
     /**
      * @param array $formFields
      * @param \yii\db\ActiveRecord $model
      * @param string $relation
-     * @param array $dbColumns
      * @param array $hiddenAttributes
      * @param array $safeAttributes
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      * @throws InvalidConfigException
      */
-    protected static function addRelationField($formFields, $model, $relation, $dbColumns, $hiddenAttributes, $safeAttributes, $multiple = false)
+    protected static function addRelationField($formFields, $model, $relation, $hiddenAttributes, $safeAttributes, $multiple = false)
     {
         $activeRelation = $model->getRelation($relation);
         if (!$activeRelation->multiple) {
@@ -500,11 +506,11 @@ JavaScript;
         }
 
         if ($activeRelation->multiple) {
-            if (($field = static::getHasManyRelationField($model, $relation, $dbColumns, $activeRelation)) !== null) {
+            if (($field = static::getHasManyRelationField($model, $relation, $activeRelation)) !== null) {
                 $formFields[$relation] = $field;
             }
         } else {
-            if (($field = static::getHasOneRelationField($model, $relation, $dbColumns, $activeRelation, $multiple)) !== null) {
+            if (($field = static::getHasOneRelationField($model, $relation, $activeRelation, $multiple)) !== null) {
                 $formFields[$relation] = $field;
             }
         }
@@ -515,14 +521,13 @@ JavaScript;
      * @param array $formFields
      * @param \yii\db\ActiveRecord $model
      * @param string $attribute
-     * @param array $dbColumns
      * @param array $hiddenAttributes
      * @param array $formats
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      * @throws InvalidConfigException
      */
-    protected static function addFormField($formFields, $model, $attribute, $dbColumns, $hiddenAttributes, $formats, $multiple = false)
+    protected static function addFormField($formFields, $model, $attribute, $hiddenAttributes, $formats, $multiple = false)
     {
         $attributeName = Html::getAttributeName($attribute);
         if (isset($hiddenAttributes[$attributeName])) {
@@ -532,6 +537,8 @@ JavaScript;
         $format = is_array($formats[$attributeName]) ? $formats[$attributeName][0] : $formats[$attributeName];
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
+
+        $dbColumns = $model->getTableSchema()->columns;
 
         $stubForm = new \stdClass();
         $stubForm->layout = 'default';
@@ -639,24 +646,28 @@ JavaScript;
         $hiddenAttributes = array_flip($hiddenAttributes);
 
         list($behaviorAttributes, $blameableAttributes) = Action::getModelBehaviorAttributes($model);
-        $dbColumns = $model->getTableSchema()->columns;
         $attributes = $model->safeAttributes();
         $relations = $model->relations();
 
         $formFields = [];
         foreach ($fields as $key => $field) {
-            if (is_array($field) || is_object($field)) {
+            if ($field instanceof ActiveField) {
                 $formFields[$key] = $field;
                 continue;
             } elseif (!is_string($field) && is_callable($field)) {
                 $formFields[$key] = call_user_func($field, $model);
+                if (!is_string($formFields[$key])) {
+                    throw new InvalidConfigException('Field definition must be either an ActiveField or a callable.');
+                }
                 continue;
+            } elseif (!is_string($field)) {
+                throw new InvalidConfigException('Field definition must be either an ActiveField or a callable.');
             }
             $attributeName = Html::getAttributeName($field);
 
             if (in_array($attributeName, $relations)) {
                 $formFields = static::addRelationField(
-                    $formFields, $model, $field, $dbColumns,
+                    $formFields, $model, $field,
                     $hiddenAttributes, $attributes, $multiple
                 );
             } elseif (in_array($attributeName, $attributes)) {
@@ -664,7 +675,7 @@ JavaScript;
                     continue;
                 }
                 $formFields = static::addFormField(
-                    $formFields, $model, $field, $dbColumns,
+                    $formFields, $model, $field,
                     $hiddenAttributes, $formats, $multiple
                 );
             }
