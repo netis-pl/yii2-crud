@@ -642,6 +642,7 @@ class Formatter extends \yii\i18n\Formatter
         }
         if ($adjustTimezone) {
             $date->setTimezone(new \DateTimeZone($this->dbTimeZone));
+            $date->setTime(0, 0, 0);
         }
 
         return $date->format($dbFormat);
@@ -669,8 +670,8 @@ class Formatter extends \yii\i18n\Formatter
         return $this->filterDateTimeValue(
             $value,
             $hasTime ? $this->datetimeFormat : $this->dateFormat,
-            $hasTime ? $this->dbDatetimeFormat : $this->dbDateFormat,
-            $hasTime
+            $this->dbDatetimeFormat,
+            !$hasTime
         );
     }
 

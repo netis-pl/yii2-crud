@@ -578,12 +578,15 @@ JavaScript;
             case 'datetime':
             case 'date':
                 $value = Html::getAttributeValue($model, $attribute);
+                if (!$model->hasErrors($attribute) && $value !== null) {
+                    $value = $formatter->asDate($value);
+                }
                 $field->parts['{input}'] = \omnilight\widgets\DatePicker::widget([
                     'model' => $model,
                     'attribute' => $attributeName,
                     'options'   => [
                         'class' => 'form-control',
-                        'value' => ($value === null ? null : $formatter->asDate($value)),
+                        'value' => $value,
                     ],
                 ]);
                 break;
