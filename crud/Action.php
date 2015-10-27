@@ -630,12 +630,14 @@ class Action extends \yii\rest\Action
                 $columns[$key] = call_user_func($field, $model);
                 continue;
             }
+            // if the field is from a relation (eg. client.firstname) treat it as an attribute
+            $format = isset($formats[$field]) ? $formats[$field] : $model->getAttributeFormat($field);
 
-            if (isset($formats[$field])) {
+            if ($format !== null) {
                 if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
                     continue;
                 }
-                $columns[] = static::getAttributeColumn($model, $field, $formats[$field]);
+                $columns[] = static::getAttributeColumn($model, $field, $format);
                 continue;
             }
 
