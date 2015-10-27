@@ -69,6 +69,9 @@ class Action extends \yii\rest\Action
      */
     private $query;
 
+    /** @var array active named queries */
+    public $activeQueries = [];
+
     /**
      * @inheritdoc
      */
@@ -664,6 +667,9 @@ class Action extends \yii\rest\Action
         }
 
         $this->query = $model::find();
+        if (!empty($this->activeQueries)) {
+            $this->query->setActiveQueries($this->activeQueries);
+        }
 
         $params = Yii::$app->request->queryParams;
         if (isset($params['query']) && !isset($params['ids'])) {
