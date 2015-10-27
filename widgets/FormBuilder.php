@@ -436,7 +436,7 @@ JavaScript;
                 'label' => $label,
             ],
             'parts' => [
-                '{input}' => Yii::createObject($widgetOptions)->run(),
+                '{input}' => $widgetOptions,
             ],
         ]);
         return $field;
@@ -581,14 +581,15 @@ JavaScript;
                 if (!$model->hasErrors($attribute) && $value !== null) {
                     $value = $formatter->asDate($value);
                 }
-                $field->parts['{input}'] = \omnilight\widgets\DatePicker::widget([
+                $field->parts['{input}'] = [
+                    'class' => 'omnilight\widgets\DatePicker',
                     'model' => $model,
                     'attribute' => $attributeName,
                     'options'   => [
                         'class' => 'form-control',
                         'value' => $value,
                     ],
-                ]);
+                ];
                 break;
             case 'enum':
                 //! @todo move to default case, check if enum with such name exists and add items to arguments
@@ -698,6 +699,10 @@ JavaScript;
     {
         if ($field instanceof ActiveField) {
             $field->form = $form;
+        }
+        if (is_array($field->parts['{input}'])) {
+            $class = $field->parts['{input}']['class'];
+            $field->parts['{input}'] = $class::widget($field->parts['{input}']);
         }
         return (string)$field;
     }
