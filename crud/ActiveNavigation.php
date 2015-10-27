@@ -29,6 +29,8 @@ class ActiveNavigation extends Behavior
      */
     private $indexRoute;
 
+    public $createActionId = 'update';
+
     /**
      * @param \yii\base\Action $action
      * @return array
@@ -105,6 +107,7 @@ class ActiveNavigation extends Behavior
     public function getMenuCommon(\yii\base\Action $action, $model, $horizontal, $privs, $defaultActions, $confirms)
     {
         $menu = [];
+        $askBeforeLeave = in_array($action->id, [$this->createActionId, 'update']);
 
         if ($privs['read'] && $defaultActions['index']) {
             if ($horizontal || $action->id != 'index') {
@@ -113,19 +116,19 @@ class ActiveNavigation extends Behavior
                     'label'       => Yii::t('app', 'List'),
                     'icon'        => 'list-alt',
                     'url'         => $this->getIndexRoute($action),
-                    'linkOptions' => $action->id === 'update' ? ['data-confirm' => $confirms['leave']] : [],
+                    'linkOptions' => $askBeforeLeave ? ['data-confirm' => $confirms['leave']] : [],
                     'active'      => $action->id === 'index',
                 ];
             }
         }
         if ($privs['create']) {
             // drawn in all actions, that is: index, update, view
-            $menu['update'] = [
+            $menu[$this->createActionId] = [
                 'label'       => Yii::t('app', 'Create'),
                 'icon'        => 'file',
-                'url'         => ['update'],
-                'linkOptions' => $action->id !== 'update' ? [] : ['data-confirm' => $confirms['leave']],
-                'active'      => $action->id === 'update' && $model->isNewRecord,
+                'url'         => [$this->createActionId],
+                'linkOptions' => $askBeforeLeave ? [] : ['data-confirm' => $confirms['leave']],
+                'active'      => $action->id === $this->createActionId && $model->isNewRecord,
             ];
         }
         if ($privs['read'] && $defaultActions['help']) {
@@ -166,6 +169,7 @@ class ActiveNavigation extends Behavior
     public function getMenuCurrent(\yii\base\Action $action, $model, $horizontal, $privs, $defaultActions, $confirms)
     {
         $menu = [];
+
         $id = null;
         if (!$model->isNewRecord) {
             $id = $action instanceof Action
