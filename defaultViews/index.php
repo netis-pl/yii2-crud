@@ -99,7 +99,8 @@ Pjax::begin(['id' => 'indexPjax']);
 echo GridView::widget(array_merge([
     'id'             => 'indexGrid',
     'dataProvider'   => $dataProvider,
-    'columns'        => $columns,
+    // this actually renders some widgets and must be called after Pjax::begin()
+    'columns'        => $controller->action->addColumnFilters($columns, $searchFields),
     'layout'         => $layout,
 ], $gridOptions));
 Pjax::end();

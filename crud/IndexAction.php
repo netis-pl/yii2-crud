@@ -72,7 +72,6 @@ class IndexAction extends Action
             $this->getExtraFields($searchModel, 'searchForm')
         ), true);
         $columns = $this->getIndexGridColumns($model, $this->getFields($model, 'grid'));
-        $columns = $this->addColumnFilters($columns, $searchFields);
 
         return [
             'dataProvider' => $dataProvider,
@@ -83,7 +82,7 @@ class IndexAction extends Action
         ];
     }
 
-    private function addColumnFilters($columns, $searchFields)
+    public function addColumnFilters($columns, $searchFields)
     {
         $filterableColumns = [];
         foreach ($columns as $key => $column) {
@@ -99,7 +98,14 @@ class IndexAction extends Action
                 continue;
             }
             $key = $filterableColumns[$searchField->attribute];
-            $columns[$key]['filter'] = $searchField->parts['{input}'];
+            $filter = $searchField->parts['{input}'];
+            if (is_array($filter)) {
+                $class = $filter['class'];
+                $filter['clientOptions']['width'] = '15em';
+                $columns[$key]['filter'] = $class::widget($filter);
+            } else {
+                $columns[$key]['filter'] = $filter;
+            }
         }
         return $columns;
     }

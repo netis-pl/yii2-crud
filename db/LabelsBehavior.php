@@ -154,7 +154,7 @@ class LabelsBehavior extends Behavior
         }
         $localLabels = $this->getLocalLabels();
 
-        return !isset($localLabels[$language])
+        return !isset($localLabels[$language][$owner->getPrimaryKey()][$attribute])
             ? $owner->getAttribute($attribute)
             : $localLabels[$language][$owner->getPrimaryKey()][$attribute];
     }
