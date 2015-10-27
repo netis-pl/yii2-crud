@@ -127,7 +127,7 @@ class ActiveNavigation extends Behavior
                 'label'       => Yii::t('app', 'Create'),
                 'icon'        => 'file',
                 'url'         => [$this->createActionId],
-                'linkOptions' => $askBeforeLeave ? [] : ['data-confirm' => $confirms['leave']],
+                'linkOptions' => $askBeforeLeave ? ['data-confirm' => $confirms['leave']] : [],
                 'active'      => $action->id === $this->createActionId && $model->isNewRecord,
             ];
         }
