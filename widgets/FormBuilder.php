@@ -697,11 +697,14 @@ JavaScript;
      */
     public static function renderField($form, $field)
     {
-        if ($field instanceof ActiveField) {
-            $field->form = $form;
+        if (!$field instanceof ActiveField) {
+            return (string)$field;
         }
-        if (is_array($field->parts['{input}'])) {
-            $class = $field->parts['{input}']['class'];
+
+        $field->form = $form;
+
+        if (isset($field->parts['{input}']) && is_array($field->parts['{input}'])) {
+            $class                   = $field->parts['{input}']['class'];
             $field->parts['{input}'] = $class::widget($field->parts['{input}']);
         }
         return (string)$field;
