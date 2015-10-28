@@ -428,10 +428,14 @@ JavaScript;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, $relation);
         }
+
+        $isMany = $activeRelation->multiple;
+        $foreignKeys = array_values($activeRelation->link);
+        $foreignKey = reset($foreignKeys);
         $field = Yii::createObject([
             'class' => '\yii\widgets\ActiveField',
             'model' => $model,
-            'attribute' => $relation,
+            'attribute' => $isMany ? $relation : $foreignKey,
             'labelOptions' => [
                 'label' => $label,
             ],
