@@ -162,13 +162,15 @@ class ActiveQuery extends \yii\db\ActiveQuery
         $select = [];
         $joins = [];
         $joinWith = [];
-        foreach ($this->countableQueries() as $queryName) {
+        foreach ($this->countableQueries() as $queryNames) {
             /** @var ActiveQuery $query */
             $query     = clone $baseQuery;
-            $query->$queryName();
+            foreach (array_filter(array_map('trim', explode(',', $queryNames))) as $queryName) {
+                $query->$queryName();
+            }
             $params    = array_merge($params, $query->params);
             $condition = $queryBuilder->buildCondition($query->where, $params);
-            $select[]  = "COUNT(t.id) FILTER (WHERE $condition) AS \"$queryName\"";
+            $select[]  = "COUNT(t.id) FILTER (WHERE $condition) AS \"$queryNames\"";
 
             $joinWith = array_merge($joinWith, is_array($query->joinWith) ? $query->joinWith : []);
             if (!is_array($query->join)) {
@@ -198,10 +200,13 @@ class ActiveQuery extends \yii\db\ActiveQuery
             ->queryOne();
     }
 
+    /**
+     * @param string $queryName one or more query names separated by a comma
+     * @return int
+     */
     public function getCounter($queryName)
     {
         $counters = $this->getCounters();
-
         return $counters[$queryName];
     }
 

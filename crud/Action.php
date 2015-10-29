@@ -658,6 +658,16 @@ class Action extends \yii\rest\Action
     }
 
     /**
+     * Returns a new ActiveQuery object. Can be overridden instead of getQuery().
+     * @param \yii\db\ActiveRecord $model
+     * @return \yii\db\ActiveQuery
+     */
+    protected function createQuery($model)
+    {
+        return $model::find();
+    }
+
+    /**
      * Returns an ActiveQuery configured using request query params and current user identity.
      * @param \yii\db\ActiveRecord $model
      * @return \yii\db\ActiveQuery
@@ -668,7 +678,7 @@ class Action extends \yii\rest\Action
             return $this->query;
         }
 
-        $this->query = $model::find();
+        $this->query = $this->createQuery($model);
         if (!empty($this->activeQueries)) {
             $this->query->setActiveQueries($this->activeQueries);
         }
