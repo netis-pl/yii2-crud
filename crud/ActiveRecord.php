@@ -10,6 +10,7 @@ namespace netis\utils\crud;
 use yii\base\InvalidParamException;
 use yii\db\ActiveQuery;
 use yii\db\Schema;
+use yii\validators\RequiredValidator;
 use yii\web\IdentityInterface;
 
 /**
@@ -304,5 +305,29 @@ class ActiveRecord extends \yii\db\ActiveRecord
         $data['_label'] = implode($labelsBehavior->separator, $attributes);
 
         return $data;
+    }
+
+    /**
+     * Returns a value indicating whether the attribute is required.
+     * This is determined by checking if the attribute is associated with a
+     * [[\yii\validators\RequiredValidator|required]] validation rule in the
+     * current [[scenario]].
+     *
+     * Note that when the validator has a conditional validation applied using
+     * [[\yii\validators\RequiredValidator::$when|$when]] this method will return
+     * `false` regardless of the `when` condition because it may be called be
+     * before the model is loaded with data.
+     *
+     * @param string $attribute attribute name
+     * @return boolean whether the attribute is required
+     */
+    public function isAttributeRequired($attribute)
+    {
+        foreach ($this->getActiveValidators($attribute) as $validator) {
+            if ($validator instanceof RequiredValidator && ($validator->when === null || call_user_func($validator->when, $this, $attribute))) {
+                return true;
+            }
+        }
+        return false;
     }
 }
