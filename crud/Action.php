@@ -343,7 +343,7 @@ class Action extends \yii\rest\Action
         $names = [];
         $result = [];
         foreach ($fields as $key => $field) {
-            if (is_array($field) || (!is_string($field) && is_callable($field))) {
+            if ($field instanceof \yii\widgets\ActiveField || is_array($field) || (!is_string($field) && is_callable($field))) {
                 $names[] = $key;
                 $result[$key] = $field;
             } else {
