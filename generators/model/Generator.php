@@ -670,7 +670,7 @@ DESC;
                 if ($ruleName === 'safe' || isset($rule['on']) || !isset($rule['attributes']) || empty($rule['attributes'])) {
                     continue;
                 }
-                $safeAttributes += $rule['attributes'];
+                $safeAttributes = array_merge($safeAttributes, $rule['attributes']);
             }
             $safeAttributes = array_flip($safeAttributes);
             foreach ($rules['safe']['attributes'] as $key => $attribute) {
