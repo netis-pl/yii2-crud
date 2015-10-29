@@ -658,13 +658,16 @@ DESC;
                     continue;
                 }
             }
+            if (isset($rules['safe'])) {
+                $rules['safe']['attributes'] = array_unique($rules['safe']['attributes']);
+            }
         }
 
         // remove safe attributes that have any other rules without a specific scenario
         if (isset($rules['safe'])) {
             $safeAttributes = [];
-            foreach ($rules as $rule) {
-                if (isset($rule['on']) || !isset($rule['attributes']) || empty($rule['attributes'])) {
+            foreach ($rules as $ruleName => $rule) {
+                if ($ruleName === 'safe' || isset($rule['on']) || !isset($rule['attributes']) || empty($rule['attributes'])) {
                     continue;
                 }
                 $safeAttributes += $rule['attributes'];
