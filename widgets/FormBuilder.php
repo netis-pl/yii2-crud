@@ -607,12 +607,17 @@ JavaScript;
             case 'flags':
                 throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
             case 'paragraphs':
-                $options = [
-                    'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
-                    'cols' => '80',
-                    'rows' => '10',
-                ];
-                $field->textarea($options);
+                if ($multiple) {
+                    $field->textInput([
+                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
+                    ]);
+                } else {
+                    $field->textarea([
+                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
+                        'cols'  => '80',
+                        'rows'  => '10',
+                    ]);
+                }
                 break;
             case 'file':
                 $field->fileInput([
