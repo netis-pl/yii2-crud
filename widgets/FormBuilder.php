@@ -596,13 +596,31 @@ JavaScript;
                 ];
                 break;
             case 'enum':
-                //! @todo move to default case, check if enum with such name exists and add items to arguments
                 $items = $formatter->getEnums()->get($formats[$attributeName][1]);
-                $options = [];
-                if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->allowNull) {
-                    $options['prompt'] = self::getPrompt();
+                if ($multiple) {
+                    $field->parts['{input}'] = [
+                        'class' => 'maddoger\widgets\Select2',
+                        'model' => $model,
+                        'attribute' => $attribute,
+                        'items' => $items,
+                        'clientOptions' => [
+                            'allowClear' => true,
+                            'closeOnSelect' => true,
+                        ],
+                        'options' => [
+                            'class' => 'select2',
+                            //'value' => $value,
+                            'placeholder' => self::getPrompt(),
+                            'multiple' => 'multiple',
+                        ],
+                    ];
+                } else {
+                    $options = [];
+                    if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->allowNull) {
+                        $options['prompt'] = self::getPrompt();
+                    }
+                    $field->dropDownList($items, $options);
                 }
-                $field->dropDownList($items, $options);
                 break;
             case 'flags':
                 throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
