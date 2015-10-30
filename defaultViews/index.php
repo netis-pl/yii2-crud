@@ -130,7 +130,7 @@ $(document)
 
         return false;
     })
-    .on('change', '#{$gridId}-filters select', function (event) {
+    .on('change', '#{$gridId}-filters input.select2, #{$gridId}-filters select.select2', function (event) {
         $('#{$gridId}').yiiGridView('applyFilter');
         return false;
     });

@@ -91,13 +91,13 @@ class IndexAction extends Action
             }
             $filterableColumns[$column['attribute']] = $key;
         }
-        foreach ($searchFields as $searchField) {
-            if (!$searchField instanceof ActiveField || !isset($filterableColumns[$searchField->attribute])
+        foreach ($searchFields as $fieldName => $searchField) {
+            if (!$searchField instanceof ActiveField || !isset($filterableColumns[$fieldName])
                 || !isset($searchField->parts['{input}'])
             ) {
                 continue;
             }
-            $key = $filterableColumns[$searchField->attribute];
+            $key = $filterableColumns[$fieldName];
             $filter = $searchField->parts['{input}'];
             if (is_array($filter)) {
                 $class = $filter['class'];
