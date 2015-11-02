@@ -432,18 +432,21 @@ JavaScript;
         $isMany = $activeRelation->multiple;
         $foreignKeys = array_values($activeRelation->link);
         $foreignKey = reset($foreignKeys);
+
+        $stubForm = new \stdClass();
+        $stubForm->layout = 'default';
+
+        /** @var \yii\bootstrap\ActiveField $field */
         $field = Yii::createObject([
-            'class' => '\yii\widgets\ActiveField',
+            'class' => '\yii\bootstrap\ActiveField',
             'model' => $model,
+            'form' => $stubForm,
             'attribute' => $isMany ? $relation : $foreignKey,
-            'labelOptions' => [
-                'label' => $label,
-            ],
             'parts' => [
                 '{input}' => $widgetOptions,
             ],
         ]);
-        return $field;
+        return $field->label($label);
     }
 
     /**
