@@ -730,6 +730,7 @@ class Action extends \yii\rest\Action
      */
     public function getSearchModel()
     {
+        /** @var ActiveRecord $model */
         if ($this->controller instanceof ActiveController) {
             $model = $this->controller->getSearchModel();
         } else {
