@@ -22,6 +22,7 @@ $controller = $this->context;
 if (!isset($gridOptions) || !is_array($gridOptions)) {
     $gridOptions = [];
 }
+$gridId = 'indexGrid';
 
 if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
     if ($this->title === null) {
@@ -57,7 +58,7 @@ $buttonsTemplate = implode("\n        ", array_map(function ($button) {
 }, $buttons));
 
 if ($searchModes & IndexAction::SEARCH_QUICK_SEARCH) {
-    $gridOptions['filterSelector'] = '#indexGrid-quickSearch';
+    $gridOptions['filterSelector'] = "#{$gridId}-quickSearch";
     $buttonsTemplate = <<<HTML
 <div class="row">
     <div class="col-md-3">{quickSearch}</div>
@@ -97,10 +98,42 @@ if ($searchModes & IndexAction::SEARCH_ADVANCED_FORM) {
 
 Pjax::begin(['id' => 'indexPjax']);
 echo GridView::widget(array_merge([
-    'id'             => 'indexGrid',
+    'id'             => $gridId,
     'dataProvider'   => $dataProvider,
     // this actually renders some widgets and must be called after Pjax::begin()
     'columns'        => $controller->action->addColumnFilters($columns, $searchFields),
     'layout'         => $layout,
 ], $gridOptions));
 Pjax::end();
+
+if ($searchModes & IndexAction::SEARCH_COLUMN_HEADERS) {
+    $script = <<<JavaScript
+var enterPressed = false;
+$(document)
+    .off('change.yiiGridView keydown.yiiGridView', '#{$gridId}-filters input, #{$gridId}-filters select')
+    .on('change.yiiGridView keydown.yiiGridView', '#{$gridId}-filters input.form-control', function (event) {
+        if (event.type === 'keydown') {
+            if (event.keyCode !== 13) {
+                return; // only react to enter key
+            } else {
+                enterPressed = true;
+            }
+        } else {
+            // prevent processing for both keydown and change events
+            if (enterPressed) {
+                enterPressed = false;
+                return;
+            }
+        }
+
+        $('#{$gridId}').yiiGridView('applyFilter');
+
+        return false;
+    })
+    .on('change', '#{$gridId}-filters input.select2, #{$gridId}-filters select.select2', function (event) {
+        $('#{$gridId}').yiiGridView('applyFilter');
+        return false;
+    });
+JavaScript;
+    $this->registerJs($script);
+}
