@@ -17,7 +17,7 @@ class IntervalValidator extends Validator
     {
         parent::init();
         if ($this->message === null) {
-            $this->message = Yii::t('yii', 'The format of {attribute} is invalid.');
+            $this->message = \Yii::t('yii', 'The format of {attribute} is invalid.');
         }
     }
 
