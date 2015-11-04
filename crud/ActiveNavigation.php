@@ -244,7 +244,7 @@ class ActiveNavigation extends Behavior
                 $transitions,
                 $model,
                 $model->$stateAttribute,
-                [$this->owner, 'checkAccess'],
+                [$this->owner, 'hasAccess'],
                 $this->useDropDownMenuForTransitions
             );
             //if label is set then it's drop down menu

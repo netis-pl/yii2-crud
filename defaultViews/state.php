@@ -59,7 +59,10 @@ foreach ($states as $state) {
 
 <?php else : ?>
 
-<?= $this->render('_form', [
+<?php
+$icon = Html::tag('i', '', ['class' => 'fa fa-'. $stateChange['state']->icon]);
+echo Html::hiddenInput('target-state', $targetState, ['id' => 'target-state']);
+echo $this->render('_form', [
     'model' => $model,
     'fields' => $fields,
     'relations' => $relations,
@@ -73,13 +76,15 @@ foreach ($states as $state) {
         'enableAjaxValidation' => false,
     ],
     'buttons' => [
-        Html::submitButton('<i class="fa fa-save"></i>' . Yii::t('netis/fsm/app', 'Confirm'), [
-            'class' => 'btn btn-success',
+        Html::submitButton($icon . $stateChange['state']->label, [
+            'class' => 'btn ' . $stateChange['state']->css_class,
         ]),
-        Html::a(Yii::t('netis/fsm/app', 'Cancel'), Url::toRoute([
+        Html::a(Yii::t('netis/fsm/app', 'Back'), Url::toRoute([
             Yii::$app->request->getQueryParam('return', $controller->action->viewAction),
             'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true)),
-        ])),
+        ]), [
+            'class' => 'btn btn-default',
+        ]),
     ],
 ], $this->context) ?>
 
