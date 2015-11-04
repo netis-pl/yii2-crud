@@ -219,10 +219,11 @@ JavaScript;
         if ($relQuery instanceof ActiveQuery) {
             $relQuery->defaultOrder();
         }
+        $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id, $relModel::className() . '.read');
         return ArrayHelper::map(
             $relQuery
                 ->from($relModel::tableName() . ' t')
-                ->authorized($relModel, $relModel->getCheckedRelations(), Yii::$app->user->getIdentity())
+                ->authorized($relModel, $checkedRelations, Yii::$app->user->getIdentity())
                 ->all(),
             function ($item) use ($fields, $flippedPrimaryKey) {
                 /** @var \netis\utils\crud\ActiveRecord $item */
@@ -339,11 +340,11 @@ JavaScript;
 
         // check if only one option is available and if yes - set it as selected value
         if (!$allowClear && trim($value) === '') {
-            Yii::$app->user->can($activeRelation->modelClass . '.read');
+            $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id, $activeRelation->modelClass . '.read');
             $relQuery = $relModel::find()
                 ->select($primaryKey)
                 ->from($relModel::tableName() . ' t')
-                ->authorized($relModel, $relModel->getCheckedRelations(), Yii::$app->user->getIdentity())
+                ->authorized($relModel, $checkedRelations, Yii::$app->user->getIdentity())
                 ->asArray();
             if ($relQuery->count() === 1) {
                 $value = $relQuery->one();

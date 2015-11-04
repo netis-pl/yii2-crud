@@ -22,7 +22,7 @@ use yii\web\IdentityInterface;
  *
  * @package netis\utils\crud
  * @method bool isRelated(array $relations, IdentityInterface $user = null)
- * @method array getCheckedRelations()
+ * @method array getCheckedRelations($userId, $permissionName, array $params = [])
  * @method bool saveRelations(array $data, string $formName = null)
  * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
  * @method string getCrudLabel(string $operation = null)

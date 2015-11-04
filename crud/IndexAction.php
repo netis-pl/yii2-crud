@@ -55,7 +55,7 @@ class IndexAction extends Action
     public function run()
     {
         if ($this->checkAccess) {
-            // additional authorization conditions are added in prepareDataProvider() method
+            // additional authorization conditions are added in getQuery() method
             // using the "authorized" query
             call_user_func($this->checkAccess, 'read');
         }

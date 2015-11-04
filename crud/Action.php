@@ -487,7 +487,7 @@ class Action extends \yii\rest\Action
             if ($relation->getBehavior('authorizer') !== null) {
                 $relation->authorized(
                     $relatedModel,
-                    $relatedModel->getCheckedRelations(),
+                    $relatedModel->getCheckedRelations(Yii::$app->user->id, $relation->modelClass . '.read'),
                     Yii::$app->user->getIdentity()
                 );
             }
@@ -693,7 +693,8 @@ class Action extends \yii\rest\Action
 
         // add extra authorization conditions
         if ($model->getBehavior('authorizer')) {
-            $this->query->authorized($model, $model->getCheckedRelations(), Yii::$app->user->getIdentity());
+            $checkedRelations = $model->getCheckedRelations(Yii::$app->user->id, $this->modelClass . '.read');
+            $this->query->authorized($model, $checkedRelations, Yii::$app->user->getIdentity());
         }
 
         if ($model instanceof ActiveSearchInterface) {
