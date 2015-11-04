@@ -664,7 +664,12 @@ class Action extends \yii\rest\Action
      */
     protected function createQuery($model)
     {
-        return $model::find();
+        $query = $model::find();
+        if (empty($query->from)) {
+            // required by the query authorizer behavior and when model implements ActiveSearchInterface
+            $query->from = ['t' => $model->tableName()];
+        }
+        return $query;
     }
 
     /**

@@ -52,18 +52,12 @@ trait ActiveSearchTrait
 
     /**
      * Build filters based on this model attributes and other query options.
+     * Warning! Main table in the query should have the 't' alias set.
      * @param \yii\db\ActiveQuery $query
      * @return \yii\db\ActiveQuery
      */
     public function addConditions(\yii\db\ActiveQuery $query)
     {
-        // set from with an alias
-        if (empty($query->from)) {
-            /* @var $modelClass ActiveRecord */
-            $modelClass = $query->modelClass;
-            $tableName = $modelClass::tableName();
-            $query->from = [$tableName.' t'];
-        }
         if ($query instanceof ActiveQuery) {
             $this->addQuickSearchConditions($query);
         }
