@@ -8,7 +8,6 @@ namespace netis\utils\crud;
 
 
 use yii\base\InvalidParamException;
-use yii\db\ActiveQuery;
 use yii\db\Schema;
 use yii\validators\RequiredValidator;
 use yii\web\IdentityInterface;
@@ -23,15 +22,15 @@ use yii\web\IdentityInterface;
  * @package netis\utils\crud
  * @method bool isRelated(array $relations, IdentityInterface $user = null)
  * @method array getCheckedRelations($userId, $permissionName, array $params = [])
- * @method bool saveRelations(array $data, string $formName = null)
+ * @method bool saveRelations(array $data, $formName = null)
  * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
- * @method string getCrudLabel(string $operation = null)
- * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, string $relation)
+ * @method string getCrudLabel($operation = null)
+ * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, $relation)
  * @method string getLocalLabel($attribute, $language = null)
  * @method null beginChangeset() {@link \nineinchnick\audit\behaviors\TrackableBehavior::beginChangeset()}
  * @method null endChangeset() {@link \nineinchnick\audit\behaviors\TrackableBehavior::endChangeset()}
- * @method ActiveRecord loadVersion(integer $version_id)
- * @method array getAttributeVersions(string $attribute)
+ * @method ActiveRecord loadVersion($version_id)
+ * @method array getAttributeVersions($attribute)
  * @method array getRecordedVersions()
  * @method \netis\utils\db\ActiveQuery getRelation($name, $throwException = true)
  * @method static \netis\utils\db\ActiveQuery find()
@@ -136,25 +135,38 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         $relation = $this->getRelation($attribute);
         $attributes = isset($params['attributes']) ? $params['attributes'] : null;
-        $valid = true;
+        $errors = [];
+
         $models = $this->$attribute;
         if (!$relation->multiple) {
             $models = [$models];
         }
-        foreach ($models as $model) {
+        /** @var \yii\db\ActiveRecord[] $models */
+        foreach ($models as $index => $model) {
             if (isset($params['scenario'])) {
                 $model->scenario = $params['scenario'];
             }
-            $valid = $model->validate($attributes) && $valid;
+
+            if ($model->validate($attributes)) {
+                continue;
+            }
+            $errors[] = (string)$model . ': ' . \yii\helpers\Html::errorSummary($model, ['header' => '']) ;
         }
+
         $this->populateRelation($attribute, $relation->multiple ? $models : $models[0]);
-        if (!$valid) {
-            $placeholders = ['attribute' => $this->getRelationLabel($relation, $attribute)];
-            $message = $relation->multiple
-                ? \Yii::t('app', '{attribute} have invalid items.', $placeholders)
-                : \Yii::t('app', '{attribute} is invalid.', $placeholders);
-            $this->addError($attribute, $message);
+        if (empty($errors)) {
+            return;
         }
+
+        $errors = "<ul><li>" . implode("</li>\n<li>", $errors) . "</li></ul>";
+
+        $placeholders = [
+            'attribute' => $this->getRelationLabel($relation, $attribute),
+        ];
+        $message = $relation->multiple
+            ? \Yii::t('app', '{attribute} have invalid items.', $placeholders)
+            : \Yii::t('app', '{attribute} is invalid.', $placeholders);
+        $this->addError($attribute, $message . ' '. \Yii::t('app', 'Errors: ') . $errors);
     }
 
     /**
