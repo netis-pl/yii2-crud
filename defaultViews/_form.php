@@ -17,6 +17,7 @@ use \netis\utils\crud\UpdateAction;
 /* @var $buttons array */
 /* @var $formBody string if set, allows to override only the form part */
 /* @var $defaultWidth integer default form column width */
+/* @var $errorSummaryModels array models passed to form error summary, defaults to $model */
 
 $controller = $this->context;
 $action = $controller->action;
@@ -59,7 +60,7 @@ if (($pjax = Yii::$app->request->getQueryParam('_pjax')) === null || $pjax !== '
     </p>
     <?php endif;?>
 
-    <?= $form->errorSummary($model); ?>
+    <?= $form->errorSummary(!isset($errorSummaryModels) ? $model : $errorSummaryModels); ?>
 
     <?php if (!empty($fields)): ?>
         <fieldset class="well">
