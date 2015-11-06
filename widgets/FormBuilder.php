@@ -170,25 +170,26 @@ JavaScript;
     }
 
     /**
-     * @param bool $isMany
      * @param \yii\db\ActiveRecord $model
      * @param string $relation
      * @param \yii\db\ActiveQuery $activeRelation
-     * @param array $primaryKey
-     * @param array $foreignKeys
      * @return string
      * @throws Exception
      */
-    protected static function getRelationValue($isMany, $model, $relation, $activeRelation, $primaryKey, $foreignKeys)
+    protected static function getRelationValue($model, $relation, $activeRelation)
     {
-        if ($isMany) {
+        $foreignKeys = array_values($activeRelation->link);
+
+        if ($activeRelation->multiple) {
             if (property_exists($model, $relation)) {
                 // special case for search models, where there is a relation property defined that holds the keys
                 $value = $model->$relation;
             } else {
+                /** @var \yii\db\ActiveRecord $modelClass */
+                $modelClass = $activeRelation->modelClass;
                 $value = array_map(
                     '\netis\utils\crud\Action::exportKey',
-                    $activeRelation->select($primaryKey)->asArray()->all()
+                    $activeRelation->select($modelClass::primaryKey())->asArray()->all()
                 );
             }
             if (is_array($value)) {
@@ -208,23 +209,31 @@ JavaScript;
     }
 
     /**
-     * @param \netis\utils\crud\ActiveRecord $relModel
-     * @param array $flippedPrimaryKey
-     * @param array $fields
+     * Get drop down list items using provided Query.
+     *
+     * __WARNING__: This method does not append authorized conditions to query and you need append those if needed.
+     *
+     * @param \yii\db\ActiveQuery $query
+     *
      * @return array
      */
-    protected static function getRelationItems($relModel, $flippedPrimaryKey, $fields)
+    public static function getDropDownItems($query)
     {
-        $relQuery = $relModel::find();
-        if ($relQuery instanceof ActiveQuery) {
-            $relQuery->defaultOrder();
+        if ($query instanceof ActiveQuery) {
+            $query->defaultOrder();
         }
-        $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id, $relModel::className() . '.read');
+
+        /** @var \yii\db\ActiveRecord|\netis\rbac\AuthorizerBehavior $model */
+        $model = new $query->modelClass;
+
+        $fields = $model::primaryKey();
+        if (($labelAttributes = $model->getBehavior('labels')->attributes) !== null) {
+            $fields = array_merge($model::primaryKey(), $labelAttributes);
+        }
+
+        $flippedPrimaryKey = array_flip($model::primaryKey());
         return ArrayHelper::map(
-            $relQuery
-                ->from($relModel::tableName() . ' t')
-                ->authorized($relModel, $checkedRelations, Yii::$app->user->getIdentity())
-                ->all(),
+            $query->from($model::tableName() . ' t')->all(),
             function ($item) use ($fields, $flippedPrimaryKey) {
                 /** @var \netis\utils\crud\ActiveRecord $item */
                 return Action::exportKey(array_intersect_key($item->toArray($fields, []), $flippedPrimaryKey));
@@ -307,20 +316,107 @@ JavaScript;
         return [$ajaxResults, $clientEvents];
     }
 
+    /**
+     * Returns {@link \maddoger\widgets\Select2} widget options without ajax configuration.     *
+     *
+     * @param \yii\db\ActiveRecord $model
+     * @param string               $relation
+     * @param \yii\db\ActiveQuery  $activeRelation
+     * @param bool|false           $multiple
+     * @param null|array           $items
+     *
+     * @return array
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public static function getRelationWidgetStaticOptions($model, $relation, $activeRelation, $multiple = false, $items = null)
+    {
+        $isMany = $activeRelation->multiple;
+        $foreignKey = array_values($activeRelation->link)[0];
+        /** @var \netis\utils\crud\ActiveRecord $relModel */
+        $relModel = new $activeRelation->modelClass;
+
+        if ($items === null) {
+            $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id, $activeRelation->modelClass . '.read');
+            $query = $relModel::find()->authorized($relModel, $checkedRelations, Yii::$app->user->getIdentity());
+            $items = self::getDropDownItems($query);
+        }
+
+        //clone model so we could set value for attribute so we would have initialized value for static select2
+        $model = clone $model;
+        $attribute = $isMany ? $relation : $foreignKey;
+        $model->$attribute = count($items) > 1 ? self::getRelationValue($model, $relation, $activeRelation) : key($items);
+
+        $dbColumn = $model->getTableSchema()->getColumn($foreignKey);
+        $allowClear = $multiple || $isMany ? true : !$model->isAttributeRequired($foreignKey)
+            && ($dbColumn === null || $dbColumn->allowNull);
+
+        if (!$allowClear && empty($items)) {
+            throw new InvalidConfigException("$foreignKey attribute in {$model::className()} is required but there are no available items");
+        }
+
+        if (!$allowClear && empty($items)) {
+            Yii::warning("There are no items in control for $foreignKey attribute in {$model::className()}");
+        }
+
+        return [
+            'class' => \maddoger\widgets\Select2::className(),
+            'model' => $model,
+            'attribute' => $attribute,
+            'items' => $items,
+            'clientOptions' => [
+                'width' => '100%',
+                'allowClear' => $allowClear,
+                'closeOnSelect' => true,
+            ],
+            'options' => array_merge([
+                'class' => 'select2',
+                'prompt' => '',
+                'placeholder' => self::getPrompt(),
+            ], $multiple ? ['multiple' => 'multiple'] : []),
+        ];
+    }
+
+    /**
+     * @param \yii\db\ActiveRecord $model
+     * @param string $relation
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @param bool|false $multiple
+     *
+     * @return array
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
     public static function getRelationWidgetOptions($model, $relation, $activeRelation, $multiple = false)
     {
+        /** @var \netis\utils\crud\ActiveRecord $relModel */
+        $relModel = new $activeRelation->modelClass;
+        list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
+            $model,
+            $relModel,
+            $activeRelation
+        );
+
+        if ($indexRoute === null) {
+            return self::getRelationWidgetStaticOptions($model, $relation, $activeRelation, $multiple);
+        }
+
         $isMany = $activeRelation->multiple;
         $foreignKeys = array_values($activeRelation->link);
         $foreignKey = reset($foreignKeys);
         $dbColumns = $model->getTableSchema()->columns;
-        /** @var \netis\utils\crud\ActiveRecord $relModel */
-        $relModel = new $activeRelation->modelClass;
         $primaryKey = $relModel::primaryKey();
+
         if (($labelAttributes = $relModel->getBehavior('labels')->attributes) !== null) {
             $fields = array_merge($primaryKey, $labelAttributes);
         } else {
             $fields = $primaryKey;
         }
+
+        $value = self::getRelationValue($model, $relation, $activeRelation);
+        $allowClear = $multiple || $isMany ? true : !$model->isAttributeRequired($foreignKey)
+            && (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
+
         $jsPrimaryKey = json_encode($primaryKey);
         $jsSeparator = \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR;
         $jsId = <<<JavaScript
@@ -332,11 +428,6 @@ function(object){
     return netis.implodeEscaped('$jsSeparator', values);
 }
 JavaScript;
-
-        $allowClear = $multiple || $isMany ? true : !$model->isAttributeRequired($foreignKey)
-            && (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
-
-        $value = self::getRelationValue($isMany, $model, $relation, $activeRelation, $primaryKey, $foreignKeys);
 
         // check if only one option is available and if yes - set it as selected value
         if (!$allowClear && trim($value) === '') {
@@ -351,14 +442,6 @@ JavaScript;
                 $value = Action::implodeEscaped(Action::KEYS_SEPARATOR, $value);
             }
         }
-
-        list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
-            $model,
-            $relModel,
-            $activeRelation
-        );
-
-        $items = $indexRoute !== null ? null : self::getRelationItems($relModel, array_flip($primaryKey), $fields);
 
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
@@ -380,20 +463,15 @@ JavaScript;
             'class' => 'maddoger\widgets\Select2',
             'model' => $model,
             'attribute' => $isMany ? $relation : $foreignKey,
-            'items' => $items,
             'clientOptions' => array_merge(
-                $indexRoute === null ? [] : [
+                [
                     'formatResult' => new JsExpression('s2helper.formatResult'),
                     'formatSelection' => new JsExpression('s2helper.formatSelection'),
-                ],
-                $items === null ? ['id' => new JsExpression($jsId)] : [],
-                [
+                    'id' => new JsExpression($jsId),
                     'width' => '100%',
                     'allowClear' => $allowClear,
                     'closeOnSelect' => true,
-                ],
-                $multiple && $items === null ? ['multiple' => true] : [],
-                $indexRoute === null ? [] : [
+                    'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
                     'ajax' => [
                         'url' => Url::toRoute(array_merge($indexRoute, [
                             '_format' => 'json',
@@ -404,15 +482,15 @@ JavaScript;
                         'data' => new JsExpression('s2helper.data'),
                         'results' => $ajaxResults,
                     ],
-                    'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
-                ]
+                ],
+                $multiple ? ['multiple' => true] : []
             ),
             'clientEvents' => $clientEvents,
-            'options' => array_merge([
+            'options' => [
                 'class' => 'select2',
                 'value' => $value,
                 'placeholder' => self::getPrompt(),
-            ], $multiple && $items !== null ? ['multiple' => 'multiple'] : []),
+            ],
         ];
     }
 

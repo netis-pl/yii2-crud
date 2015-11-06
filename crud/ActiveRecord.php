@@ -72,13 +72,13 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         return [
             'authorizer' => [
-                'class' => 'netis\rbac\AuthorizerBehavior',
+                'class' => \netis\rbac\AuthorizerBehavior::className(),
             ],
             'linkable' => [
-                'class' => 'netis\utils\db\LinkableBehavior',
+                'class' => \netis\utils\db\LinkableBehavior::className(),
             ],
             'labels' => [
-                'class' => 'netis\utils\db\LabelsBehavior',
+                'class' => \netis\utils\db\LabelsBehavior::className(),
             ],
         ];
     }
