@@ -33,7 +33,7 @@ trait AttributeSearchTrait
         $enums = $formatter instanceof Formatter ? $formatter->getEnums() : null;
         foreach ($validAttributes as $attribute) {
             $value = $attributeValues[$attribute];
-            if (empty($value) || !isset($formats[$attribute])
+            if ($value === null || !isset($formats[$attribute])
                 || ($enums !== null && !is_array($formats[$attribute]) && $enums->has($formats[$attribute]))
             ) {
                 continue;

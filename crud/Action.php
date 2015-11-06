@@ -692,6 +692,11 @@ class Action extends \yii\rest\Action
         if (isset($params['query']) && !isset($params['ids'])) {
             $this->query->setActiveQueries($params['query']);
         }
+
+        if (isset($params['search']['search-term']) && is_string($params['search']['search-term'])) {
+            $this->query->quickSearchPhrase = $params['search']['search-term'];
+        }
+
         if (isset($params['search']) && is_string($params['search'])) {
             $this->query->quickSearchPhrase = $params['search'];
         }
