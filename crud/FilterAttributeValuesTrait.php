@@ -95,10 +95,8 @@ trait FilterAttributeValuesTrait
     {
         $scenario = $this->getScenario();
         $scenarios = $this->filteringScenarios();
-        if (!isset($scenarios[$scenario])) {
-            return [];
-        }
-        $attributes = $scenarios[$scenario];
+
+        $attributes = isset($scenarios[$scenario]) ? $scenarios[$scenario] : $scenarios[ActiveRecord::SCENARIO_DEFAULT];
         foreach ($attributes as $i => $attribute) {
             if ($attribute[0] === '!') {
                 $attributes[$i] = substr($attribute, 1);

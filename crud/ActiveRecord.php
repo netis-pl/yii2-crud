@@ -294,7 +294,15 @@ class ActiveRecord extends \yii\db\ActiveRecord
             return false;
         }
 
-        $this->filterAttributes();
+        $scope = $formName === null ? $this->formName() : $formName;
+        $attributes = [];
+        if ($scope === '' && !empty($data)) {
+            $attributes = array_keys($data);
+        } elseif (isset($data[$scope])) {
+            $attributes = array_keys($data[$scope]);
+        }
+        //filter only those attributes that was set
+        $this->filterAttributes($attributes);
         return true;
     }
 
