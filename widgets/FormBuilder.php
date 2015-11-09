@@ -665,16 +665,17 @@ JavaScript;
             case 'date':
                 $value = Html::getAttributeValue($model, $attribute);
                 if (!$model->hasErrors($attribute) && $value !== null) {
-                    $value = $formatter->asDate($value);
+                    $value = $formatter->format($value, $format);
                 }
                 $field->parts['{input}'] = [
-                    'class' => 'omnilight\widgets\DatePicker',
+                    'class' => $format === 'datetime' ? 'kartik\datetime\DateTimePicker' : 'omnilight\widgets\DatePicker',
                     'model' => $model,
                     'attribute' => $attributeName,
                     'options'   => [
                         'class' => 'form-control',
                         'value' => $value,
                     ],
+                    'convertFormat' => true,
                 ];
                 break;
             case 'enum':
