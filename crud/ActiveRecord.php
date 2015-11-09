@@ -164,9 +164,9 @@ class ActiveRecord extends \yii\db\ActiveRecord
             'attribute' => $this->getRelationLabel($relation, $attribute),
         ];
         $message = $relation->multiple
-            ? \Yii::t('app', '{attribute} have invalid items.', $placeholders)
-            : \Yii::t('app', '{attribute} is invalid.', $placeholders);
-        $this->addError($attribute, $message . ' '. \Yii::t('app', 'Errors: ') . $errors);
+            ? \Yii::t('app', '{attribute} have invalid items:', $placeholders)
+            : \Yii::t('app', '{attribute} is invalid:', $placeholders);
+        $this->addError($attribute, $message . $errors);
     }
 
     /**
