@@ -64,6 +64,7 @@ $icon = Html::tag('i', '', ['class' => 'fa fa-'. $stateChange['state']->icon]);
 echo Html::hiddenInput('target-state', $targetState, ['id' => 'target-state']);
 echo $this->render('_form', [
     'model' => $model,
+    'targetState' => $targetState,
     'fields' => $fields,
     'relations' => $relations,
     'formOptions' => [
