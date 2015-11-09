@@ -21,7 +21,8 @@ if ($controller instanceof \yii\base\Controller) {
 }
 
 // skip the whole view if pjax requested specific part
-if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null
+$request = Yii::$app->request;
+if ($request instanceof \yii\web\Request && ($relationName = $request->getQueryParam('_pjax')) !== null
     && ($relationName = substr($relationName, 1)) !== ''
     && isset($relations[$relationName])
 ) {

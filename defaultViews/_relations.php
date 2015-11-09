@@ -11,7 +11,8 @@ use yii\helpers\Html;
 
 $controller = $this->context;
 
-$pjax = Yii::$app->request->getQueryParam('_pjax');
+$request = Yii::$app->request;
+$pjax = $request instanceof \yii\web\Request ? $request->getQueryParam('_pjax') : null;
 $activeRelation = false;
 foreach ($relations as $relationName => $data) {
     if ($pjax === null || $pjax === "#{$relationName}Pjax") {
