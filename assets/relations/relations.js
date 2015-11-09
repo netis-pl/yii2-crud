@@ -59,7 +59,8 @@
             container = _settings.modalId + ' .modal-body',
             options = {
                 'push': false,
-                'replace': false
+                'replace': false,
+                'scrollTo': false
             },
             target, title, relation, url;
         if (clicked.is('a')) {
