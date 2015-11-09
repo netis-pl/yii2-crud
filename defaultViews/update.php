@@ -35,8 +35,10 @@ $this->title = $model->getCrudLabel($model->isNewRecord ? 'create' : 'update');
 if (!$model->isNewRecord) {
     $this->title .= ': ' . $model->__toString();
 }
-$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
-$this->params['menu']        = $controller->getMenu($controller->action, $model);
+if ($controller instanceof \yii\base\Controller) {
+    $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
+    $this->params['menu']        = $controller->getMenu($controller->action, $model);
+}
 ?>
 
 <?php if (!isset($showTitle) || $showTitle): ?>

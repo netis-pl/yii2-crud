@@ -21,18 +21,20 @@ $id = \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true));
 
 $this->title = ($targetState === null ? Yii::t('netis/fsm/app', 'State change') : $stateChange['state']->label);
 $this->title .= ': ' . $model->__toString();
-$this->params['breadcrumbs'] = [
-    [
-        'label' => $model->getCrudLabel('index'),
-        'url' => ['index'],
-    ],
-    [
-        'label' => $model->__toString(),
-        'url' => ['view', 'id' => $id],
-    ],
-    $targetState === null ? Yii::t('netis/fsm/app', 'State change') : $stateChange['state']->label,
-];
-$this->params['menu'] = $controller->getMenu($controller->action, $model);
+if ($controller instanceof \yii\base\Controller) {
+    $this->params['breadcrumbs'] = [
+        [
+            'label' => $model->getCrudLabel('index'),
+            'url'   => ['index'],
+        ],
+        [
+            'label' => $model->__toString(),
+            'url'   => ['view', 'id' => $id],
+        ],
+        $targetState === null ? Yii::t('netis/fsm/app', 'State change') : $stateChange['state']->label,
+    ];
+    $this->params['menu'] = $controller->getMenu($controller->action, $model);
+}
 
 $format = $model->getAttributeFormat($model->getStateAttributeName());
 

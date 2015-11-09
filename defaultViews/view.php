@@ -15,8 +15,10 @@ use yii\widgets\DetailView;
 
 $controller = $this->context;
 $this->title = $model->getCrudLabel('read').': '.$model->__toString();
-$this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
-$this->params['menu'] = $controller->getMenu($controller->action, $model);
+if ($controller instanceof \yii\base\Controller) {
+    $this->params['breadcrumbs'] = $controller->getBreadcrumbs($controller->action, $model);
+    $this->params['menu']        = $controller->getMenu($controller->action, $model);
+}
 
 // skip the whole view if pjax requested specific part
 if (($relationName = Yii::$app->request->getQueryParam('_pjax')) !== null

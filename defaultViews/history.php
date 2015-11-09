@@ -18,18 +18,20 @@ $controller = $this->context;
 
 if ($model instanceof \netis\utils\crud\ActiveRecord) {
     $this->title                 = $model->getCrudLabel('relation');
-    $this->params['breadcrumbs'] = [
-        [
-            'label' => $model->getCrudLabel('index'),
-            'url' => ['index'],
-        ],
-        [
-            'label' => $model->__toString(),
-            'url' => ['view', 'id' => $model->id],
-        ],
-        Yii::t('app', 'History'),
-    ];
-    $this->params['menu'] = $controller->getMenu($controller->action, $model);
+    if ($controller instanceof \yii\base\Controller) {
+        $this->params['breadcrumbs'] = [
+            [
+                'label' => $model->getCrudLabel('index'),
+                'url'   => ['index'],
+            ],
+            [
+                'label' => $model->__toString(),
+                'url'   => ['view', 'id' => $model->id],
+            ],
+            Yii::t('app', 'History'),
+        ];
+        $this->params['menu'] = $controller->getMenu($controller->action, $model);
+    }
 } else {
     $this->title = Yii::t('app', 'History');
 }
