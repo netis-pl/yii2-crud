@@ -24,7 +24,8 @@
     "netis/yii2-relauth": "1.0.*",
     "cogpowered/FineDiff": "0.3.*",
     "mpdf/mpdf": "6.0.*",
-    "phpoffice/phpexcel": "1.8.*"
+    "phpoffice/phpexcel": "1.8.*",
+    "kartik-v/yii2-widget-datetimepicker": "1.4.*"
   },
   "autoload": {
     "psr-4": { "netis\\utils\\": "" }
