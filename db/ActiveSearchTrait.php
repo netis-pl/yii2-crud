@@ -113,11 +113,10 @@ trait ActiveSearchTrait
 
     /**
      * @inheritdoc
-     * HasOne relations are never safe, even if they have validation rules.
+     * Restores marking relation attributes as safe when they've got validation rules.
      */
     public function safeAttributes()
     {
-        list($hasOneRelations, $hasManyRelations) = $this->getRelationTypes();
         // copied from yii\base\Model because parent::safeAttributes() already filters all relations
         $scenario = $this->getScenario();
         $scenarios = $this->scenarios();
@@ -132,6 +131,6 @@ trait ActiveSearchTrait
         }
         // end of copy
 
-        return array_diff($attributes, $hasOneRelations);
+        return $attributes;
     }
 }

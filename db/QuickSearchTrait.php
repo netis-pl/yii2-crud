@@ -144,7 +144,7 @@ trait QuickSearchTrait
         $modelClass = array_pop($parts);
         $namespace = implode('\\', $parts);
         $searchModelClass = $namespace . '\\search\\' . $modelClass;
-        $relationSearchModel = new $searchModelClass;
+        $relationSearchModel = class_exists($searchModelClass) ? new $searchModelClass : new $activeRelation->modelClass;
 
         return [
             'model'      => $relationModel,
