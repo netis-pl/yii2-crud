@@ -114,6 +114,9 @@ trait QuickSearchTrait
             $conditions = ['and'];
             /** @var ActiveSearchInterface $searchModel */
             $searchModel = $relation['searchModel'];
+            if (!$searchModel instanceof ActiveSearchInterface) {
+                continue;
+            }
             foreach ($tokens as $token) {
                 $condition = $searchModel->processSearchToken($token, $relation['attributes'], $relationName);
                 if ($condition !== null) {
