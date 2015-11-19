@@ -25,6 +25,11 @@ $regexp = '/(?#! splitCamelCase Rev:20140412)
       (?=[A-Z][a-z])  # and before upper-then-lower case.
     /x';
 $classLabel = implode(' ', preg_split($regexp, $className));
+$versionAttribute = null;
+if (isset($behaviors['versioned'])) {
+    $versionAttribute = $behaviors['versioned'];
+    unset($behaviors['versioned']);
+}
 
 echo "<?php\n";
 ?>
@@ -129,6 +134,16 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
 <?php endforeach; ?>
         ]);
     }
+<?php if ($versionAttribute !== null): ?>
+
+    /**
+     * @inheritdoc
+     */
+    public function optimisticLock()
+    {
+        return '<?= $versionAttribute ?>';
+    }
+<?php endif; ?>
 
     /**
      * @inheritdoc

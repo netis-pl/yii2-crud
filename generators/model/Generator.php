@@ -360,7 +360,7 @@ DESC;
             if ($isRequired) {
                 $rules['updateRequired']['attributes'][] = $column->name;
             }
-        } elseif (is_string($behavesAs) && in_array($behavesAs, ['blameable', 'timestamp', 'toggable'])) {
+        } elseif (is_string($behavesAs) && in_array($behavesAs, ['blameable', 'timestamp', 'toggable', 'versioned'])) {
             return $rules;
         } else {
             $rules['trim']['attributes'][] = $column->name;
@@ -600,18 +600,26 @@ DESC;
             // assume special attributes will ALWAYS be filled automatically and are never required by user
             $columnBehaviors[$column->name] = false;
             if ($isSearchScenario) {
-                $columnBehaviors[$column->name] = true;
+                if (isset($behaviors['versioned']) && $behaviors['versioned'] === $column->name) {
+                    $columnBehaviors[$column->name] = 'versioned';
+                } else {
+                    $columnBehaviors[$column->name] = true;
+                }
             } else {
                 foreach ($behaviors as $behaviorName => $behavior) {
+                    if (!isset($behavior['options'])) {
+                        continue;
+                    }
                     foreach ($behavior['options'] as $option) {
-                        if ($option === $column->name) {
-                            if ($option === 'updateNotesAttribute') {
-                                $columnBehaviors[$column->name] = 'blameableNote';
-                            } else {
-                                $columnBehaviors[$column->name] = $behaviorName;
-                            }
-                            break 2;
+                        if ($option !== $column->name) {
+                            continue;
                         }
+                        if ($option === 'updateNotesAttribute') {
+                            $columnBehaviors[$column->name] = 'blameableNote';
+                        } else {
+                            $columnBehaviors[$column->name] = $behaviorName;
+                        }
+                        break 2;
                     }
                 }
             }
@@ -775,6 +783,12 @@ DESC;
                 'class' => 'netis\utils\db\SortableBehavior',
                 'optionName' => 'attribute',
             ],
+            [
+                'name' => 'versioned',
+                'attributes' => ['version'],
+                // invalid behavior: doesn't have a class or optionName,
+                // has to be turned into a method in the model template
+            ],
         ];
         $behaviors = [
             'labels' => [
@@ -787,8 +801,12 @@ DESC;
         foreach ($table->columns as $column) {
             foreach ($available as $options) {
                 if (in_array($column->name, $options['attributes'])) {
-                    $behaviors[$options['name']]['class'] = $options['class'];
-                    $behaviors[$options['name']]['options'][$options['optionName']] = $column->name;
+                    if (isset($options['class'])) {
+                        $behaviors[$options['name']]['class']                           = $options['class'];
+                        $behaviors[$options['name']]['options'][$options['optionName']] = $column->name;
+                    } else {
+                        $behaviors[$options['name']] = $column->name;
+                    }
                     break;
                 }
             }
