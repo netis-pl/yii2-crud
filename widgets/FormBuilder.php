@@ -766,6 +766,9 @@ JavaScript;
         list($behaviorAttributes, $blameableAttributes) = Action::getModelBehaviorAttributes($model);
         $attributes = $model->safeAttributes();
         $relations = $model->relations();
+        if (($versionAttribute = $model->optimisticLock()) !== null) {
+            $hiddenAttributes[$versionAttribute] = true;
+        }
 
         $formFields = [];
         foreach ($fields as $key => $field) {
