@@ -617,6 +617,7 @@ class Action extends \yii\rest\Action
 
         /** @var ActiveRecord $model */
         list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
+        $versionAttribute = $model->optimisticLock();
         $formats = $model->attributeFormats();
         $keys    = self::getModelKeys($model);
 
@@ -634,7 +635,7 @@ class Action extends \yii\rest\Action
             $format = isset($formats[$field]) ? $formats[$field] : $model->getAttributeFormat($field);
 
             if ($format !== null) {
-                if (in_array($field, $keys) || in_array($field, $behaviorAttributes)) {
+                if (in_array($field, $keys) || in_array($field, $behaviorAttributes) || $field === $versionAttribute) {
                     continue;
                 }
                 $columns[] = static::getAttributeColumn($model, $field, $format);

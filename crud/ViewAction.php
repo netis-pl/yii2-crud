@@ -53,6 +53,7 @@ class ViewAction extends Action
         $keys    = self::getModelKeys($model);
         list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
         $attributes = $model->attributes();
+        $versionAttribute = $model->optimisticLock();
         $result = [];
         foreach ($fields as $key => $field) {
             if (is_array($field)) {
@@ -64,7 +65,7 @@ class ViewAction extends Action
             }
 
             if (in_array($field, $attributes)) {
-                if (in_array($field, $keys) || in_array($field, $blameableAttributes)) {
+                if (in_array($field, $keys) || in_array($field, $blameableAttributes) || $field === $versionAttribute) {
                     continue;
                 }
                 $result[$field] = [
