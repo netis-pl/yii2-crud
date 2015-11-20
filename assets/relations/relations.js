@@ -1,23 +1,22 @@
 (function(netis, $, undefined) {
     'use strict';
+    /** @const */
     var MODE_NEW_RECORD = 1;
+    /** @const */
     var MODE_EXISTING_RECORD = 2;
-
     var defaults = {
-        modalId: '#relationModal',
-        saveButtonId: '#relationSave',
-        i18n: {
-            loadingText: 'Loading, please wait.'
+            modalId: '#relationModal',
+            saveButtonId: '#relationSave',
+            i18n: {
+                loadingText: 'Loading, please wait.'
+            },
+            compositeKeySeparator: '-',
+            keysSeparator: ','
         },
-        compositeKeySeparator: '-',
-        keysSeparator: ','
-    };
-
-    var _settings;
-
-    var _mode = undefined;
-    var _selectionFields = undefined;
-    var _container = undefined;
+        _settings,
+        _mode,
+        _selectionFields,
+        _container;
 
     netis.init = function(settings) {
         _settings = $.extend({}, defaults, settings);
@@ -45,7 +44,7 @@
         });
     };
 
-    netis.hideModal = function(event) {
+    netis.hideModal = function() {
         _mode = undefined;
         _selectionFields = undefined;
         _container = undefined;

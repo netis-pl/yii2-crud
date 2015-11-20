@@ -175,10 +175,9 @@ class UpdateAction extends Action
         $response = Yii::$app->getResponse();
         $response->setStatusCode(201);
 
-        $response->getHeaders()->set('Location',
-            isset($_POST[self::NEW_RELATED_BUTTON_NAME]) ?
-                Url::current(['id' => $id, self::ADD_RELATED_NAME => $_POST[self::NEW_RELATED_BUTTON_NAME]], true) :
-                Url::toRoute([$this->viewAction, 'id' => $id], true));
+        $response->getHeaders()->set('Location', isset($_POST[self::NEW_RELATED_BUTTON_NAME])
+            ? Url::current(['id' => $id, self::ADD_RELATED_NAME => $_POST[self::NEW_RELATED_BUTTON_NAME]], true)
+            : Url::toRoute([$this->viewAction, 'id' => $id], true));
 
         $response->getHeaders()->set('X-Primary-Key', $id);
     }
@@ -271,16 +270,15 @@ class UpdateAction extends Action
                 'class'         => 'btn btn-default',
                 'id'            => 'createRelation-' . $relationName,
             ]);
-
         } else {
-
-            $result[] = Html::button('<span class="glyphicon glyphicon-file"></span>',
-                [
-                    'name'  => self::NEW_RELATED_BUTTON_NAME,
-                    'type'  => 'submit',
-                    'class' => 'btn btn-default',
-                    'value' => $relationName,
-                ]);
+            // a normal submit button that tries to save the record
+            // and open the usual modal immediately after reloading the page
+            $result[] = Html::button('<span class="glyphicon glyphicon-file"></span>', [
+                'name'  => self::NEW_RELATED_BUTTON_NAME,
+                'type'  => 'submit',
+                'class' => 'btn btn-default',
+                'value' => $relationName,
+            ]);
         }
 
         if ($searchRoute !== null) {

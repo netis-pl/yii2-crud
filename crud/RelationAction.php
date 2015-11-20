@@ -42,21 +42,22 @@ class RelationAction extends IndexAction
                             ? json_encode($key, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
                             : $key,
                     ];
-                    if (!empty($relationName) && $model->$relationName !== null && trim($id) !== '') {
-                        $relation = $model->getRelation($relationName);
-                        if ($relation->multiple) {
-                            /** @var \yii\db\ActiveRecord $relationClass */
-                            $relationClass = $relation->modelClass;
-                            if (Action::importKey($relationClass::primaryKey(), $id)
-                                === $model->getAttributes(array_keys($relation->link))
-                            ) {
-                                $options['checked']  = true;
-                                $options['disabled'] = true;
-                            }
-                        } elseif (Action::exportKey($relation->one()->getPrimaryKey()) === $id) {
+                    if (empty($relationName) || $model->$relationName === null || trim($id) === '') {
+                        return $options;
+                    }
+                    $relation = $model->getRelation($relationName);
+                    if ($relation->multiple) {
+                        /** @var \yii\db\ActiveRecord $relationClass */
+                        $relationClass = $relation->modelClass;
+                        if (Action::importKey($relationClass::primaryKey(), $id)
+                            === $model->getAttributes(array_keys($relation->link))
+                        ) {
                             $options['checked']  = true;
                             $options['disabled'] = true;
                         }
+                    } elseif (Action::exportKey($relation->one()->getPrimaryKey()) === $id) {
+                        $options['checked']  = true;
+                        $options['disabled'] = true;
                     }
                     return $options;
                 },
