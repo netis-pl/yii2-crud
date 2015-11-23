@@ -4,7 +4,7 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\utils\crud\stream;
 
 /**
  * A stream wrapper allowing to gradually render a response while reading it with stream functions like fread().

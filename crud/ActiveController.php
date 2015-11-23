@@ -355,19 +355,19 @@ class ActiveController extends \yii\rest\ActiveController
     {
         parent::afterAction($action, $result);
         $format = Yii::$app->response->format;
-        /** @var RendererStream $rendererClass */
+        /** @var stream\RendererStream $rendererClass */
         switch ($format) {
             case Response::FORMAT_CSV:
-                $rendererClass = 'netis\\utils\\crud\\CsvRendererStream';
+                $rendererClass = 'netis\\utils\\crud\\stream\\CsvRendererStream';
                 break;
             case Response::FORMAT_JSON:
-                $rendererClass = 'netis\\utils\\crud\\JsonRendererStream';
+                $rendererClass = 'netis\\utils\\crud\\stream\\JsonRendererStream';
                 break;
             case Response::FORMAT_XML:
-                $rendererClass = 'netis\\utils\\crud\\XmlRendererStream';
+                $rendererClass = 'netis\\utils\\crud\\stream\\XmlRendererStream';
                 break;
             case Response::FORMAT_XLS:
-                $rendererClass = 'netis\\utils\\crud\\XlsRendererStream';
+                $rendererClass = 'netis\\utils\\crud\\stream\\XlsRendererStream';
                 break;
             default:
                 throw new \HttpInvalidParamException('Unsupported format requested: '.$format);

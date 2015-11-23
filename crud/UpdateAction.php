@@ -14,7 +14,6 @@ use yii\helpers\Url;
 use yii\web\Request;
 use yii\web\Response;
 use yii\web\ServerErrorHttpException;
-use yii\widgets\ActiveForm;
 
 /**
  * Combines the \yii\rest\UpdateAction and \yii\rest\CreateAction.
@@ -22,6 +21,9 @@ use yii\widgets\ActiveForm;
  */
 class UpdateAction extends Action
 {
+    const CREATE_RELATED_BUTTON = 'create';
+    const SEARCH_RELATED_BUTTON = 'search';
+
     /**
      * @var string the scenario to be assigned to a new model before it is validated and updated.
      */
@@ -257,7 +259,7 @@ class UpdateAction extends Action
 
         $result = [];
         if ($createRoute !== null) {
-            $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
+            $result[self::CREATE_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
                 'title'         => Yii::t('app', 'Create new'),
                 'aria-label'    => Yii::t('app', 'Create new'),
                 'data-pjax'     => '0',
@@ -273,7 +275,7 @@ class UpdateAction extends Action
         } else {
             // a normal submit button that tries to save the record
             // and open the usual modal immediately after reloading the page
-            $result[] = Html::button('<span class="glyphicon glyphicon-file"></span>', [
+            $result[self::CREATE_RELATED_BUTTON] = Html::button('<span class="glyphicon glyphicon-file"></span>', [
                 'name'  => self::NEW_RELATED_BUTTON_NAME,
                 'type'  => 'submit',
                 'class' => 'btn btn-default',
@@ -282,7 +284,7 @@ class UpdateAction extends Action
         }
 
         if ($searchRoute !== null) {
-            $result[] = \yii\helpers\Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+            $result[self::SEARCH_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
                 'title'         => Yii::t('app', 'Add existing'),
                 'aria-label'    => Yii::t('app', 'Add existing'),
                 'data-pjax'     => '0',
@@ -379,7 +381,7 @@ class UpdateAction extends Action
                 'data-pjax-url' => $url,
                 'class'         => 'btn btn-default btn-xs',
             ], $actionColumn->buttonOptions);
-            return \yii\helpers\Html::a('<span class="glyphicon glyphicon-pencil"></span>', $url, $options);
+            return Html::a('<span class="glyphicon glyphicon-pencil"></span>', $url, $options);
         };
 
         /** @var \yii\db\ActiveQuery $relation */
@@ -402,7 +404,7 @@ class UpdateAction extends Action
                 'data-pjax'  => '0',
                 'class'      => 'remove btn btn-default btn-xs',
             ], $actionColumn->buttonOptions);
-            return \yii\helpers\Html::a('<span class="glyphicon glyphicon-remove"></span>', $url, $options);
+            return Html::a('<span class="glyphicon glyphicon-remove"></span>', $url, $options);
         };
         return $columns;
     }
