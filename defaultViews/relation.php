@@ -29,5 +29,8 @@ HTML;
     'filterSelector' => '#relationGrid-quickSearch',
     'columns'        => $columns,
     'layout'         => $layout,
+    'options' => [
+        'style'=> 'overflow: auto;', // so it'll stay fitted inside a modal
+    ],
 ]); ?>
 <?php Pjax::end(); ?>
