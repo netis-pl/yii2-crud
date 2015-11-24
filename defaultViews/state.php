@@ -82,7 +82,7 @@ echo $this->render('_form', [
         Html::submitButton($icon . $stateChange['state']->label, [
             'class' => 'btn ' . $stateChange['state']->css_class,
         ]),
-        Html::a(Yii::t('netis/fsm/app', 'Back'), Url::toRoute([
+        Html::a(Yii::t('app', 'Back'), Url::toRoute([
             Yii::$app->request->getQueryParam('return', $controller->action->viewAction),
             'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true)),
         ]), [
