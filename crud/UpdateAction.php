@@ -177,9 +177,12 @@ class UpdateAction extends Action
         $response = Yii::$app->getResponse();
         $response->setStatusCode(201);
 
-        $response->getHeaders()->set('Location', isset($_POST[self::NEW_RELATED_BUTTON_NAME])
-            ? Url::current(['id' => $id, self::ADD_RELATED_NAME => $_POST[self::NEW_RELATED_BUTTON_NAME]], true)
-            : Url::toRoute([$this->viewAction, 'id' => $id], true));
+        if (!Yii::$app->request->isAjax) {
+            // when such header is set, ActiveController will change the response code set above to a redirect
+            $response->getHeaders()->set('Location', isset($_POST[self::NEW_RELATED_BUTTON_NAME])
+                ? Url::current(['id' => $id, self::ADD_RELATED_NAME => $_POST[self::NEW_RELATED_BUTTON_NAME]], true)
+                : Url::toRoute([$this->viewAction, 'id' => $id], true));
+        }
 
         $response->getHeaders()->set('X-Primary-Key', $id);
     }
