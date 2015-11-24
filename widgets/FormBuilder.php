@@ -264,6 +264,11 @@ JavaScript;
         $searchKey = 'search_item';
         $script = <<<JavaScript
 function (data, page) {
+    if (page !== 1) {
+        //append search and create items on first page only
+        return s2helper.results(data, page);
+    }
+
     var keys = $jsPrimaryKey, values = {};
     if ('$searchUrl') {
         for (var i = 0; i < keys.length; i++) {
