@@ -9,7 +9,6 @@ use yii\widgets\Pjax;
 /* @var $relations array */
 /* @var $relationName string */
 /* @var $relation array */
-/* @var $controller netis\utils\crud\ActiveController */
 
 $relation = $relations[$relationName];
 $pjax = null;
