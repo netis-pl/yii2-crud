@@ -30,6 +30,7 @@ HTML;
     'columns'        => $columns,
     'layout'         => $layout,
     'options' => [
+        'class' => 'grid-view',
         'style'=> 'overflow: auto;', // so it'll stay fitted inside a modal
     ],
 ]); ?>
