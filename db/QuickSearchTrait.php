@@ -106,9 +106,11 @@ trait QuickSearchTrait
              * - for HAS_MANY and HAS_ONE check pk against subquery
              * - for MANY_MANY join only to pivot table and check its fk agains subquery
              */
-            $query->joinWith([$relationName => function ($query) {
+            $query->joinWith([$relationName => function ($query) use ($relationName) {
                 /** @var \yii\db\ActiveQuery $query */
-                return $query->select(false);
+                /** @var \yii\db\ActiveRecord $class */
+                $class = $query->modelClass;
+                return $query->select(false)->from([$relationName => $class::tableName()]);
             }]);
             $query->distinct = true;
             $conditions = ['and'];
