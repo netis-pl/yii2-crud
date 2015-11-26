@@ -350,8 +350,10 @@ JavaScript;
         //clone model so we could set value for attribute so we would have initialized value for static select2
         $model = clone $model;
         $attribute = $isMany ? $relation : $foreignKey;
-        $model->$attribute = count($items) > 1 ? self::getRelationValue($model, $relation, $activeRelation) : key($items);
-
+        if (!$isMany) {
+            $model->$attribute = count($items) <= 1 ? key($items)
+                : self::getRelationValue($model, $relation, $activeRelation);
+        }
         $dbColumn = $model->getTableSchema()->getColumn($foreignKey);
         $allowClear = $multiple || $isMany ? true : !$model->isAttributeRequired($foreignKey)
             && ($dbColumn === null || $dbColumn->allowNull);
