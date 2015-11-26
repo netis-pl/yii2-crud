@@ -33,7 +33,7 @@ $visible = array_filter($model->getAttributes()) !== [];
     ]); ?>
 
     <fieldset>
-        <?= isset($formBody) ? $formBody : FormBuilder::renderRow($this, $model, $form, $fields, 10); ?>
+        <?= isset($formBody) ? $formBody : FormBuilder::renderRow($form, $fields, 10); ?>
     </fieldset>
 
     <div class="form-group">

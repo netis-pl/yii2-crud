@@ -60,7 +60,7 @@ FormBuilder::registerSelect($this);
 
     <?php if (!empty($fields)): ?>
         <fieldset class="well">
-            <?= isset($formBody) ? $formBody : FormBuilder::renderRow($this, $model, $form, $fields, $defaultWidth); ?>
+            <?= isset($formBody) ? $formBody : FormBuilder::renderRow($form, $fields, $defaultWidth); ?>
         </fieldset>
     <?php endif; ?>
 

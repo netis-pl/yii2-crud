@@ -831,14 +831,12 @@ JavaScript;
     }
 
     /**
-     * @param \yii\web\View $view
-     * @param \yii\db\ActiveRecord $model
      * @param \yii\widgets\ActiveForm $form
      * @param array $fields
      * @param int $topColumnWidth
      * @return string
      */
-    public static function renderRow($view, $model, $form, $fields, $topColumnWidth = 12)
+    public static function renderRow($form, $fields, $topColumnWidth = 12)
     {
         if (empty($fields)) {
             return '';
@@ -856,7 +854,7 @@ JavaScript;
                     if (!is_array($row)) {
                         $result[] = static::renderField($form, $row);
                     } else {
-                        $result[] = static::renderRow($view, $model, $form, $row);
+                        $result[] = static::renderRow($form, $row);
                     }
                 }
             }
