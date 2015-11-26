@@ -6,6 +6,7 @@
 
 namespace netis\utils\crud;
 
+use maddoger\widgets\Select2;
 use netis\utils\db\ActiveQuery;
 use netis\utils\db\ActiveSearchInterface;
 use netis\utils\db\LabelsBehavior;
@@ -101,7 +102,9 @@ class IndexAction extends Action
             $filter = $searchField->parts['{input}'];
             if (is_array($filter)) {
                 $class = $filter['class'];
-                $filter['clientOptions']['width'] = '15em';
+                if ($class === Select2::className()) {
+                    $filter['clientOptions']['width'] = '15em';
+                }
                 $columns[$key]['filter'] = $class::widget($filter);
             } else {
                 $columns[$key]['filter'] = $filter;
