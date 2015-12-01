@@ -307,7 +307,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     }
 
     /**
-     * Adds _label field to serialized array if netis\utils\db\LabelsBehavior is configured
+     * Adds _label field to serialized array if model has a __toString() method.
      *
      * @inheritdoc
      */
@@ -315,15 +315,9 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         $data = parent::toArray($fields, $expand, $recursive);
 
-        /** @var \netis\utils\db\LabelsBehavior $labelsBehavior */
-        if (($labelsBehavior = $this->getBehavior('labels')) === null) {
-            return $data;
+        if (method_exists($this, '__toString')) {
+            $data['_label'] = $this->__toString();
         }
-
-        $attributes = $this->getAttributes($labelsBehavior->attributes);
-
-        $data['_label'] = implode($labelsBehavior->separator, $attributes);
-
         return $data;
     }
 
