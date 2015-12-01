@@ -228,7 +228,7 @@ class IndexAction extends Action
                 'icon' => 'glyphicon glyphicon-file',
                 'label' => 'XLS',
                 'url' => Url::current([
-                    $negotiator->formatParam                 => Response::FORMAT_XLS,
+                    $negotiator->formatParam => Response::FORMAT_XLS,
                     $dataProvider->pagination->pageSizeParam => -1,
                 ]),
                 'options' => ['class' => 'btn btn-default', 'data-pjax' => 0],
@@ -237,7 +237,7 @@ class IndexAction extends Action
                 'icon' => 'glyphicon glyphicon-file',
                 'label' => 'CSV',
                 'url' => Url::current([
-                    $negotiator->formatParam                 => Response::FORMAT_CSV,
+                    $negotiator->formatParam => Response::FORMAT_CSV,
                     $dataProvider->pagination->pageSizeParam => -1,
                 ]),
                 'options' => ['class' => 'btn btn-default', 'data-pjax' => 0],

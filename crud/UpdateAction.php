@@ -164,9 +164,9 @@ class UpdateAction extends Action
     protected function afterSave($model, $wasNew)
     {
         if ($wasNew) {
-            $message = Yii::t('app', 'A new has been successfully created.');
+            $message = Yii::t('app', '<strong>Success!</strong> A new record has been created.');
         } else {
-            $message = Yii::t('app', 'Record has been successfully updated.');
+            $message = Yii::t('app', '<strong>Success!</strong> Record has been updated.');
         }
 
         if (!isset($_POST[self::NEW_RELATED_BUTTON_NAME])) {

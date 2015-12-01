@@ -49,9 +49,9 @@ class ToggleAction extends Action
         $response->setStatusCode($enable ? 205 : 204);
 
         if ($enable) {
-            $message = Yii::t('app', 'Record has been successfully restored.');
+            $message = Yii::t('app', '<strong>Success!</strong> Record has been restored.');
         } else {
-            $message = Yii::t('app', 'Record has been successfully disabled.');
+            $message = Yii::t('app', '<strong>Success!</strong> Record has been disabled.');
         }
         $this->setFlash('success', $message);
 

@@ -45,7 +45,7 @@ class DeleteAction extends Action
         $response = Yii::$app->getResponse();
         $response->setStatusCode(204);
 
-        $message = Yii::t('app', 'Record has been successfully deleted.');
+        $message = Yii::t('app', '<strong>Success!</strong> Record has been deleted.');
         $this->setFlash('success', $message);
 
         $response->getHeaders()->set('Location', Url::toRoute([$this->indexAction], true));
