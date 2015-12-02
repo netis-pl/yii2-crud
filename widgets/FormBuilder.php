@@ -665,12 +665,17 @@ JavaScript;
                     $field->checkbox();
                 }
                 break;
-            case 'multiplied':
-            case 'integer':
+            case 'shortLength':
+            case 'shortWeight':
                 $value = Html::getAttributeValue($model, $attribute);
-                $field->inputOptions['value'] = $format === 'multiplied'
-                    ? ($value === null ? null : $formatter->asMultiplied($value, $formats[$attributeName][1]))
-                    : $value;
+                $field->inputOptions['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
+                break;
+            case 'multiplied':
+                $value = Html::getAttributeValue($model, $attribute);
+                $field->inputOptions['value'] = $value === null ? null : $formatter->asMultiplied($value, $formats[$attributeName][1]);
+                break;
+            case 'integer':
+                $field->inputOptions['value'] = Html::getAttributeValue($model, $attribute);
                 break;
             case 'time':
                 $field->inputOptions['value'] = Html::encode(Html::getAttributeValue($model, $attribute));
