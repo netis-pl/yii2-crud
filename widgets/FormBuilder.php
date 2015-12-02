@@ -180,6 +180,7 @@ JavaScript;
     {
         $foreignKeys = array_values($activeRelation->link);
 
+        $relation = Html::getAttributeName($relation);
         if ($activeRelation->multiple) {
             if (property_exists($model, $relation)) {
                 // special case for search models, where there is a relation property defined that holds the keys
@@ -366,10 +367,13 @@ JavaScript;
             Yii::warning("There are no items in control for $foreignKey attribute in {$model::className()}");
         }
 
+        //we get prefix from $relation because it could be in format [3]relation and we need to have [3]foreign_key here
+        $relationName = Html::getAttributeName($relation);
+        $prefixedFk = str_replace($relationName, $foreignKey, $relation);
         return [
             'class' => \maddoger\widgets\Select2::className(),
             'model' => $model,
-            'attribute' => $attribute,
+            'attribute' => $isMany ? $relation : $prefixedFk,
             'items' => $items,
             'clientOptions' => [
                 'width' => '100%',
@@ -452,7 +456,7 @@ JavaScript;
 
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
-            $label = $model->getRelationLabel($activeRelation, $relation);
+            $label = $model->getRelationLabel($activeRelation, Html::getAttributeName($relation));
         }
         $ajaxResults = new JsExpression('s2helper.results');
         $clientEvents = null;
@@ -466,10 +470,13 @@ JavaScript;
             );
         }
 
+        //we get prefix from $relation because it could be in format [3]relation and we need to have [3]foreign_key here
+        $relationName = Html::getAttributeName($relation);
+        $prefixedFk = str_replace($relation, $foreignKey, $relationName);
         return [
             'class' => 'maddoger\widgets\Select2',
             'model' => $model,
-            'attribute' => $isMany ? $relation : $foreignKey,
+            'attribute' => $isMany ? $relation : $prefixedFk,
             'clientOptions' => array_merge(
                 [
                     'formatResult' => new JsExpression('s2helper.formatResult'),
@@ -512,7 +519,7 @@ JavaScript;
     {
         $label = null;
         if ($model instanceof \netis\utils\crud\ActiveRecord) {
-            $label = $model->getRelationLabel($activeRelation, $relation);
+            $label = $model->getRelationLabel($activeRelation, Html::getAttributeName($relation));
         }
 
         $isMany = $activeRelation->multiple;
@@ -573,7 +580,7 @@ JavaScript;
      */
     protected static function addRelationField($formFields, $model, $relation, $hiddenAttributes, $safeAttributes, $multiple = false)
     {
-        $activeRelation = $model->getRelation($relation);
+        $activeRelation = $model->getRelation(Html::getAttributeName($relation));
         if (!$activeRelation->multiple) {
             // validate foreign keys only for hasOne relations
             $isHidden = false;
