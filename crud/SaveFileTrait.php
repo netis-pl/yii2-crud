@@ -24,6 +24,7 @@ trait SaveFileTrait
     public function saveFiles($fileClass, $files, $primaryValue, $foreignKey)
     {
         foreach ($files as $documentFile) {
+            /** @var \yii\db\ActiveRecord $document */
             $document = new $fileClass();
             $content  = file_get_contents($documentFile->tempName);
             $info     = strpos($documentFile->type, 'image/') !== 0 ? [null, null] : getimagesizefromstring($content);
@@ -46,7 +47,7 @@ trait SaveFileTrait
     }
 
     /**
-     * @param \yii\db\ActiveRecord $fileClass Namespace of file class
+     * @param \yii\db\ActiveRecord|string $fileClass Namespace of file class
      * @param array  $files     UploadedFile instances
      *
      * @return bool
@@ -55,6 +56,7 @@ trait SaveFileTrait
     public function deleteFiles($fileClass, $files)
     {
         foreach ($files as $id) {
+            /** @var \yii\db\ActiveRecord $document */
             $document = $fileClass::findOne(Action::importKey($fileClass::primaryKey(), $id));
             if (!Yii::$app->user->can("$fileClass.delete", ['model' => $document])) {
                 throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
