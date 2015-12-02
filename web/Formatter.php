@@ -461,6 +461,9 @@ class Formatter extends \yii\i18n\Formatter
 
     protected function isInfinity($value)
     {
+        if (!is_string($value)) {
+            return null;
+        }
         $value = strtolower($value);
         if ($value === '-infinity') {
             return $this->infinityFormat[0];
