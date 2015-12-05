@@ -4,10 +4,10 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\db;
+namespace netis\crud\db;
 
 use Yii;
-use netis\utils\crud\ActiveRecord;
+use netis\crud\crud\ActiveRecord;
 use yii\data\ActiveDataProvider;
 use yii\data\Pagination;
 use yii\data\Sort;

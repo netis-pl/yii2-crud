@@ -4,14 +4,14 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\web;
+namespace netis\crud\web;
 
-use netis\utils\crud\Action;
+use netis\crud\crud\Action;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
 use yii\base\Model;
-use \netis\utils\crud\ActiveRecord;
+use \netis\crud\db\ActiveRecord;
 use yii\helpers\FormatConverter;
 use yii\helpers\Html;
 
@@ -538,7 +538,7 @@ class Formatter extends \yii\i18n\Formatter
             return null;
         }
         if ($scale !== null) {
-            throw new InvalidParamException('netis\utils\web\Formatter::filterDecimal does not support setting scale');
+            throw new InvalidParamException('netis\crud\web\Formatter::filterDecimal does not support setting scale');
         }
         $value = $this->str2dec($value, $precision);
         $defaultMultiplier = pow(10, $precision);

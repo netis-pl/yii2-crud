@@ -1,9 +1,13 @@
 <?php
-namespace netis\utils\crud;
+/**
+ * @link http://netis.pl/
+ * @copyright Copyright (c) 2015 Netis Sp. z o. o.
+ */
+
+namespace netis\crud\crud;
 
 use yii\base\InvalidConfigException;
 use yii\data\ActiveDataProvider;
-use yii\db\ActiveRecordInterface;
 use yii\db\Query;
 
 /**
@@ -14,7 +18,7 @@ use yii\db\Query;
  *
  * @author jwas
  * @property string $authItemTemplate
- * @property \netis\utils\crud\ActiveController $controller
+ * @property \netis\crud\crud\ActiveController $controller
  */
 abstract class BaseBulkAction extends Action implements BulkActionInterface
 {

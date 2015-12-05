@@ -1,6 +1,10 @@
 <?php
+/**
+ * @link http://netis.pl/
+ * @copyright Copyright (c) 2015 Netis Sp. z o. o.
+ */
 
-namespace netis\utils\db;
+namespace netis\crud\db;
 
 use yii\data\ActiveDataProvider;
 use yii\data\Pagination;

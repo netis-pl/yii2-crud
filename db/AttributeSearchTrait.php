@@ -4,10 +4,10 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\db;
+namespace netis\crud\db;
 
-use netis\utils\web\EnumCollection;
-use netis\utils\web\Formatter;
+use netis\crud\web\EnumCollection;
+use netis\crud\web\Formatter;
 use Yii;
 use yii\db\Connection;
 use yii\db\Query;

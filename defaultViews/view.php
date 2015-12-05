@@ -4,11 +4,11 @@ use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /**
- * @var $this \netis\utils\web\View
- * @var $model yii\db\ActiveRecord
+ * @var $this netis\crud\web\View
+ * @var $model netis\crud\db\ActiveRecord
  * @var $attributes array
  * @var $relations array
- * @var $controller netis\utils\crud\ActiveController
+ * @var $controller netis\crud\crud\ActiveController
  * @var $detailsBody string if set, allows to override only the details part
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
@@ -40,7 +40,7 @@ if ($request instanceof \yii\web\Request && ($relationName = $request->getQueryP
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
 
-<?= netis\utils\web\Alerts::widget() ?>
+<?= netis\crud\web\Alerts::widget() ?>
 
 <?= isset($detailsBody) ? $detailsBody : DetailView::widget([
     'model' => $model,

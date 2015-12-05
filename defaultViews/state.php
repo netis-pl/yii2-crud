@@ -4,20 +4,20 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 
 /**
- * @var $this netis\utils\web\View
- * @var $model netis\utils\crud\ActiveRecord
+ * @var $this netis\crud\web\View
+ * @var $model netis\crud\db\ActiveRecord
  * @var $fields array
  * @var $relations array
  * @var array $stateChange contains state and targets keys
  * @var mixed $sourceState
  * @var mixed $targetState
  * @var array $states
- * @var $controller netis\utils\crud\ActiveController
+ * @var $controller netis\crud\crud\ActiveController
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
 
 $controller = $this->context;
-$id = \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true));
+$id = \netis\crud\crud\Action::exportKey($model->getPrimaryKey(true));
 
 $this->title = ($targetState === null ? Yii::t('netis/fsm/app', 'State change') : $stateChange['state']->label);
 $this->title .= ': ' . $model->__toString();
@@ -43,7 +43,7 @@ $format = $model->getAttributeFormat($model->getStateAttributeName());
 <?php if (!isset($showTitle) || $showTitle): ?>
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
-<?= netis\utils\web\Alerts::widget() ?>
+<?= netis\crud\web\Alerts::widget() ?>
 
 <?php if ($targetState === null && is_array($states)) : ?>
 
@@ -84,7 +84,7 @@ echo $this->render('_form', [
         ]),
         Html::a(Yii::t('app', 'Back'), Url::toRoute([
             Yii::$app->request->getQueryParam('return', $controller->action->viewAction),
-            'id' => \netis\utils\crud\Action::exportKey($model->getPrimaryKey(true)),
+            'id' => \netis\crud\crud\Action::exportKey($model->getPrimaryKey(true)),
         ]), [
             'class' => 'btn btn-default',
         ]),

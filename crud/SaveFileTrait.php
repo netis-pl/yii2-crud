@@ -5,7 +5,7 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
 use Yii;
 use yii\web\ForbiddenHttpException;
@@ -15,7 +15,7 @@ trait SaveFileTrait
     /**
      * @param string $fileClass    Namespace of file class
      * @param array  $files        UploadedFile instances
-     * @param        $primaryValue Basic model primary
+     * @param mixed  $primaryValue Basic model primary
      * @param string $foreignKey
      *
      * @return bool

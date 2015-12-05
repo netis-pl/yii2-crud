@@ -1,12 +1,12 @@
 <?php
 
-use netis\utils\crud\Action;
+use netis\crud\crud\Action;
 use yii\helpers\Html;
 
 /* @var $this yii\web\View */
-/* @var $model netis\utils\crud\ActiveRecord */
+/* @var $model netis\crud\db\ActiveRecord */
 /* @var $relations array */
-/* @var $controller netis\utils\crud\ActiveController */
+/* @var $controller netis\crud\crud\ActiveController */
 /* @var $renderKeyInputs bool */
 
 $controller = $this->context;
@@ -50,7 +50,7 @@ foreach ($relations as $relationName => $data) {
         $keys  = Action::implodeEscaped(
             Action::KEYS_SEPARATOR,
             array_map(
-                '\netis\utils\crud\Action::exportKey',
+                '\netis\crud\crud\Action::exportKey',
                 $query->select($relationModel->getTableSchema()->primaryKey)
                     ->asArray()
                     ->all()

@@ -4,9 +4,9 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\db;
+namespace netis\crud\db;
 
-use netis\utils\crud\ActiveRecord;
+use netis\crud\crud\ActiveRecord;
 use yii\base\Behavior;
 
 /**

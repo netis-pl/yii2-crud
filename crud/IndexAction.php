@@ -4,14 +4,12 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
 use maddoger\widgets\Select2;
-use netis\utils\db\ActiveQuery;
-use netis\utils\db\ActiveSearchInterface;
-use netis\utils\db\LabelsBehavior;
-use netis\utils\web\Response;
-use netis\utils\widgets\FormBuilder;
+use netis\crud\db\LabelsBehavior;
+use netis\crud\web\Response;
+use netis\crud\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;

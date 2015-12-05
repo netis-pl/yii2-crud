@@ -4,16 +4,15 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\db;
+namespace netis\crud\db;
 
-use netis\utils\crud\Action;
+use netis\crud\crud\Action;
 use Yii;
 use yii\base\Behavior;
 use yii\base\InvalidCallException;
 use yii\db\Expression;
 use yii\db\Query;
 use yii\web\ForbiddenHttpException;
-
 
 /**
  * LinkableBehavior provides methods for easy linking of current model with related records.

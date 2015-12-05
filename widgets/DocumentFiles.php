@@ -1,6 +1,10 @@
 <?php
+/**
+ * @link http://netis.pl/
+ * @copyright Copyright (c) 2015 Netis Sp. z o. o.
+ */
 
-namespace netis\utils\widgets;
+namespace netis\crud\widgets;
 
 use Yii;
 use yii\base\InvalidConfigException;

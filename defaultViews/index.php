@@ -1,19 +1,19 @@
 <?php
 
-use netis\utils\crud\IndexAction;
-use netis\utils\widgets\FormBuilder;
+use netis\crud\crud\IndexAction;
+use netis\crud\widgets\FormBuilder;
 use yii\helpers\Html;
-use netis\utils\widgets\GridView;
+use netis\crud\widgets\GridView;
 use yii\widgets\Pjax;
 
 /**
- * @var $this netis\utils\web\View
+ * @var $this netis\crud\web\View
  * @var $dataProvider yii\data\ActiveDataProvider
  * @var $columns array
  * @var $buttons array each entry is an array with keys: icon, label, url, options
  * @var $searchModel \yii\base\Model
  * @var $searchFields array
- * @var $controller netis\utils\crud\ActiveController
+ * @var $controller netis\crud\crud\ActiveController
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
  * @var $searchModes integer combination of IndexAction::SEARCH_* constants - what kind of search options are available
  */
@@ -24,7 +24,7 @@ if (!isset($gridOptions) || !is_array($gridOptions)) {
 }
 $gridId = 'indexGrid';
 
-if ($searchModel instanceof \netis\utils\crud\ActiveRecord) {
+if ($searchModel instanceof \netis\crud\crud\ActiveRecord) {
     if ($this->title === null) {
         $this->title = $searchModel->getCrudLabel('relation');
     }
@@ -87,7 +87,7 @@ if (!isset($showTitle) || $showTitle) {
     echo '<h1><span>' . Html::encode($this->title) . '</span></h1>';
 }
 
-echo netis\utils\web\Alerts::widget();
+echo netis\crud\web\Alerts::widget();
 if ($searchModes & IndexAction::SEARCH_ADVANCED_FORM) {
     echo $this->render('_search', [
         'model'  => $searchModel,

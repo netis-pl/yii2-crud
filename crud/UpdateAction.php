@@ -4,9 +4,9 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
-use netis\utils\widgets\FormBuilder;
+use netis\crud\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
 use yii\helpers\Html;

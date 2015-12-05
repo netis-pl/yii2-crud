@@ -4,10 +4,11 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
-use netis\utils\db\ActiveSearchInterface;
-use netis\utils\web\Response;
+use netis\crud\db\ActiveRecord;
+use netis\crud\db\ActiveSearchInterface;
+use netis\crud\web\Response;
 use Yii;
 use yii\base\Exception;
 use yii\base\Model;

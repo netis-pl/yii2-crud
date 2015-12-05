@@ -1,7 +1,6 @@
 <?php
 
-use netis\utils\crud\ActiveRecord;
-use netis\utils\widgets\GridView;
+use netis\crud\widgets\GridView;
 use yii\widgets\Pjax;
 
 /* @var $this yii\web\View */

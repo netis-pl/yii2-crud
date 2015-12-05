@@ -4,14 +4,14 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\web;
+namespace netis\crud\web;
 
 use yii\base\Component;
 use yii\web\ResponseFormatterInterface;
 
 /**
  * If the response contains an 'items' key, it will be exported as CSV lines.
- * @package netis\utils\web
+ * @package netis\crud\web
  */
 class CsvResponseFormatter extends Component implements ResponseFormatterInterface
 {

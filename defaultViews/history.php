@@ -9,14 +9,14 @@ use yii\widgets\Pjax;
  * @var $this yii\web\View
  * @var $model ActiveRecord
  * @var $dataProvider yii\data\ActiveDataProvider
- * @var $controller netis\utils\crud\ActiveController
+ * @var $controller netis\crud\crud\ActiveController
  * @var $searchModel nineinchnick\audit\models\ActionSearch
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
 
 $controller = $this->context;
 
-if ($model instanceof \netis\utils\crud\ActiveRecord) {
+if ($model instanceof \netis\crud\crud\ActiveRecord) {
     $this->title                 = $model->getCrudLabel('relation');
     if ($controller instanceof \yii\base\Controller) {
         $this->params['breadcrumbs'] = [
@@ -56,7 +56,7 @@ $diff = new cogpowered\FineDiff\Diff(new cogpowered\FineDiff\Granularity\Word);
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
 
-<?= netis\utils\web\Alerts::widget() ?>
+<?= netis\crud\web\Alerts::widget() ?>
 
 
 <div class="history-search">

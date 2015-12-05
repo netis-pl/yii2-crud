@@ -4,14 +4,14 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\web;
+namespace netis\crud\web;
 
 use yii\base\ArrayAccessTrait;
 use yii\base\Object;
 
 /**
  * Class EnumCollection holds enums - associative arrays used for formatting values.
- * @package netis\utils\web
+ * @package netis\crud\web
  */
 class EnumCollection extends Object implements \IteratorAggregate, \ArrayAccess, \Countable
 {

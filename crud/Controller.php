@@ -4,11 +4,11 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
-use netis\utils\db\ActiveSearchInterface;
 use Yii;
 use yii\db\ActiveRecord;
+use netis\crud\db\ActiveSearchInterface;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\NotFoundHttpException;

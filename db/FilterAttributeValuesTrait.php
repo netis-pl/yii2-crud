@@ -1,10 +1,9 @@
 <?php
 
-namespace netis\utils\crud;
+namespace netis\crud\db;
 
 use ArrayObject;
 use yii\base\InvalidConfigException;
-use yii\base\InvalidParamException;
 use yii\validators\Validator;
 
 /**

@@ -4,9 +4,9 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
-use netis\utils\db\ActiveQuery;
+use netis\crud\db\ActiveQuery;
 use Yii;
 use yii\base\Behavior;
 

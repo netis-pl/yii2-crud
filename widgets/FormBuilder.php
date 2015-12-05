@@ -4,11 +4,11 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\widgets;
+namespace netis\crud\widgets;
 
-use netis\utils\crud\Action;
-use netis\utils\db\ActiveQuery;
-use netis\utils\web\Formatter;
+use netis\crud\crud\Action;
+use netis\crud\db\ActiveQuery;
+use netis\crud\web\Formatter;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;

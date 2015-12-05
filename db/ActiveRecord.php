@@ -4,8 +4,7 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
-
+namespace netis\crud\db;
 
 use yii\base\InvalidParamException;
 use yii\db\Schema;

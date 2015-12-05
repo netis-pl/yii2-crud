@@ -4,7 +4,7 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\assets;
+namespace netis\crud\assets;
 
 use yii\web\AssetBundle;
 
@@ -13,7 +13,7 @@ use yii\web\AssetBundle;
  */
 class RelationsAsset extends AssetBundle
 {
-    public $sourcePath = '@netis/yii2-utils/assets/relations';
+    public $sourcePath = '@netis/yii2-crud/assets/relations';
     public $baseUrl = '@web';
     public $css = [
     ];

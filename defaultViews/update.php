@@ -3,11 +3,11 @@
 use yii\helpers\Html;
 
 /**
- * @var $this netis\utils\web\View
- * @var $model netis\utils\crud\ActiveRecord
+ * @var $this netis\crud\web\View
+ * @var $model netis\crud\db\ActiveRecord
  * @var $fields array
  * @var $relations array
- * @var $controller netis\utils\crud\ActiveController
+ * @var $controller netis\crud\crud\ActiveController
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
  */
 
@@ -45,7 +45,7 @@ if ($controller instanceof \yii\base\Controller) {
     <h1><span><?= Html::encode($this->title) ?></span></h1>
 <?php endif;?>
 
-<?= netis\utils\web\Alerts::widget() ?>
+<?= netis\crud\web\Alerts::widget() ?>
 
 <?= $this->render('_form', [
     'model' => $model,

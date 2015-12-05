@@ -1,16 +1,16 @@
 {
-  "name": "netis/yii2-utils",
-  "description": "Various helper classes for projects based on the Yii 2 PHP framework.",
+  "name": "netis/yii2-crud",
+  "description": "Yii2 extension that provides default CRUD for AR models.",
   "type": "yii2-extension",
-  "license": "proprietary",
-  "support": {
-    "issues": "http://gitlab.netis.pl/web-tools/yii2-utils/issues",
-    "source": "http://gitlab.netis.pl/web-tools/yii2-utils/tree/master"
-  },
+  "license": "MIT",
   "authors": [
     {
       "name": "Jan Waś",
       "email": "jwas@netis.pl"
+    },
+    {
+      "name": "Michał Motyczko",
+      "email": "mmotyczko@netis.pl"
     }
   ],
   "require": {
@@ -28,6 +28,6 @@
     "kartik-v/yii2-widget-datetimepicker": "1.4.*"
   },
   "autoload": {
-    "psr-4": { "netis\\utils\\": "" }
+    "psr-4": { "netis\\crud\\": "" }
   }
 }

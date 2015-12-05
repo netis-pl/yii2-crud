@@ -4,10 +4,11 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
 use Yii;
 use yii\base\Model;
+use netis\crud\db\ActiveRecord;
 
 /**
  * @package netis\utils\crud

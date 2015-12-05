@@ -1,6 +1,10 @@
 <?php
+/**
+ * @link http://netis.pl/
+ * @copyright Copyright (c) 2015 Netis Sp. z o. o.
+ */
 
-namespace netis\utils\crud;
+namespace netis\crud\crud;
 
 /**
  * BulkActionInterface defines an interface of actions performing bulk operations.

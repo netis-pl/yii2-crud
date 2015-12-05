@@ -4,7 +4,7 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\generators\model;
+namespace netis\crud\generators\model;
 
 use Yii;
 use yii\base\NotSupportedException;

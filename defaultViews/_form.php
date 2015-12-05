@@ -2,17 +2,17 @@
 
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
-use netis\utils\widgets\FormBuilder;
-use \netis\utils\crud\UpdateAction;
+use netis\crud\widgets\FormBuilder;
+use netis\crud\crud\UpdateAction;
 
-/* @var $this \netis\utils\web\View */
+/* @var $this \netis\crud\web\View */
 /* @var $model yii\db\ActiveRecord */
 /* @var $fields array */
 /* @var $relations array */
 /* @var $form yii\widgets\ActiveForm */
-/* @var $controller netis\utils\crud\ActiveController */
-/* @var $action netis\utils\crud\UpdateAction */
-/* @var $view \netis\utils\web\View */
+/* @var $controller netis\crud\crud\ActiveController */
+/* @var $action netis\crud\crud\UpdateAction */
+/* @var $view \netis\crud\web\View */
 /* @var $formOptions array form options, will be merged with defaults */
 /* @var $buttons array */
 /* @var $formBody string if set, allows to override only the form part */

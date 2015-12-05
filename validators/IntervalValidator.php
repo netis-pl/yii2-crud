@@ -4,7 +4,7 @@
  * @copyright Copyright (c) 2015 Netis Sp. z o. o.
  */
 
-namespace netis\utils\validators;
+namespace netis\crud\validators;
 
 use yii\validators\Validator;
 
