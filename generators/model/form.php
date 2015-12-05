@@ -1,7 +1,7 @@
 <?php
 /* @var $this yii\web\View */
 /* @var $form yii\widgets\ActiveForm */
-/* @var $generator netis\utils\generators\model\Generator */
+/* @var $generator netis\crud\generators\model\Generator */
 
 echo $form->field($generator, 'tableName');
 echo $form->field($generator, 'modelClass');

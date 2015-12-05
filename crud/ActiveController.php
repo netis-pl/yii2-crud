@@ -29,7 +29,7 @@ use yii\web\ForbiddenHttpException;
  * To stream the result, instead of serializing it and using a response formatter
  * a stream wrapper is created, which gradually renders the response.
  *
- * @package netis\utils\crud
+ * @package netis\crud\crud
  * @method array getBreadcrumbs(Action $action, ActiveRecord $model)
  * @method array getMenuCurrent(\yii\base\Action $action, ActiveRecord $model, $horizontal, array $privs, array $defaultActions, array $confirms) {@link ActiveNavigation::getMenuCurrent}
  * @method array getMenuCommon(\yii\base\Action $action, ActiveRecord $model, $horizontal, array $privs, array $defaultActions, array $confirms) {@link ActiveNavigation::getMenuCommon}
@@ -122,24 +122,24 @@ class ActiveController extends \yii\rest\ActiveController
     {
         $actions = [
             'index' => [
-                'class' => 'netis\utils\crud\IndexAction',
+                'class' => \netis\crud\crud\IndexAction::className(),
             ],
             'relation' => [
-                'class' => 'netis\utils\crud\RelationAction',
+                'class' => \netis\crud\crud\RelationAction::className(),
             ],
             'view' => [
-                'class' => 'netis\utils\crud\ViewAction',
+                'class' => \netis\crud\crud\ViewAction::className(),
             ],
             'update' => [
-                'class' => 'netis\utils\crud\UpdateAction',
+                'class' => \netis\crud\crud\UpdateAction::className(),
                 'createScenario' => $this->createScenario,
                 'updateScenario' => $this->updateScenario,
             ],
             'delete' => [
-                'class' => 'netis\utils\crud\DeleteAction',
+                'class' => \netis\crud\crud\DeleteAction::className(),
             ],
             'options' => [
-                'class' => 'yii\rest\OptionsAction',
+                'class' => \yii\rest\OptionsAction::className(),
             ],
         ];
         foreach ($this->actionsClassMap as $id => $action) {

@@ -14,7 +14,7 @@ use yii\helpers\Url;
 
 /**
  * Renders a list of models.
- * @package netis\utils\widgets
+ * @package netis\crud\widgets
  */
 class DocumentFiles extends InputWidget
 {
@@ -71,7 +71,7 @@ class DocumentFiles extends InputWidget
         /** @var \yii\db\ActiveRecord $model */
         foreach ($this->getValue() as $model) {
             $parts = [];
-            $documentId = \netis\utils\crud\Action::exportKey($model->getPrimaryKey());
+            $documentId = \netis\crud\crud\Action::exportKey($model->getPrimaryKey());
             $url = Url::toRoute([
                 $this->action,
                 'id' => $documentId,
@@ -108,7 +108,7 @@ class DocumentFiles extends InputWidget
     }
 
     /**
-     * @param \netis\utils\crud\Action::exportKey $documentId
+     * @param \netis\crud\crud\Action::exportKey $documentId
      *
      * @return string
      */

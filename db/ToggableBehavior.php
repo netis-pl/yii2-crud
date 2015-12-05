@@ -11,8 +11,8 @@ use yii\base\Behavior;
 /**
  * SortableBehavior allows to define custom order through selected attribute.
  *
- * An `enabled()` query is available in \netis\utils\db\ActiveQuery.
- * @package netis\utils\crud
+ * An `enabled()` query is available in \netis\crud\db\ActiveQuery.
+ * @package netis\crud\crud
  */
 class ToggableBehavior extends Behavior
 {

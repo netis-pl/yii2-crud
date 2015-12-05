@@ -12,7 +12,7 @@ use yii\db\ActiveRecord;
 
 /**
  * Provides queries to add default order and support the soft delete ToggableBehavior.
- * @package netis\utils\db
+ * @package netis\crud\db
  *
  * @method ActiveQuery authorized(\yii\db\ActiveRecord $model, array $relations, \yii\web\IdentityInterface $user = null)
  * @method \yii\db\Query getRelatedUserQuery($model, $relations, $user = null, $baseConditions = [], $baseParams = [], $primaryKey = null)
@@ -51,7 +51,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
      */
     public function getDefaultOrderColumns()
     {
-        /* @var $model \netis\utils\crud\ActiveRecord */
+        /* @var $model \netis\crud\db\ActiveRecord */
         $model = new $this->modelClass;
         $columns = $model->getTableSchema()->columns;
         try {
@@ -227,7 +227,7 @@ class ActiveQuery extends \yii\db\ActiveQuery
      */
     public function enabled()
     {
-        /* @var $model \netis\utils\crud\ActiveRecord */
+        /* @var $model \netis\crud\db\ActiveRecord */
         $model = new $this->modelClass;
         /** @var ToggableBehavior $toggle */
         if (($toggle = $model->getBehavior('toggable')) === null) {

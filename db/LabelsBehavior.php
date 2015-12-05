@@ -11,7 +11,7 @@ use yii\base\Behavior;
 
 /**
  * LabelsBehavior allows to configure how a model is cast to string and its other labels.
- * @package netis\utils\db
+ * @package netis\crud\db
  */
 class LabelsBehavior extends Behavior
 {

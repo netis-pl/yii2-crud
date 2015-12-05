@@ -16,7 +16,7 @@ use yii\web\ForbiddenHttpException;
 
 /**
  * LinkableBehavior provides methods for easy linking of current model with related records.
- * @package netis\utils\db
+ * @package netis\crud\db
  */
 class LinkableBehavior extends Behavior
 {

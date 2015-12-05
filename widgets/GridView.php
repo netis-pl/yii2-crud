@@ -13,7 +13,7 @@ use yii\helpers\Html;
 
 /**
  * Extends \yii\grid\GridView, adding two new layout elements: lengthPicker and quickSearch.
- * @package netis\utils\widgets
+ * @package netis\crud\widgets
  */
 class GridView extends \yii\grid\GridView
 {

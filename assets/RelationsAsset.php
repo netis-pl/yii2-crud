@@ -9,7 +9,7 @@ namespace netis\crud\assets;
 use yii\web\AssetBundle;
 
 /**
- * @package netis\utils\assets
+ * @package netis\crud\assets
  */
 class RelationsAsset extends AssetBundle
 {

@@ -11,7 +11,7 @@ use yii\base\Model;
 use netis\crud\db\ActiveRecord;
 
 /**
- * @package netis\utils\crud
+ * @package netis\crud\crud
  */
 class ViewAction extends Action
 {

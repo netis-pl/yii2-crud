@@ -15,7 +15,7 @@ use yii\web\NotFoundHttpException;
 
 /**
  * Class Controller
- * @package netis\utils\crud
+ * @package netis\crud\crud
  */
 class Controller extends \yii\web\Controller
 {

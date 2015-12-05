@@ -10,7 +10,7 @@ use yii\base\Behavior;
 
 /**
  * SortableBehavior allows to define custom order through selected attribute.
- * @package netis\utils\crud
+ * @package netis\crud\crud
  */
 class SortableBehavior extends Behavior
 {

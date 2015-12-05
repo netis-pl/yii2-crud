@@ -18,7 +18,7 @@ use yii\web\IdentityInterface;
  * - added relations() method to return list of relations
  * - added attributeFormats() to return default attribute formats
  *
- * @package netis\utils\crud
+ * @package netis\crud\crud
  * @method bool isRelated(array $relations, IdentityInterface $user = null)
  * @method array getCheckedRelations($userId, $permissionName, array $params = [])
  * @method bool saveRelations(array $data, $formName = null)
@@ -31,8 +31,8 @@ use yii\web\IdentityInterface;
  * @method ActiveRecord loadVersion($version_id)
  * @method array getAttributeVersions($attribute)
  * @method array getRecordedVersions()
- * @method \netis\utils\db\ActiveQuery getRelation($name, $throwException = true)
- * @method static \netis\utils\db\ActiveQuery find()
+ * @method \netis\crud\db\ActiveQuery getRelation($name, $throwException = true)
+ * @method static \netis\crud\db\ActiveQuery find()
  * @method array filteringRules() {@link FilterAttributeValuesTrait::filteringRules()}
  * @method array filteringScenarios() {@link FilterAttributeValuesTrait::filteringScenarios()}
  * @method string[] activeFilterAttributes() {@link FilterAttributeValuesTrait::activeFilterAttributes()}
@@ -74,10 +74,10 @@ class ActiveRecord extends \yii\db\ActiveRecord
                 'class' => \netis\rbac\AuthorizerBehavior::className(),
             ],
             'linkable' => [
-                'class' => \netis\utils\db\LinkableBehavior::className(),
+                'class' => \netis\crud\db\LinkableBehavior::className(),
             ],
             'labels' => [
-                'class' => \netis\utils\db\LabelsBehavior::className(),
+                'class' => \netis\crud\db\LabelsBehavior::className(),
             ],
         ];
     }
@@ -98,7 +98,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
 
     public function __toString()
     {
-        /** @var \netis\utils\db\LabelsBehavior */
+        /** @var \netis\crud\db\LabelsBehavior */
         if (($string = $this->getBehavior('labels')) !== null) {
             $attributes = $this->getAttributes($string->attributes);
             return implode($string->separator, $attributes);

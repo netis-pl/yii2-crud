@@ -17,7 +17,7 @@ use yii\web\ServerErrorHttpException;
 
 /**
  * Combines the \yii\rest\UpdateAction and \yii\rest\CreateAction.
- * @package netis\utils\crud
+ * @package netis\crud\crud
  */
 class UpdateAction extends Action
 {
@@ -245,12 +245,12 @@ class UpdateAction extends Action
     /**
      * @param string $relationName
      * @param array $relation an item obtained from getModelRelations() result array,
-     * @param ActiveRecord $model
+     * @param \netis\crud\db\ActiveRecord $model
      * @return array
      */
     private function getRelationButtons($relationName, $relation, $model)
     {
-        /** @var \netis\utils\crud\ActiveRecord $relatedModel */
+        /** @var \netis\crud\db\ActiveRecord $relatedModel */
         $relatedModel = $relation['model'];
         $dataProvider = $relation['dataProvider'];
 
@@ -367,7 +367,7 @@ class UpdateAction extends Action
             return Url::toRoute($params);
         };
         $columns[0]['buttons']['update'] = function ($url, $model, $key) use ($actionColumn, $relationName) {
-            /** @var \netis\utils\crud\ActiveRecord $model */
+            /** @var \netis\crud\db\ActiveRecord $model */
             if (!Yii::$app->user->can($model::className() . '.update', ['model' => $model])) {
                 return null;
             }
@@ -395,7 +395,7 @@ class UpdateAction extends Action
         }
 
         $columns[0]['buttons']['unlink'] = function ($url, $model, $key) use ($actionColumn, $remove) {
-            /** @var \netis\utils\crud\ActiveRecord $model */
+            /** @var \netis\crud\db\ActiveRecord $model */
             if (!Yii::$app->user->can($model::className() . ($remove ? '.delete' : '.update'), ['model' => $model])) {
                 return null;
             }

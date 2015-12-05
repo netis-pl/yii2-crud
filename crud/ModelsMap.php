@@ -11,7 +11,7 @@ use yii\base\Component;
 
 /**
  * Class ModelsMap holds model to controller mappings.
- * @package netis\utils\crud
+ * @package netis\crud\crud
  */
 class ModelsMap extends Component implements \IteratorAggregate, \ArrayAccess, \Countable
 {

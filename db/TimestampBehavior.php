@@ -10,7 +10,7 @@ use yii\db\Expression;
 
 /**
  * @inheritdoc
- * @package netis\utils\db
+ * @package netis\crud\db
  */
 class TimestampBehavior extends \yii\behaviors\TimestampBehavior
 {

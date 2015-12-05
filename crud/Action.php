@@ -390,10 +390,10 @@ class Action extends \yii\rest\Action
                 continue;
             }
             switch ($behaviorOptions['class']) {
-                case 'netis\utils\db\SortableBehavior':
+                case \netis\crud\db\SortableBehavior::className():
                     $behaviorAttributes[] = $behaviorOptions['attribute'];
                     break;
-                case 'netis\utils\db\ToggableBehavior':
+                case \netis\crud\db\ToggableBehavior::className():
                     if (isset($behaviorOptions['disabledAttribute'])) {
                         $behaviorAttributes[] = $behaviorOptions['disabledAttribute'];
                     }
@@ -401,7 +401,7 @@ class Action extends \yii\rest\Action
                         $behaviorAttributes[] = $behaviorOptions['enabledAttribute'];
                     }
                     break;
-                case 'netis\utils\db\BlameableBehavior':
+                case \netis\crud\db\BlameableBehavior::className():
                     if (isset($behaviorOptions['createdByAttribute'])) {
                         $behaviorAttributes[] = $behaviorOptions['createdByAttribute'];
                         $blameableAttributes[] = $behaviorOptions['createdByAttribute'];
@@ -411,7 +411,7 @@ class Action extends \yii\rest\Action
                         $blameableAttributes[] = $behaviorOptions['updatedByAttribute'];
                     }
                     break;
-                case 'netis\utils\db\TimestampBehavior':
+                case \netis\crud\db\TimestampBehavior::className():
                     if (isset($behaviorOptions['createdAtAttribute'])) {
                         $behaviorAttributes[] = $behaviorOptions['createdAtAttribute'];
                     }

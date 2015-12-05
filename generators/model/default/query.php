@@ -4,7 +4,7 @@
  */
 
 /* @var $this yii\web\View */
-/* @var $generator netis\utils\generators\model\Generator */
+/* @var $generator netis\crud\generators\model\Generator */
 /* @var $className string class name */
 /* @var $modelClassName string related model class name */
 

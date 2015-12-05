@@ -13,7 +13,7 @@ use yii\base\Behavior;
 /**
  * ActiveNavigation provides method to build navigation items for a CRUD controller.
  * Those include breadcrumbs and context menus.
- * @package netis\utils\crud
+ * @package netis\crud\crud
  */
 class ActiveNavigation extends Behavior
 {

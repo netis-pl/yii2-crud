@@ -6,7 +6,7 @@
 use yii\helpers\Inflector;
 
 /* @var $this yii\web\View */
-/* @var $generator netis\utils\generators\model\Generator */
+/* @var $generator netis\crud\generators\model\Generator */
 /* @var $className string class name */
 /* @var $modelClassName string related model class name */
 /* @var $queryClassName string query model class name */
@@ -28,7 +28,7 @@ echo "<?php\n";
 
 namespace <?= $generator->searchNs ?>;
 
-use netis\utils\db\ActiveSearchInterface;
+use netis\crud\db\ActiveSearchInterface;
 use Yii;
 use yii\base\Model;
 use <?= ltrim($modelFullClassName, '\\') . (isset($modelAlias) ? " as $modelAlias" : "") ?>;
@@ -39,7 +39,7 @@ use <?= ($queryClassName === 'ActiveQuery' ? 'yii\db' : $generator->queryNs) . '
  */
 class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelClass ?> implements ActiveSearchInterface
 {
-    use \netis\utils\db\ActiveSearchTrait;
+    use \netis\crud\db\ActiveSearchTrait;
 
 <?php foreach ($relations as $name => $relation): if (true || !$relation[2]) continue; ?>
     /**

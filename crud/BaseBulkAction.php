@@ -30,8 +30,8 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
      */
     public function init()
     {
-        if (!$this->controller instanceof \netis\utils\crud\ActiveController) {
-            throw new \yii\base\InvalidConfigException('BulkAction can only be used in a controller extending \netis\utils\crud\ActiveController.');
+        if (!$this->controller instanceof \netis\crud\crud\ActiveController) {
+            throw new \yii\base\InvalidConfigException('BulkAction can only be used in a controller extending \netis\crud\crud\ActiveController.');
         }
         parent::init();
     }

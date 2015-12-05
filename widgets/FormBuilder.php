@@ -26,7 +26,7 @@ class FormBuilder
 
     /**
      * Registers JS code to help initialize Select2 widgets
-     * with access to netis\utils\crud\ActiveController API.
+     * with access to netis\crud\crud\ActiveController API.
      * @param \yii\web\View $view
      */
     public static function registerSelect($view)
@@ -90,13 +90,13 @@ JavaScript;
      */
     public static function registerRelations($view)
     {
-        \netis\utils\assets\RelationsAsset::register($view);
+        \netis\crud\assets\RelationsAsset::register($view);
         $options = \yii\helpers\Json::htmlEncode([
             'i18n'                  => [
                 'loadingText' => Yii::t('app', 'Loading, please wait.'),
             ],
-            'keysSeparator'         => \netis\utils\crud\Action::KEYS_SEPARATOR,
-            'compositeKeySeparator' => \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR,
+            'keysSeparator'         => \netis\crud\crud\Action::KEYS_SEPARATOR,
+            'compositeKeySeparator' => \netis\crud\crud\Action::COMPOSITE_KEY_SEPARATOR,
         ]);
         $view->registerJs("netis.init($options)", \yii\web\View::POS_READY, 'netis.init');
 
@@ -189,7 +189,7 @@ JavaScript;
                 /** @var \yii\db\ActiveRecord $modelClass */
                 $modelClass = $activeRelation->modelClass;
                 $value = array_map(
-                    '\netis\utils\crud\Action::exportKey',
+                    '\netis\crud\crud\Action::exportKey',
                     $activeRelation->select($modelClass::primaryKey())->asArray()->all()
                 );
             }
@@ -236,11 +236,11 @@ JavaScript;
         return ArrayHelper::map(
             $query->from($model::tableName() . ' t')->all(),
             function ($item) use ($fields, $flippedPrimaryKey) {
-                /** @var \netis\utils\crud\ActiveRecord $item */
+                /** @var \netis\crud\db\ActiveRecord $item */
                 return Action::exportKey(array_intersect_key($item->toArray($fields, []), $flippedPrimaryKey));
             },
             function ($item) use ($fields) {
-                /** @var \netis\utils\crud\ActiveRecord $item */
+                /** @var \netis\crud\db\ActiveRecord $item */
                 $data = $item->toArray($fields, []);
                 return $data['_label'];
             }
@@ -339,7 +339,7 @@ JavaScript;
     {
         $isMany = $activeRelation->multiple;
         $foreignKey = array_values($activeRelation->link)[0];
-        /** @var \netis\utils\crud\ActiveRecord $relModel */
+        /** @var \netis\crud\db\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
 
         if ($items === null) {
@@ -400,7 +400,7 @@ JavaScript;
      */
     public static function getRelationWidgetOptions($model, $relation, $activeRelation, $multiple = false)
     {
-        /** @var \netis\utils\crud\ActiveRecord $relModel */
+        /** @var \netis\crud\db\ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
         list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
             $model,
@@ -429,7 +429,7 @@ JavaScript;
             && (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
 
         $jsPrimaryKey = json_encode($primaryKey);
-        $jsSeparator = \netis\utils\crud\Action::COMPOSITE_KEY_SEPARATOR;
+        $jsSeparator = \netis\crud\crud\Action::COMPOSITE_KEY_SEPARATOR;
         $jsId = <<<JavaScript
 function(object){
     var keys = $jsPrimaryKey, values = [];
@@ -455,7 +455,7 @@ JavaScript;
         }
 
         $label = null;
-        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+        if ($model instanceof \netis\crud\db\ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, Html::getAttributeName($relation));
         }
         $ajaxResults = new JsExpression('s2helper.results');
@@ -518,7 +518,7 @@ JavaScript;
     public static function getRelationWidget($model, $relation, $activeRelation, $widgetOptions)
     {
         $label = null;
-        if ($model instanceof \netis\utils\crud\ActiveRecord) {
+        if ($model instanceof \netis\crud\db\ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, Html::getAttributeName($relation));
         }
 
@@ -777,7 +777,7 @@ JavaScript;
             return $model->safeAttributes();
         }
 
-        /** @var \netis\utils\crud\ActiveRecord $model */
+        /** @var \netis\crud\db\ActiveRecord $model */
         $formats = $model->attributeFormats();
         $keys = Action::getModelKeys($model);
         $hiddenAttributes = array_flip($hiddenAttributes);
@@ -916,7 +916,7 @@ JavaScript;
     {
         $prompt = null;
         $formatter = Yii::$app->formatter;
-        if ($formatter instanceof \netis\utils\web\Formatter) {
+        if ($formatter instanceof \netis\crud\web\Formatter) {
             $prompt = $formatter->dropDownPrompt;
         } else {
             $prompt = strip_tags($formatter->nullDisplay);

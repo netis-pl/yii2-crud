@@ -8,7 +8,7 @@ namespace netis\crud\db;
 
 /**
  * @inheritdoc
- * @package netis\utils\db
+ * @package netis\crud\db
  */
 class BlameableBehavior extends \yii\behaviors\BlameableBehavior
 {

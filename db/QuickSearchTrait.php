@@ -90,8 +90,8 @@ trait QuickSearchTrait
      * @param \yii\db\ActiveQuery $query
      * @param  array $tokens             all search tokens extracted from term
      * @param  array $relationAttributes array of string(relation name) => array(
-     *                                       'model' => netis\utils\crud\ActiveRecord,
-     *                                       'searchModel' => netis\utils\db\ActiveSearchTrait,
+     *                                       'model' => netis\crud\db\ActiveRecord,
+     *                                       'searchModel' => netis\crud\db\ActiveSearchTrait,
      *                                       'attributes' => array
      *                                   )
      * @return array conditions to add to $query

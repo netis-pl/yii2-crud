@@ -5,7 +5,7 @@
 use yii\helpers\Inflector;
 
 /* @var $this yii\web\View */
-/* @var $generator netis\utils\generators\model\Generator */
+/* @var $generator netis\crud\generators\model\Generator */
 /* @var $tableName string full table name */
 /* @var $className string class name */
 /* @var $queryClassName string query class name */

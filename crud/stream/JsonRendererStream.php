@@ -8,7 +8,7 @@ namespace netis\crud\crud\stream;
 
 /**
  * A stream wrapper allowing to gradually render a response while reading it with stream functions like fread().
- * @package netis\utils\crud
+ * @package netis\crud\crud
  */
 class JsonRendererStream extends RendererStream
 {
