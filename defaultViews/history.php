@@ -16,7 +16,7 @@ use yii\widgets\Pjax;
 
 $controller = $this->context;
 
-if ($model instanceof \netis\crud\crud\ActiveRecord) {
+if ($model instanceof \netis\crud\db\ActiveRecord) {
     $this->title                 = $model->getCrudLabel('relation');
     if ($controller instanceof \yii\base\Controller) {
         $this->params['breadcrumbs'] = [

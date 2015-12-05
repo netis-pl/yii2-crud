@@ -24,7 +24,7 @@ if (!isset($gridOptions) || !is_array($gridOptions)) {
 }
 $gridId = 'indexGrid';
 
-if ($searchModel instanceof \netis\crud\crud\ActiveRecord) {
+if ($searchModel instanceof \netis\crud\db\ActiveRecord) {
     if ($this->title === null) {
         $this->title = $searchModel->getCrudLabel('relation');
     }
