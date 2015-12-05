@@ -73,3 +73,6 @@ with the model being updated.
 
 A context menu is available.
 
+### Composite keys
+
+Both primary and foreign composite keys (consisting of two or more columns) are fully supported.
