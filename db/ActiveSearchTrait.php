@@ -7,7 +7,6 @@
 namespace netis\crud\db;
 
 use Yii;
-use netis\crud\crud\ActiveRecord;
 use yii\data\ActiveDataProvider;
 use yii\data\Pagination;
 use yii\data\Sort;

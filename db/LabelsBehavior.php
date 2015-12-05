@@ -6,7 +6,6 @@
 
 namespace netis\crud\db;
 
-use netis\crud\crud\ActiveRecord;
 use yii\base\Behavior;
 
 /**

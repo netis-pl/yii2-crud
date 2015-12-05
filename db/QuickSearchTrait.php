@@ -6,7 +6,6 @@
 
 namespace netis\crud\db;
 
-use netis\crud\crud\ActiveRecord;
 use netis\crud\web\EnumCollection;
 use netis\crud\web\Formatter;
 use Yii;
@@ -65,7 +64,7 @@ trait QuickSearchTrait
         $validAttributes = array_diff($attributes, array_keys($this->getErrors()));
         Yii::trace(
             'Processing token ' . $token . ', validated in: ' . print_r($validAttributes, true),
-            'application.model.NetActiveRecord'
+            'netis.crud.ActiveRecord'
         );
         $attributeValues = $this->getAttributes($validAttributes);
         foreach ($validAttributes as $attribute) {
