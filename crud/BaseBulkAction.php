@@ -6,6 +6,7 @@
 
 namespace netis\crud\crud;
 
+use netis\crud\db\ActiveRecord;
 use yii\base\InvalidConfigException;
 use yii\data\ActiveDataProvider;
 use yii\db\Query;
@@ -18,7 +19,7 @@ use yii\db\Query;
  *
  * @author jwas
  * @property string $authItemTemplate
- * @property \netis\crud\crud\ActiveController $controller
+ * @property ActiveController $controller
  */
 abstract class BaseBulkAction extends Action implements BulkActionInterface
 {
@@ -26,12 +27,12 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
 
     /**
      * @inheritdoc
-     * @throws \yii\base\InvalidConfigException
+     * @throws InvalidConfigException
      */
     public function init()
     {
-        if (!$this->controller instanceof \netis\crud\crud\ActiveController) {
-            throw new \yii\base\InvalidConfigException('BulkAction can only be used in a controller extending \netis\crud\crud\ActiveController.');
+        if (!$this->controller instanceof ActiveController) {
+            throw new InvalidConfigException('BulkAction can only be used in a controller extending \netis\crud\crud\ActiveController.');
         }
         parent::init();
     }
@@ -87,6 +88,11 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
         ]);
     }
 
+    /**
+     * @param ActiveRecord $model
+     * @param Query $query
+     * @return ActiveDataProvider
+     */
     public function getDataProvider(ActiveRecord $model, Query $query)
     {
         return new ActiveDataProvider([

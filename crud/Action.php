@@ -7,6 +7,7 @@
 namespace netis\crud\crud;
 
 use netis\crud\db\ActiveQuery;
+use netis\crud\db\ActiveRecord;
 use netis\crud\db\ActiveSearchInterface;
 use Yii;
 use yii\base\Model;

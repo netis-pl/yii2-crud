@@ -6,6 +6,7 @@
 
 namespace netis\crud\crud;
 
+use netis\crud\db\ActiveRecord;
 use netis\crud\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
