@@ -9,6 +9,7 @@ namespace netis\crud\crud;
 use netis\crud\db\ActiveQuery;
 use netis\crud\db\ActiveRecord;
 use netis\crud\db\ActiveSearchInterface;
+use netis\crud\db\LabelsBehavior;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -259,15 +260,18 @@ class Action extends \yii\rest\Action
     /**
      * Returns all primary and foreign key column names for specified model.
      * @param ActiveRecord $model
+     * @param bool $includePrimary
      * @return array names of columns from primary and foreign keys
      */
-    public static function getModelKeys($model)
+    public static function getModelKeys($model, $includePrimary = true)
     {
         $keys = array_map(function ($foreignKey) {
             array_shift($foreignKey);
             return array_keys($foreignKey);
         }, $model->getTableSchema()->foreignKeys);
-        $keys[] = $model->primaryKey();
+        if ($includePrimary) {
+            $keys[] = $model->primaryKey();
+        }
         return call_user_func_array('array_merge', $keys);
     }
 
@@ -618,6 +622,8 @@ class Action extends \yii\rest\Action
 
         /** @var ActiveRecord $model */
         list($behaviorAttributes, $blameableAttributes) = self::getModelBehaviorAttributes($model);
+        /** @var LabelsBehavior $labelsBehavior */
+        $labelsBehavior = $model->getBehavior('labels');
         $versionAttribute = $model->optimisticLock();
         $formats = $model->attributeFormats();
         $keys    = self::getModelKeys($model);
@@ -636,7 +642,11 @@ class Action extends \yii\rest\Action
             $format = isset($formats[$field]) ? $formats[$field] : $model->getAttributeFormat($field);
 
             if ($format !== null) {
-                if (in_array($field, $keys) || in_array($field, $behaviorAttributes) || $field === $versionAttribute) {
+                if ((in_array($field, $keys)
+                        && ($labelsBehavior === null || !in_array($field, $labelsBehavior->attributes)))
+                    || in_array($field, $behaviorAttributes)
+                    || $field === $versionAttribute
+                ) {
                     continue;
                 }
                 $columns[] = static::getAttributeColumn($model, $field, $format);
