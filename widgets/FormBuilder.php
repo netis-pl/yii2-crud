@@ -142,14 +142,22 @@ JavaScript;
             }
         }
 
-        $createRoute = !$allowCreate ? null : [
-            $route . '/update',
-            'hide'                    => implode(',', array_keys($relation->link)),
-            $relatedModel->formName() => array_combine(
-                array_keys($relation->link),
-                $model->getPrimaryKey(true)
-            ),
-        ];
+        if (!$allowCreate) {
+            $createRoute = null;
+        } else {
+            $createRoute = [$route . '/update'];
+            if ($relation->multiple) {
+                $createRoute['hide'] = implode(',', array_keys($relation->link));
+                $scope      = $relatedModel->formName();
+                $primaryKey = $model->getPrimaryKey(true);
+                foreach ($relation->link as $left => $right) {
+                    if (!isset($primaryKey[$left])) {
+                        continue;
+                    }
+                    $createRoute[$scope][$left] = $primaryKey[$left];
+                }
+            }
+        }
 
         $parts = explode('\\', $relatedModel::className());
         $relatedModelClass = array_pop($parts);
