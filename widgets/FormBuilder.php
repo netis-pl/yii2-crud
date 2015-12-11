@@ -629,26 +629,38 @@ JavaScript;
 
     /**
      * @param array $formFields
-     * @param \yii\db\ActiveRecord $model
+     * @param \netis\crud\db\ActiveRecord $model
      * @param string $attribute
      * @param array $hiddenAttributes
-     * @param array $formats
      * @param bool $multiple true for multiple values inputs, usually used for search forms
      * @return array
      * @throws InvalidConfigException
      */
-    protected static function addFormField($formFields, $model, $attribute, $hiddenAttributes, $formats, $multiple = false)
+    protected static function addFormField($formFields, $model, $attribute, $hiddenAttributes, $multiple = false)
     {
         $attributeName = Html::getAttributeName($attribute);
         if (isset($hiddenAttributes[$attributeName])) {
             $formFields[$attribute] = Html::activeHiddenInput($model, $attribute);
             return $formFields;
         }
-        $format = is_array($formats[$attributeName]) ? $formats[$attributeName][0] : $formats[$attributeName];
+
+        $formFields[$attribute] = self::createActiveField($model, $attribute, [], $multiple);
+        return $formFields;
+    }
+
+    /**
+     * @param \netis\crud\db\ActiveRecord $model
+     * @param string                      $attribute
+     * @param array                       $options
+     * @param bool                        $multiple
+     *
+     * @return \yii\bootstrap\ActiveField
+     * @throws InvalidConfigException
+     */
+    public static function createActiveField($model, $attribute, $options = [], $multiple = false)
+    {
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
-
-        $dbColumns = $model->getTableSchema()->columns;
 
         $stubForm = new \stdClass();
         $stubForm->layout = 'default';
@@ -661,6 +673,11 @@ JavaScript;
             'form' => $stubForm,
         ]);
 
+        $attributeName = Html::getAttributeName($attribute);
+        $attributeFormat = $model->getAttributeFormat($attributeName);
+        $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
+
+        $column = $model->getTableSchema()->getColumn($attributeName);
         switch ($format) {
             case 'boolean':
                 if ($multiple) {
@@ -668,50 +685,70 @@ JavaScript;
                         '0' => $formatter->booleanFormat[0],
                         '1' => $formatter->booleanFormat[1],
                         '' => Yii::t('app', 'Any'),
-                    ]);
+                    ], $options);
                 } else {
-                    $field->checkbox();
+                    $field->checkbox($options);
                 }
                 break;
             case 'shortLength':
             case 'shortWeight':
                 $value = Html::getAttributeValue($model, $attribute);
-                $field->inputOptions['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
+                if (!isset($options['value'])) {
+                    $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
+                }
+                $field->textInput($options);
                 break;
             case 'multiplied':
                 $value = Html::getAttributeValue($model, $attribute);
-                $field->inputOptions['value'] = $value === null ? null : $formatter->asMultiplied($value, $formats[$attributeName][1]);
+                if (!isset($options['value'])) {
+                    $options['value'] = $value === null ? null : $formatter->asMultiplied($value, $attributeFormat[1]);
+                }
+                $field->textInput($options);
                 break;
             case 'integer':
-                $field->inputOptions['value'] = Html::getAttributeValue($model, $attribute);
+                if (!isset($options['value'])) {
+                    $options['value'] = Html::getAttributeValue($model, $attribute);
+                }
+                $field->textInput($options);
                 break;
             case 'time':
-                $field->inputOptions['value'] = Html::encode(Html::getAttributeValue($model, $attribute));
+                if (!isset($options['value'])) {
+                    $options['value'] = Html::encode(Html::getAttributeValue($model, $attribute));
+                }
+                $field->textInput($options);
                 break;
             case 'datetime':
             case 'date':
-                $value = Html::getAttributeValue($model, $attribute);
-                if (!$model->hasErrors($attribute) && $value !== null) {
-                    $value = $formatter->format($value, $format);
+                if (!isset($options['value'])) {
+                    $value = Html::getAttributeValue($model, $attribute);
+                    if (!$model->hasErrors($attribute) && $value !== null) {
+                        $value = $formatter->format($value, $format);
+                    }
+                    $options['value'] = $value;
+                }
+                if (!isset($options['class'])) {
+                    $options['class'] = 'form-control';
                 }
                 $field->parts['{input}'] = array_merge([
                     'class' => \omnilight\widgets\DatePicker::className(),
                     'model' => $model,
                     'attribute' => $attributeName,
-                    'options'   => [
-                        'class' => 'form-control',
-                        'value' => $value,
-                    ],
+                    'options'   => $options,
                 ], $format !== 'datetime' ? [] : [
                     'class' => \kartik\datetime\DateTimePicker::className(),
                     'convertFormat' => true,
                 ]);
                 break;
             case 'enum':
-                $items = $formatter->getEnums()->get($formats[$attributeName][1]);
+                $items = $formatter->getEnums()->get($attributeFormat[1]);
                 if ($multiple) {
+                    $options = array_merge([
+                        'class' => 'select2',
+                        'placeholder' => self::getPrompt(),
+                        'multiple' => 'multiple',
+                    ], $options);
                     $field->parts['{input}'] = [
-                        'class' => 'maddoger\widgets\Select2',
+                        'class' => \maddoger\widgets\Select2::className(),
                         'model' => $model,
                         'attribute' => $attribute,
                         'items' => $items,
@@ -719,16 +756,10 @@ JavaScript;
                             'allowClear' => true,
                             'closeOnSelect' => true,
                         ],
-                        'options' => [
-                            'class' => 'select2',
-                            //'value' => $value,
-                            'placeholder' => self::getPrompt(),
-                            'multiple' => 'multiple',
-                        ],
+                        'options' => $options,
                     ];
                 } else {
-                    $options = [];
-                    if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->allowNull) {
+                    if ($column !== null && $column->allowNull) {
                         $options['prompt'] = self::getPrompt();
                     }
                     $field->dropDownList($items, $options);
@@ -737,47 +768,47 @@ JavaScript;
             case 'flags':
                 throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
             case 'paragraphs':
+                if (!isset($options['value'])) {
+                    $options['value'] = Html::encode(Html::getAttributeValue($model, $attribute));
+                }
+
                 if ($multiple) {
-                    $field->textInput([
-                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
-                    ]);
+                    $field->textInput($options);
                 } else {
-                    $field->textarea([
-                        'value' => Html::encode(Html::getAttributeValue($model, $attribute)),
-                        'cols'  => '80',
-                        'rows'  => '10',
-                    ]);
+                    $field->textarea(array_merge(['cols'  => '80', 'rows'  => '10'], $options));
                 }
                 break;
             case 'file':
-                $field->fileInput([
-                    'value' => Html::getAttributeValue($model, $attribute),
-                ]);
+                if (!isset($options['value'])) {
+                    $options['value'] = Html::getAttributeValue($model, $attribute);
+                }
+                $field->fileInput($options);
                 break;
             default:
             case 'text':
-                $options = [
-                    'value' => Html::getAttributeValue($model, $attribute),
-                ];
-                if (isset($dbColumns[$attributeName]) && $dbColumns[$attributeName]->type === 'string'
-                    && $dbColumns[$attributeName]->size !== null
-                ) {
-                    $options['maxlength'] = $dbColumns[$attributeName]->size;
+                if (!isset($options['value'])) {
+                    $options['value'] = Html::getAttributeValue($model, $attribute);
+                }
+                if ($column && $column->type === 'string' && $column->size !== null) {
+                    $options['maxlength'] = $column->size;
                 }
                 $field->textInput($options);
                 break;
         }
-        $formFields[$attribute] = $field;
-        return $formFields;
+
+        return $field;
     }
 
     /**
      * Retrieves form fields configuration. Fields can be config arrays, ActiveField objects or closures.
+     *
      * @param \yii\base\Model $model
-     * @param array $fields
-     * @param bool $multiple true for multiple values inputs, usually used for search forms
-     * @param array $hiddenAttributes list of attribute names to render as hidden fields
+     * @param array           $fields
+     * @param bool            $multiple         true for multiple values inputs, usually used for search forms
+     * @param array           $hiddenAttributes list of attribute names to render as hidden fields
+     *
      * @return array form fields
+     * @throws InvalidConfigException
      */
     public static function getFormFields($model, $fields, $multiple = false, $hiddenAttributes = [])
     {
@@ -824,7 +855,7 @@ JavaScript;
                 }
                 $formFields = static::addFormField(
                     $formFields, $model, $field,
-                    $hiddenAttributes, $formats, $multiple
+                    $hiddenAttributes, $multiple
                 );
             }
         }
