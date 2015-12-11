@@ -24,9 +24,8 @@
         $(document).off('pjax:timeout', _settings.modalId).on('pjax:timeout', _settings.modalId, function(event) {
             event.preventDefault();
         });
-        $(document).off('pjax:error', _settings.modalId).on('pjax:error', _settings.modalId, function(event) {
-            event.preventDefault();
-        });
+        $(document).off('pjax:error', _settings.modalId)
+            .on('pjax:error', _settings.modalId, netis.pjaxError);
         //$(document).on('pjax:send', settings.modalId, function() { })
         //$(document).on('pjax:complete', settings.modalId, function() { })
 
@@ -98,54 +97,64 @@
             $.pjax.submit(event, container, options);
         });
         $(document).off('pjax:success', _settings.modalId);
-        $(document).on('pjax:success', _settings.modalId, function(event, data, status, xhr, options) {
-            var saveButton = $(_settings.saveButtonId),
-                added = [],
-                removed = [],
-                grid = $(_settings.modalId + ' .grid-view');
-
-            saveButton.data('target', target);
-
-            if (_selectionFields !== undefined) {
-                added = netis.explodeKeys(_selectionFields.add.val());
-                removed = netis.explodeKeys(_selectionFields.remove.val());
-            }
-
-            if (_mode === MODE_EXISTING_RECORD && grid.length) {
-                grid.find("input[name='selection[]']").each(function() {
-                    var key = $(this).parent().closest('tr').data('key').toString();
-                    if ($.inArray(key, added) !== -1) {
-                        $(this).prop('disabled', true).prop('checked', true);
-                    } else if ($.inArray(key, removed) !== -1) {
-                        $(this).prop('disabled', false).prop('checked', false);
-                    }
-                });
-                //$(document).off('pjax:success', settings.modalId);
-                /* the following should not be necessary after changing renderPartial to renderAjax in ActiveController.afterAction
-                grid.yiiGridView({
-                    'filterUrl': url,
-                    'filterSelector': '#relationGrid-quickSearch'
-                });
-                grid.yiiGridView('setSelectionColumn', {
-                    'name': 'selection[]',
-                    'multiple': true,
-                    'checkAll': 'selection_all'
-                });*/
-            } else {
-                if (xhr.getResponseHeader('X-Primary-Key')) {
-                    saveButton.data('primaryKey', xhr.getResponseHeader('X-Primary-Key'));
-                    netis.saveRelation(event);
-                    return;
-                }
-                $(_settings.modalId + ' h1').remove();
-                $(_settings.modalId + ' .form-buttons').remove();
-            }
-        });
+        $(document).on('pjax:success', _settings.modalId, netis.pjaxSuccess);
         $.pjax.reload(container, {
             'url': url,
             'push': false,
             'replace': false
         });
+    };
+
+    netis.pjaxError = function (event, textStatus, error, options) {
+        $('.modal-title', this).text(textStatus.statusText);
+        $('.modal-body', this).html(textStatus.responseText);
+
+        //prevent hard reload on error
+        event.preventDefault();
+    };
+
+    netis.pjaxSuccess = function (event, data, status, xhr, options) {
+        var saveButton = $(_settings.saveButtonId),
+            added = [],
+            removed = [],
+            grid = $(_settings.modalId + ' .grid-view');
+
+        saveButton.data('target', target);
+
+        if (_selectionFields !== undefined) {
+            added = netis.explodeKeys(_selectionFields.add.val());
+            removed = netis.explodeKeys(_selectionFields.remove.val());
+        }
+
+        if (_mode === MODE_EXISTING_RECORD && grid.length) {
+            grid.find("input[name='selection[]']").each(function() {
+                var key = $(this).parent().closest('tr').data('key').toString();
+                if ($.inArray(key, added) !== -1) {
+                    $(this).prop('disabled', true).prop('checked', true);
+                } else if ($.inArray(key, removed) !== -1) {
+                    $(this).prop('disabled', false).prop('checked', false);
+                }
+            });
+            //$(document).off('pjax:success', settings.modalId);
+            /* the following should not be necessary after changing renderPartial to renderAjax in ActiveController.afterAction
+             grid.yiiGridView({
+             'filterUrl': url,
+             'filterSelector': '#relationGrid-quickSearch'
+             });
+             grid.yiiGridView('setSelectionColumn', {
+             'name': 'selection[]',
+             'multiple': true,
+             'checkAll': 'selection_all'
+             });*/
+        } else {
+            if (xhr.getResponseHeader('X-Primary-Key')) {
+                saveButton.data('primaryKey', xhr.getResponseHeader('X-Primary-Key'));
+                netis.saveRelation(event);
+                return;
+            }
+            $(_settings.modalId + ' h1').remove();
+            $(_settings.modalId + ' .form-buttons').remove();
+        }
     };
 
     netis.saveRelation = function(event) {
