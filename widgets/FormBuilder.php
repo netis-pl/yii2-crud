@@ -151,10 +151,10 @@ JavaScript;
                 $scope      = $relatedModel->formName();
                 $primaryKey = $model->getPrimaryKey(true);
                 foreach ($relation->link as $left => $right) {
-                    if (!isset($primaryKey[$left])) {
+                    if (!isset($primaryKey[$right])) {
                         continue;
                     }
-                    $createRoute[$scope][$left] = $primaryKey[$left];
+                    $createRoute[$scope][$left] = $primaryKey[$right];
                 }
             }
         }

@@ -88,6 +88,7 @@
 
         modal.find('.modal-title').text(title);
         modal.find('.modal-body').text(_settings.i18n.loadingText);
+        $(_settings.saveButtonId).data('target', target);
 
         $(document).off('click.pjax', container + ' a');
         $(document).off('submit', container + ' form');
@@ -118,8 +119,6 @@
             added = [],
             removed = [],
             grid = $(_settings.modalId + ' .grid-view');
-
-        saveButton.data('target', target);
 
         if (_selectionFields !== undefined) {
             added = netis.explodeKeys(_selectionFields.add.val());
