@@ -802,7 +802,7 @@ JavaScript;
     /**
      * Retrieves form fields configuration. Fields can be config arrays, ActiveField objects or closures.
      *
-     * @param \yii\base\Model $model
+     * @param \yii\base\Model|\netis\crud\db\ActiveRecord $model
      * @param array           $fields
      * @param bool            $multiple         true for multiple values inputs, usually used for search forms
      * @param array           $hiddenAttributes list of attribute names to render as hidden fields
@@ -816,8 +816,6 @@ JavaScript;
             return $model->safeAttributes();
         }
 
-        /** @var \netis\crud\db\ActiveRecord $model */
-        $formats = $model->attributeFormats();
         $keys = Action::getModelKeys($model);
         $hiddenAttributes = array_flip($hiddenAttributes);
 
