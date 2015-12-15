@@ -17,6 +17,8 @@ use yii\data\Sort;
  */
 interface ActiveSearchInterface
 {
+    const TOKEN_SEPARATOR = ',';
+
     /**
      * Creates data provider instance with search query applied.
      *

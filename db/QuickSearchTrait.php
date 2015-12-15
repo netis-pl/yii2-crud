@@ -217,7 +217,7 @@ trait QuickSearchTrait
         if (!$query instanceof ActiveQuery) {
             return $query;
         }
-        $searchPhrase = array_filter(array_map('trim', explode(',', $query->quickSearchPhrase)));
+        $searchPhrase = array_filter(array_map('trim', explode(ActiveSearchInterface::TOKEN_SEPARATOR, $query->quickSearchPhrase)));
         if (count($searchPhrase) === 2 && (string)intval($searchPhrase[0]) === $searchPhrase[0]
             && (string)intval($searchPhrase[1]) === $searchPhrase[1]
         ) {
