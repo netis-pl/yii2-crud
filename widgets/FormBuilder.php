@@ -691,12 +691,20 @@ JavaScript;
                 }
                 break;
             case 'shortLength':
+                $value = Html::getAttributeValue($model, $attribute);
+                if (!isset($options['value'])) {
+                    $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
+                }
+                $field->textInput($options);
+                $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">m</span></div>';
+                break;
             case 'shortWeight':
                 $value = Html::getAttributeValue($model, $attribute);
                 if (!isset($options['value'])) {
                     $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
                 }
                 $field->textInput($options);
+                $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">kg</span></div>';
                 break;
             case 'multiplied':
                 $value = Html::getAttributeValue($model, $attribute);
