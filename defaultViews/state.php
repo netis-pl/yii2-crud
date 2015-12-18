@@ -8,12 +8,13 @@ use yii\helpers\Url;
  * @var $model netis\crud\db\ActiveRecord
  * @var $fields array
  * @var $relations array
- * @var array $stateChange contains state and targets keys
- * @var mixed $sourceState
- * @var mixed $targetState
- * @var array $states
+ * @var $stateChange array contains state and targets keys
+ * @var $sourceState mixed
+ * @var $targetState mixed
+ * @var $states array
  * @var $controller netis\crud\crud\ActiveController
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
+ * @var $formOptions array form options, will be merged with defaults
  */
 
 $controller = $this->context;
@@ -69,7 +70,7 @@ echo $this->render('_form', [
     'targetState' => $targetState,
     'fields' => $fields,
     'relations' => $relations,
-    'formOptions' => [
+    'formOptions' => array_merge([
         'action' => Url::toRoute([
             $controller->action->id,
             'id' => $id,
@@ -77,7 +78,7 @@ echo $this->render('_form', [
             'confirmed' => 1,
         ]),
         'enableAjaxValidation' => false,
-    ],
+    ], isset($formOptions) ? $formOptions : []),
     'buttons' => [
         Html::submitButton($icon . $stateChange['state']->label, [
             'class' => 'btn ' . $stateChange['state']->css_class,
