@@ -81,10 +81,14 @@ abstract class BaseBulkAction extends Action implements BulkActionInterface
      */
     public function getQuery($model)
     {
-        return parent::getQuery($model)->andWhere([
+        $query = clone parent::getQuery($model);
+        $primaryKey = array_map(function ($column) {
+            return 't.' . $column;
+        }, $model::primaryKey());
+        return $query->andWhere([
             'in',
-            $model::primaryKey(),
-            self::importKey($model::primaryKey(), \Yii::$app->request->getQueryParam('keys'))
+            $primaryKey,
+            self::importKey($primaryKey, \Yii::$app->request->getQueryParam('keys'))
         ]);
     }
 
