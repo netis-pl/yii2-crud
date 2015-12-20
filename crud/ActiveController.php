@@ -10,12 +10,14 @@ use netis\crud\db\ActiveRecord;
 use netis\crud\db\ActiveSearchInterface;
 use netis\crud\web\Response;
 use Yii;
+use yii\base\ActionEvent;
 use yii\base\Exception;
 use yii\base\Model;
 use yii\data\DataProviderInterface;
 use yii\filters\AccessControl;
 use yii\filters\ContentNegotiator;
 use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
 
 /**
  * Modeled after yii\rest\ActiveController with the following changes:
@@ -30,7 +32,7 @@ use yii\web\ForbiddenHttpException;
  * a stream wrapper is created, which gradually renders the response.
  *
  * @package netis\crud\crud
- * @method array getBreadcrumbs(Action $action, ActiveRecord $model)
+ * @method array getBreadcrumbs(\yii\base\Action $action, ActiveRecord $model)
  * @method array getMenuCurrent(\yii\base\Action $action, ActiveRecord $model, $horizontal, array $privs, array $defaultActions, array $confirms) {@link ActiveNavigation::getMenuCurrent}
  * @method array getMenuCommon(\yii\base\Action $action, ActiveRecord $model, $horizontal, array $privs, array $defaultActions, array $confirms) {@link ActiveNavigation::getMenuCommon}
  * @method array getMenu(\yii\base\Action $action, ActiveRecord $model, $readOnly = false, $horizontal = true)
@@ -141,7 +143,20 @@ class ActiveController extends \yii\rest\ActiveController
             'options' => [
                 'class' => \yii\rest\OptionsAction::className(),
             ],
+            'help' => [
+                'class' => \yii\web\ViewAction::className(),
+                'viewPrefix' => 'help',
+                'defaultView' => 'index.md',
+            ]
         ];
+        $helpAction = Yii::createObject($actions['help'], ['help', $this]);
+        try {
+            $helpAction->run();
+        } catch (NotFoundHttpException $e) {
+            unset($actions['help']);
+        } finally {
+            $this->on(self::EVENT_BEFORE_ACTION, [$this, 'beforeHelpAction']);
+        }
         foreach ($this->actionsClassMap as $id => $action) {
             if (!isset($actions[$id])) {
                 $actions[$id] = [];
@@ -154,6 +169,31 @@ class ActiveController extends \yii\rest\ActiveController
             }
         }
         return $actions;
+    }
+
+    /**
+     * Adds menu and breadcrumbs. Required, because help views are rendered from markdown templates and can't
+     * execute any logic.
+     * @param ActionEvent $event
+     * @return bool
+     */
+    public function beforeHelpAction($event)
+    {
+        $model = new $this->modelClass();
+        $format = Yii::$app->response->format;
+        if ($format !== Response::FORMAT_HTML && $format !== Response::FORMAT_PDF) {
+            return true;
+        }
+        if ($model instanceof \netis\crud\db\ActiveRecord) {
+            if ($this->view->title === null) {
+                $this->view->title = $model->getCrudLabel('relation') . ' - ' . Yii::t('app', 'Help');
+            }
+            $this->view->params['breadcrumbs'] = $this->getBreadcrumbs($event->action, $model);
+            $this->view->params['menu'] = $this->getMenu($event->action, $model);
+        } else {
+            $this->view->title = Yii::t('app', 'Help');
+        }
+        return true;
     }
 
     /**
@@ -436,14 +476,5 @@ class ActiveController extends \yii\rest\ActiveController
     {
         $modelClass = class_exists($this->searchModelClass) ? $this->searchModelClass : $this->modelClass;
         return new $modelClass;
-    }
-
-    /**
-     * Checks if a help view exists for current controller.
-     * @return bool
-     */
-    public function hasHelp()
-    {
-        return file_exists($this->getViewPath() . DIRECTORY_SEPARATOR . 'help' . DIRECTORY_SEPARATOR . 'index.php');
     }
 }

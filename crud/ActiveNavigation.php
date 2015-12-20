@@ -54,11 +54,11 @@ class ActiveNavigation extends Behavior
     }
 
     /**
-     * @param Action $action
+     * @param \yii\base\Action $action
      * @param ActiveRecord $model
      * @return array
      */
-    public function getBreadcrumbs(Action $action, $model)
+    public function getBreadcrumbs(\yii\base\Action $action, $model)
     {
         $breadcrumbs = [];
         $id = null;
