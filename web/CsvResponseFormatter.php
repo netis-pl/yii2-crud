@@ -21,7 +21,8 @@ class CsvResponseFormatter extends Component implements ResponseFormatterInterfa
      */
     public function format($response)
     {
-        $response->getHeaders()->set('Content-Type', 'text/csv; charset=UTF-8');
+        //$response->getHeaders()->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->setDownloadHeaders(basename(\Yii::$app->request->pathInfo) . '.csv', 'text/csv');
         if ($response->data === null) {
             return;
         }

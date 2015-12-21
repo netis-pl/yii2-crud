@@ -20,7 +20,8 @@ class XlsResponseFormatter extends Component implements ResponseFormatterInterfa
      */
     public function format($response)
     {
-        $response->getHeaders()->set('Content-Type', 'application/vnd.ms-excel');
+        //$response->getHeaders()->set('Content-Type', 'application/vnd.ms-excel');
+        $response->setDownloadHeaders(basename(\Yii::$app->request->pathInfo) . '.xls', 'application/vnd.ms-excel');
         if ($response->data === null) {
             return;
         }
