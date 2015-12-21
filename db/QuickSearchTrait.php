@@ -217,12 +217,16 @@ trait QuickSearchTrait
         if (!$query instanceof ActiveQuery) {
             return $query;
         }
-        $searchPhrase = array_filter(array_map('trim', explode(ActiveSearchInterface::TOKEN_SEPARATOR, $query->quickSearchPhrase)));
+        $parts = explode(ActiveSearchInterface::TOKEN_SEPARATOR, $query->quickSearchPhrase);
+        $searchPhrase = array_filter(array_map('trim', $parts));
         if (count($searchPhrase) === 2 && (string)intval($searchPhrase[0]) === $searchPhrase[0]
             && (string)intval($searchPhrase[1]) === $searchPhrase[1]
         ) {
             // special case, whole term is just one digit with decimal separator
             $searchPhrase = [trim($query->quickSearchPhrase)];
+        } elseif (count($parts) > 1) {
+            // add the original value for an exact match
+            $searchPhrase[] = trim($query->quickSearchPhrase);
         }
         list ($safeAttributes, $relationAttributes) = $this->getQuickSearchAttributes();
         $conditions = ['or'];

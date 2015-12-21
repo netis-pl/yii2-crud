@@ -67,7 +67,13 @@ trait AttributeSearchTrait
         $likeOp = $db->driverName === 'pgsql' ? 'ILIKE' : 'LIKE';
         $columnName = $tablePrefix . '.' . $db->getSchema()->quoteSimpleColumnName($attribute);
         if (!is_array($value)) {
-            $value = array_filter(array_map('trim', explode(ActiveSearchInterface::TOKEN_SEPARATOR, $value)));
+            $parts = explode(ActiveSearchInterface::TOKEN_SEPARATOR, $value);
+            $parts = array_filter(array_map('trim', $parts));
+            if (count($parts) > 1) {
+                // add the original value for an exact match
+                $parts[] = trim($value);
+            }
+            $value = $parts;
         }
         switch ($formats[$attribute]) {
             default:
