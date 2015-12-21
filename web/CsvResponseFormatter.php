@@ -33,7 +33,9 @@ class CsvResponseFormatter extends Component implements ResponseFormatterInterfa
         if (!isset($data['items'])) {
             // single model
             fputcsv($handle, array_keys($data));
-            fputcsv($handle, array_values($data));
+            fputcsv($handle, array_map(function ($value) {
+                return is_array($value) ? print_r($value, true) : (string)$value;
+            }, array_values($data)));
         } else {
             // a collection of models
             if (($firstRow = reset($data['items'])) !== false) {

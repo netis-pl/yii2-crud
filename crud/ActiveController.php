@@ -76,19 +76,23 @@ class ActiveController extends \yii\rest\ActiveController
      */
     public function behaviors()
     {
-        return array_merge(parent::behaviors(), [
-            'contentNegotiator' => [
-                'class' => ContentNegotiator::className(),
-                'formats' => [
-                    'text/html' => Response::FORMAT_HTML,
-                    'application/json' => Response::FORMAT_JSON,
-                    'application/xml' => Response::FORMAT_XML,
-                    // custom formats
-                    'text/csv' => Response::FORMAT_CSV,
-                    'application/pdf' => Response::FORMAT_PDF,
-                    'application/vnd.ms-excel' => Response::FORMAT_XLS,
-                ],
+        // bootstrap the ContentNegotiatot behavior earlier to use detected format for authenticator
+        /** @var ContentNegotiator $contentNegotiator */
+        $contentNegotiator = Yii::createObject([
+            'class' => ContentNegotiator::className(),
+            'formats' => [
+                'text/html' => Response::FORMAT_HTML,
+                'application/json' => Response::FORMAT_JSON,
+                'application/xml' => Response::FORMAT_XML,
+                // custom formats
+                'text/csv' => Response::FORMAT_CSV,
+                'application/pdf' => Response::FORMAT_PDF,
+                'application/vnd.ms-excel' => Response::FORMAT_XLS,
             ],
+        ]);
+        $contentNegotiator->negotiate();
+        return array_merge(parent::behaviors(), [
+            'contentNegotiator' => $contentNegotiator,
             'authenticator' => [
                 'class' => \yii\filters\auth\CompositeAuth::className(),
                 'authMethods' => !Yii::$app->user->getIsGuest() || Yii::$app->response->format === Response::FORMAT_HTML
