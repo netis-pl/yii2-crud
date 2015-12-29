@@ -10,6 +10,8 @@ use netis\crud\db\ActiveRecord;
 use netis\crud\widgets\FormBuilder;
 use Yii;
 use yii\base\Model;
+use yii\db\ActiveQuery;
+use yii\db\Query;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\Request;
@@ -219,11 +221,32 @@ class UpdateAction extends Action
         $query = $relation['dataProvider']->query;
 
         $conditions = ['or'];
-        $fkCondition = [
-            'in',
-            array_keys($query->link),
-            array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
-        ];
+        if ($query->via instanceof ActiveQuery || is_array($query->via)) {
+            /** @var ActiveQuery $viaRelation */
+            if ($query->via instanceof ActiveQuery) {
+                $viaRelation = $query->via;
+            } else {
+                list($viaName, $viaRelation) = $query->via;
+            }
+            $fkCondition = [
+                'in',
+                array_keys($query->link),
+                (new Query)
+                    ->select('(' . implode(', ', array_values($query->link)) . ')')
+                    ->from($viaRelation->from)
+                    ->where([
+                        'in',
+                        array_keys($viaRelation->link),
+                        array_combine(array_values($viaRelation->link), $query->primaryModel->getPrimaryKey(true)),
+                    ])
+            ];
+        } else {
+            $fkCondition = [
+                'in',
+                array_keys($query->link),
+                array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
+            ];
+        }
         if (!empty($selection['add'])) {
             $conditions[] = ['in', $relatedPk, self::importKey($relatedPk, $selection['add'])];
         }
