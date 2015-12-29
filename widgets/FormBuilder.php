@@ -57,25 +57,27 @@ class FormBuilder
         return { results: data.items, more: page < data._meta.pageCount };
     };
 
-    s2helper.initSingle = function (element, callback) {
-        var params = {
-            search: {
-                id: element.val()
-            }
+    s2helper.getParams = function (element) {
+        var primaryKey = element.data('relation-pk');
+        if (typeof primaryKey === 'undefined' || primaryKey === null) {
+            primaryKey = 'id';
         }
-        $.getJSON(element.data('select2').opts.ajax.url, params, function (data) {
-            if (typeof data.items[0] != 'undefined')
+
+        var params = {search: {}};
+        params.search[primaryKey] = element.val();
+        return params;
+    };
+
+    s2helper.initSingle = function (element, callback) {
+        $.getJSON(element.data('select2').opts.ajax.url, s2helper.getParams(element), function (data) {
+            if (typeof data.items[0] != 'undefined') {
                 callback(data.items[0]);
+            }
         });
     };
 
     s2helper.initMulti = function (element, callback) {
-        var params = {
-            search: {
-                id: element.val()
-            }
-        }
-        $.getJSON(element.data('select2').opts.ajax.url, params, function (data) {callback(data.items);});
+        $.getJSON(element.data('select2').opts.ajax.url, s2helper.getParams(element), function (data) {callback(data.items);});
     };
 }( window.s2helper = window.s2helper || {}, jQuery ));
 JavaScript;
@@ -512,6 +514,8 @@ JavaScript;
                 'class' => 'select2',
                 'value' => $value,
                 'placeholder' => self::getPrompt(),
+                //for now handle relations with single column primary keys
+                'data-relation-pk' => count($primaryKey) === 1 ? reset($primaryKey) : null,
             ],
         ];
     }
