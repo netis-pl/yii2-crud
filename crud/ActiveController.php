@@ -148,7 +148,7 @@ class ActiveController extends \yii\rest\ActiveController
                 'class' => \yii\rest\OptionsAction::className(),
             ],
             'help' => [
-                'class' => \yii\web\ViewAction::className(),
+                'class' => HelpAction::className(),
                 'viewPrefix' => 'help',
                 'defaultView' => 'index.md',
             ]
@@ -158,8 +158,6 @@ class ActiveController extends \yii\rest\ActiveController
             $helpAction->run();
         } catch (NotFoundHttpException $e) {
             unset($actions['help']);
-        } finally {
-            $this->on(self::EVENT_BEFORE_ACTION, [$this, 'beforeHelpAction']);
         }
         foreach ($this->actionsClassMap as $id => $action) {
             if (!isset($actions[$id])) {
@@ -173,31 +171,6 @@ class ActiveController extends \yii\rest\ActiveController
             }
         }
         return $actions;
-    }
-
-    /**
-     * Adds menu and breadcrumbs. Required, because help views are rendered from markdown templates and can't
-     * execute any logic.
-     * @param ActionEvent $event
-     * @return bool
-     */
-    public function beforeHelpAction($event)
-    {
-        $model = new $this->modelClass();
-        $format = Yii::$app->response->format;
-        if ($format !== Response::FORMAT_HTML && $format !== Response::FORMAT_PDF) {
-            return true;
-        }
-        if ($model instanceof \netis\crud\db\ActiveRecord) {
-            if ($this->view->title === null) {
-                $this->view->title = $model->getCrudLabel('relation') . ' - ' . Yii::t('app', 'Help');
-            }
-            $this->view->params['breadcrumbs'] = $this->getBreadcrumbs($event->action, $model);
-            $this->view->params['menu'] = $this->getMenu($event->action, $model);
-        } else {
-            $this->view->title = Yii::t('app', 'Help');
-        }
-        return true;
     }
 
     /**
