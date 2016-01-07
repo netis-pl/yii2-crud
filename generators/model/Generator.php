@@ -17,6 +17,11 @@ class Generator extends \yii\gii\generators\model\Generator
     public $singularModelClass = true;
     public $searchNs = 'app\models\search';
     public $searchModelClass = '';
+    public $baseClass = 'netis\crud\db\ActiveRecord';
+    public $queryBaseClass = 'netis\crud\db\ActiveQuery';
+    public $useSchemaName = false;
+    public $useTablePrefix = true;
+
 
     /**
      * @inheritdoc
