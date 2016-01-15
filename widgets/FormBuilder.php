@@ -846,11 +846,11 @@ JavaScript;
             } elseif (!is_string($field) && is_callable($field)) {
                 $formFields[$key] = call_user_func($field, $model);
                 if (!is_string($formFields[$key])) {
-                    throw new InvalidConfigException('Field definition must be either an ActiveField or a callable.');
+                    throw new InvalidConfigException('Field definition must be either an string, ActiveField or a callable.');
                 }
                 continue;
             } elseif (!is_string($field)) {
-                throw new InvalidConfigException('Field definition must be either an ActiveField or a callable.');
+                throw new InvalidConfigException('Field definition must be either an string, ActiveField or a callable.');
             }
             $attributeName = Html::getAttributeName($field);
 
