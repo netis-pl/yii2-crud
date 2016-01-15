@@ -12,6 +12,7 @@ use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
 use yii\base\Model;
 use \netis\crud\db\ActiveRecord;
+use yii\helpers\ArrayHelper;
 use yii\helpers\FormatConverter;
 use yii\helpers\Html;
 
@@ -376,7 +377,9 @@ class Formatter extends \yii\i18n\Formatter
             return $this->nullDisplay;
         }
 
-        list($params, $position) = $this->formatSiNumber($value, $decimals, 1, $options, $textOptions);
+        $maxPosition = ArrayHelper::remove($options, 'maxPosition', 1);
+
+        list($params, $position) = $this->formatSiNumber($value, $decimals, $maxPosition, $options, $textOptions);
 
         switch ($position) {
             case 0:
@@ -418,7 +421,7 @@ class Formatter extends \yii\i18n\Formatter
             }
             $value = $value / $formatBase;
             $position++;
-        } while ($position < $maxPosition + 1);
+        } while ($position < $maxPosition);
 
         // no decimals for base unit
         if ($position === 0) {

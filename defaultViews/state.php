@@ -63,7 +63,20 @@ foreach ($states as $state) {
 <?php else : ?>
 
 <?php
-$icon = Html::tag('i', '', ['class' => 'fa fa-'. $stateChange['state']->icon]);
+if (!isset($buttons)) {
+    $icon = Html::tag('i', '', ['class' => 'fa fa-'. $stateChange['state']->icon]);
+    $buttons = [
+        Html::submitButton($icon . $stateChange['state']->label, [
+            'class' => 'btn ' . $stateChange['state']->css_class,
+        ]),
+        Html::a(Yii::t('app', 'Back'), Url::toRoute([
+            Yii::$app->request->getQueryParam('return', $controller->action->viewAction),
+            'id' => \netis\crud\crud\Action::exportKey($model->getPrimaryKey(true)),
+        ]), [
+            'class' => 'btn btn-default',
+        ]),
+    ];
+}
 echo Html::hiddenInput('target-state', $targetState, ['id' => 'target-state']);
 echo $this->render('_form', [
     'model' => $model,
@@ -79,17 +92,7 @@ echo $this->render('_form', [
         ]),
         'enableAjaxValidation' => false,
     ], isset($formOptions) ? $formOptions : []),
-    'buttons' => [
-        Html::submitButton($icon . $stateChange['state']->label, [
-            'class' => 'btn ' . $stateChange['state']->css_class,
-        ]),
-        Html::a(Yii::t('app', 'Back'), Url::toRoute([
-            Yii::$app->request->getQueryParam('return', $controller->action->viewAction),
-            'id' => \netis\crud\crud\Action::exportKey($model->getPrimaryKey(true)),
-        ]), [
-            'class' => 'btn btn-default',
-        ]),
-    ],
+    'buttons' => $buttons,
 ], $this->context) ?>
 
 <?php endif; ?>
