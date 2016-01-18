@@ -15,13 +15,13 @@ cache:
 
 install:
   - cd tests/app
-  - ../bin/yii migrate --interactive=0
   - travis_retry composer self-update && composer --version
   - travis_retry composer global require "fxp/composer-asset-plugin:~1.1.0"
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
   - travis_retry composer install --dev --prefer-dist --no-interaction
 # setup application:
   - cd ../
+  - bin/yii migrate --interactive=0
   - app/vendor/bin/codecept build
 
 script:
