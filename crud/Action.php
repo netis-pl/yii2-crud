@@ -473,7 +473,7 @@ class Action extends \yii\rest\Action
                 $result[$key] = $field;
                 continue;
             } elseif (!is_string($field) && is_callable($field)) {
-                $result[$key] = call_user_func($field, $model);
+                $result[$key] = call_user_func($field, $model, $this);
                 continue;
             }
 
