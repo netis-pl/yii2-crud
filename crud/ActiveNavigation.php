@@ -185,7 +185,7 @@ class ActiveNavigation extends Behavior
             $menu['history'] = [
                 'label' => Yii::t('app', 'History of changes'),
                 'icon'  => 'list-alt',
-                'url'   => ['history', 'id' => $id],
+                'url'   => array_merge(['history', 'id' => $id], $this->getUrlParams('history', $id)),
             ];
         }
         if (!$horizontal && $model->isNewRecord) {
@@ -195,7 +195,7 @@ class ActiveNavigation extends Behavior
             $menu['update'] = [
                 'label'  => Yii::t('app', 'Update'),
                 'icon'   => 'pencil',
-                'url'    => ['update', 'id' => $id],
+                'url'    => array_merge(['update', 'id' => $id], $this->getUrlParams('update', $id)),
                 'active' => $action->id === 'update' && !$model->isNewRecord,
             ];
         }
@@ -203,7 +203,7 @@ class ActiveNavigation extends Behavior
             $menu['view'] = [
                 'label'       => Yii::t('app', 'View'),
                 'icon'        => 'eye-open',
-                'url'         => ['view', 'id' => $id],
+                'url'         => array_merge(['view', 'id' => $id], $this->getUrlParams('view', $id)),
                 'linkOptions' => $action->id === 'view' ? [] : ['data-confirm' => $confirms['leave']],
                 'active'      => $action->id === 'view',
             ];
@@ -212,7 +212,7 @@ class ActiveNavigation extends Behavior
             $menu['print'] = [
                 'label'       => Yii::t('app', 'Print'),
                 'icon'        => 'print',
-                'url'         => ['print', 'id' => $id, '_format' => 'pdf'],
+                'url'         => array_merge(['print', 'id' => $id, '_format' => 'pdf'], $this->getUrlParams('print', $id)),
                 'linkOptions' => $action->id === 'print' ? [] : ['data-confirm' => $confirms['leave']],
                 'active'      => $action->id === 'print',
             ];
@@ -221,7 +221,7 @@ class ActiveNavigation extends Behavior
             $menu['delete'] = [
                 'label'       => Yii::t('app', 'Delete'),
                 'icon'        => 'trash',
-                'url'         => ['delete', 'id' => $id],
+                'url'         => array_merge(['delete', 'id' => $id], $this->getUrlParams('delete', $id)),
                 'linkOptions' => ['data-confirm' => $confirms['delete'], 'data-method' => 'post'],
             ];
         }
@@ -230,7 +230,7 @@ class ActiveNavigation extends Behavior
             $menu['toggle'] = [
                 'label'       => $enabled ? Yii::t('app', 'Disable') : Yii::t('app', 'Enable'),
                 'icon'        => $enabled ? 'ban' : 'reply',
-                'url'         => ['toggle', 'id' => $id],
+                'url'         => array_merge(['toggle', 'id' => $id], $this->getUrlParams('toggle', $id)),
                 'linkOptions' => $enabled ? ['data-confirm' => $confirms['disable']] : [],
             ];
         }
@@ -238,9 +238,16 @@ class ActiveNavigation extends Behavior
             && $model instanceof \netis\fsm\components\IStateful
             && $privs['state']
         ) {
+            $controllerActions = $this->owner->actions();
+            $action = null;
+            if (isset($controllerActions['state'])) {
+                $action = Yii::createObject($controllerActions['state'], ['state', $this->owner]);
+            } else {
+                $action = Yii::createObject(\netis\fsm\components\StateAction::className(), ['state', $this->owner]);
+            }
             $transitions = $model->getTransitionsGroupedByTarget();
             $stateAttribute = $model->getStateAttributeName();
-            $stateMenu = \netis\fsm\components\StateAction::getContextMenuItem(
+            $stateMenu = $action->getContextMenuItem(
                 'state',
                 $transitions,
                 $model,
@@ -401,5 +408,18 @@ class ActiveNavigation extends Behavior
             }
         }
         return $result;
+    }
+
+    /**
+     * Return url params for to use in urls to actions view, update, index etc.
+     *
+     * @param string $actionId
+     * @param string $primaryKey
+     *
+     * @return array
+     */
+    protected function getUrlParams($actionId, $primaryKey)
+    {
+        return [];
     }
 }
