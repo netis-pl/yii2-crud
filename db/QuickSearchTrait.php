@@ -111,7 +111,7 @@ trait QuickSearchTrait
                 $class = $query->modelClass;
                 return $query->select(false)->from([$relationName => $class::tableName()]);
             }]);
-            $query->distinct = true;
+
             $conditions = ['and'];
             /** @var ActiveSearchInterface $searchModel */
             $searchModel = $relation['searchModel'];

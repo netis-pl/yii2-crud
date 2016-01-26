@@ -10,6 +10,7 @@ use Yii;
 use yii\data\ActiveDataProvider;
 use yii\data\Pagination;
 use yii\data\Sort;
+use yii\db\TableSchema;
 
 trait ActiveSearchTrait
 {
@@ -31,7 +32,7 @@ trait ActiveSearchTrait
         }
 
         if (is_array($sort)) {
-            $sort = array_merge($this->getSortConfig($query, $this->attributes()), $sort);
+            $sort = \yii\helpers\ArrayHelper::merge($this->getSortConfig($query, $this->attributes()), $sort);
         }
         if (is_array($pagination)) {
             $pagination = array_merge([
@@ -80,7 +81,12 @@ trait ActiveSearchTrait
             'defaultOrder' => $defaults,
         ];
 
+        /** @var TableSchema $tableSchema */
+        $tableSchema = $this->getTableSchema();
         foreach ($attributes as $attribute) {
+            if ($tableSchema->getColumn($attribute) === null) {
+                continue;
+            }
             $sort['attributes'][$attribute] = [
                 'asc' => array_merge([$attribute => SORT_ASC], $defaults),
                 'desc' => array_merge([$attribute => SORT_DESC], $defaults),

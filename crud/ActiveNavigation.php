@@ -8,6 +8,7 @@ namespace netis\crud\crud;
 
 use netis\crud\db\ActiveQuery;
 use netis\crud\db\ActiveRecord;
+use netis\fsm\components\StateActionInterface;
 use Yii;
 use yii\base\Behavior;
 
@@ -242,7 +243,8 @@ class ActiveNavigation extends Behavior
             $action = null;
             if (isset($controllerActions['state'])) {
                 $action = Yii::createObject($controllerActions['state'], ['state', $this->owner]);
-            } else {
+            }
+            if ($action === null || !($action instanceof StateActionInterface)) {
                 $action = Yii::createObject(\netis\fsm\components\StateAction::className(), ['state', $this->owner]);
             }
             $transitions = $model->getTransitionsGroupedByTarget();
