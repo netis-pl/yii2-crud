@@ -22,7 +22,7 @@ use yii\web\IdentityInterface;
  * @method bool isRelated(array $relations, IdentityInterface $user = null)
  * @method array getCheckedRelations($userId, $permissionName, array $params = [])
  * @method bool saveRelations(array $data, $formName = null)
- * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys)
+ * @method void linkByKeys(\yii\db\ActiveQuery $relation, array $keys, array $removeKeys = null)
  * @method string getCrudLabel($operation = null)
  * @method string getRelationLabel(\yii\db\ActiveQuery $activeRelation, $relation)
  * @method string getLocalLabel($attribute, $language = null)
