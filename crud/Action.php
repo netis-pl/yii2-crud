@@ -608,6 +608,20 @@ class Action extends \yii\rest\Action
         ];
     }
 
+    protected static function getLinkedColumn($model, $field)
+    {
+        return array_merge(
+            static::getAttributeColumn($model, $field, ['crudLink', [], 'view', function ($value) use ($field) {
+                return \yii\helpers\Html::encode($value->$field);
+            }]),
+            [
+                'value' => function ($model, $key, $index, $column) {
+                    return $model;
+                },
+            ]
+        );
+    }
+
     /**
      * Retrieves grid columns configuration using the modelClass.
      * @param Model $model
@@ -647,6 +661,10 @@ class Action extends \yii\rest\Action
                     || in_array($field, $behaviorAttributes)
                     || $field === $versionAttribute
                 ) {
+                    continue;
+                }
+                if (in_array($field, $labelsBehavior->attributes)) {
+                    $columns[] = static::getLinkedColumn($model, $field);
                     continue;
                 }
                 $columns[] = static::getAttributeColumn($model, $field, $format);
