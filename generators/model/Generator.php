@@ -15,13 +15,15 @@ use yii\helpers\Inflector;
 class Generator extends \yii\gii\generators\model\Generator
 {
     public $singularModelClass = true;
-    public $searchNs = 'app\models\search';
+    public $searchNs = null;
     public $searchModelClass = '';
+    public $queryNs = null;
     public $baseClass = 'netis\crud\db\ActiveRecord';
     public $queryBaseClass = 'netis\crud\db\ActiveQuery';
     public $useSchemaName = false;
     public $useTablePrefix = true;
-
+    public $enableI18N = true;
+    public $generateQuery = true;
 
     /**
      * @inheritdoc
@@ -49,11 +51,21 @@ DESC;
      */
     public function rules()
     {
-        return array_merge(parent::rules(), [
-            [['searchModelClass', 'searchNs'], 'trim'],
-            [['searchNs'], 'filter', 'filter' => function ($value) {
-                return trim($value, '\\');
-            }],
+        return array_merge(
+            [
+                [['searchModelClass', 'searchNs', 'queryNs', 'ns'], 'trim'],
+                [['searchNs', 'queryNs', 'ns'], 'filter', 'filter' => function ($value) {
+                    return trim($value, '\\');
+                }],
+                [['searchNs'], 'filter', 'filter' => function ($value) {
+                    return $value === '' ? $this->ns . '\\search' : $value;
+                }],
+                [['queryNs'], 'filter', 'filter' => function ($value) {
+                    return $value === '' ? $this->ns . '\\query' : $value;
+                }],
+            ],
+            parent::rules(),
+            [
             [['searchNs'], 'required'],
             [
                 ['searchModelClass'],

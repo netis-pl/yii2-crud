@@ -343,4 +343,32 @@ class ActiveRecord extends \yii\db\ActiveRecord
         }
         return false;
     }
+
+    /**
+     * Loads default values from database table schema
+     *
+     * You may call this method to load default values after creating a new instance:
+     *
+     * ```php
+     * // class Customer extends \yii\db\ActiveRecord
+     * $customer = new Customer();
+     * $customer->loadDefaultValues();
+     * ```
+     *
+     * @param boolean $skipIfSet whether existing value should be preserved.
+     * This will only set defaults for attributes that are `null`.
+     * @return $this the model instance itself.
+     */
+    public function loadDefaultValues($skipIfSet = true)
+    {
+        foreach ($this->getTableSchema()->columns as $column) {
+            if ($column->defaultValue !== null && (!$skipIfSet || $this->{$column->name} === null)) {
+                $this->{$column->name} = $column->defaultValue;
+            }
+            if ($column->type === 'timestamp' && $column->defaultValue !== null) {
+                $this->{$column->name} = new \yii\db\Expression('now');
+            }
+        }
+        return $this;
+    }
 }
