@@ -365,8 +365,9 @@ class ActiveRecord extends \yii\db\ActiveRecord
             if ($column->defaultValue !== null && (!$skipIfSet || $this->{$column->name} === null)) {
                 $this->{$column->name} = $column->defaultValue;
             }
-            if ($column->type === 'timestamp' && $column->defaultValue !== null) {
-                $this->{$column->name} = new \yii\db\Expression('now');
+            if (($column->type === Schema::TYPE_DATETIME || $column->type === Schema::TYPE_TIMESTAMP
+                    || $column->type === Schema::TYPE_TIME || $column->type === Schema::TYPE_DATE) && $column->defaultValue == 'now()') {
+                $this->{$column->name} = 'now';
             }
         }
         return $this;
