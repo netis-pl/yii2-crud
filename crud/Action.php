@@ -518,6 +518,7 @@ class Action extends \yii\rest\Action
                     'query' => $relation,
                     'pagination' => [
                         'pageParam' => "$field-page",
+                        'pageSizeParam' => "$field-per-page",
                     ],
                     'sort' => ['sortParam' => "$field-sort"],
                 ]),
@@ -758,10 +759,7 @@ class Action extends \yii\rest\Action
 
         return new ActiveDataProvider([
             'query' => $query,
-            'pagination' => [
-                'pageSizeLimit' => [-1, 0x7FFFFFFF],
-                'defaultPageSize' => 25,
-            ],
+            'pagination' => [],
         ]);
     }
 

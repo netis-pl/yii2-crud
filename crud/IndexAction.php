@@ -125,7 +125,7 @@ class IndexAction extends Action
         $actionColumn->buttonOptions['class'] = 'operation-button';
         $extraColumns = [
             [
-                'class'         => 'yii\grid\ActionColumn',
+                'class'         => \yii\grid\ActionColumn::className(),
                 'headerOptions' => ['class' => 'column-action'],
                 'controller'    => Yii::$app->crudModelsMap[$model::className()],
                 'template'      => '{update} {delete} {toggle}', // {view} removed because representing column is linked
@@ -173,14 +173,14 @@ class IndexAction extends Action
         ];
         if ($this->useSerialColumn) {
             $extraColumns[] = [
-                'class'         => 'yii\grid\SerialColumn',
+                'class'         => \yii\grid\SerialColumn::className(),
                 'headerOptions' => ['class' => 'column-serial'],
             ];
         }
         if ($this->useCheckboxColumn) {
             //$classParts = explode('\\', $this->modelClass);
             $extraColumns[] = [
-                'class'         => 'yii\grid\CheckboxColumn',
+                'class'         => \yii\grid\CheckboxColumn::className(),
                 'headerOptions' => ['class' => 'column-checkbox'],
                 'multiple'      => true,
                 //'name'          => end($classParts).'[]',
