@@ -109,6 +109,8 @@ echo GridView::widget(array_merge([
 Pjax::end();
 
 if ($searchModes & IndexAction::SEARCH_COLUMN_HEADERS) {
+    //@todo implement filtering on keyup after timeout.
+    //@todo move this to separate js file and make library from it.
     $script = <<<JavaScript
 var enterPressed = false;
 $(document)
@@ -133,6 +135,11 @@ $(document)
         return false;
     })
     .on('change', '#{$gridId}-filters input.select2, #{$gridId}-filters select.select2', function (event) {
+        $('#{$gridId}').yiiGridView('applyFilter');
+        return false;
+    })
+    .on( "autocompleteselect", '#{$gridId}-filters input.ui-autocomplete-input', function( event, ui ) {
+        $(this).val(ui.item.value);
         $('#{$gridId}').yiiGridView('applyFilter');
         return false;
     });

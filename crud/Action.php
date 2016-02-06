@@ -518,7 +518,6 @@ class Action extends \yii\rest\Action
                     'query' => $relation,
                     'pagination' => [
                         'pageParam' => "$field-page",
-                        'pageSize' => 10,
                     ],
                     'sort' => ['sortParam' => "$field-sort"],
                 ]),

@@ -17,11 +17,23 @@ trait ActiveSearchTrait
     use QuickSearchTrait;
 
     /**
-     * Creates data provider instance with search query applied
+     * Creates data provider instance with search query applied. You can pass {@link Pagination} configuration in
+     * $pagination param. If you want set it up globally then you should use DI like this:
+     * ```
+     * 'bootstrap' => [
+     *     function () {
+     *         \Yii::$container->set(\yii\data\Pagination::className(), [
+     *             'pageSizeLimit' => [-1, 0x7FFFFFFF],
+     *             'defaultPageSize' => 50,
+     *         ]);
+     *     },
+     * ],
+     * ```
      *
      * @param \yii\db\ActiveQuery $query
      * @param Sort|array $sort
      * @param Pagination|array $pagination
+     *
      * @return ActiveDataProvider
      */
     public function search(\yii\db\ActiveQuery $query = null, $sort = [], $pagination = [])
@@ -33,12 +45,6 @@ trait ActiveSearchTrait
 
         if (is_array($sort)) {
             $sort = \yii\helpers\ArrayHelper::merge($this->getSortConfig($query, $this->attributes()), $sort);
-        }
-        if (is_array($pagination)) {
-            $pagination = array_merge([
-                'pageSizeLimit' => [-1, 0x7FFFFFFF],
-                'defaultPageSize' => 25,
-            ], $pagination);
         }
 
         $dataProvider = new ActiveDataProvider([
