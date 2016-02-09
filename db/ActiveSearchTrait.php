@@ -44,7 +44,13 @@ trait ActiveSearchTrait
         }
 
         if (is_array($sort)) {
-            $sort = \yii\helpers\ArrayHelper::merge($this->getSortConfig($query, $this->attributes()), $sort);
+            $defaultSort = $this->getSortConfig($query, $this->attributes());
+            //if sort config has defaultOrder set then append defaultOrders at the end instead of beginning
+            if (isset($sort['defaultOrder'])) {
+                $sort['defaultOrder'] = array_merge($sort['defaultOrder'], $defaultSort['defaultOrder']);
+                unset($defaultSort['defaultOrder']);
+            }
+            $sort = \yii\helpers\ArrayHelper::merge($defaultSort, $sort);
         }
 
         $dataProvider = new ActiveDataProvider([
