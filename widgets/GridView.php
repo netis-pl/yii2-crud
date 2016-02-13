@@ -19,6 +19,8 @@ class GridView extends \yii\grid\GridView
 {
     public $buttons = [];
 
+    private $clientOptions = [];
+
     /**
      * @inheritdoc
      */
@@ -101,4 +103,12 @@ HTML;
         return $result;
     }
 
+    public function setClientOptions($options) {
+        $this->clientOptions = $options;
+    }
+
+    protected function getClientOptions()
+    {
+        return array_merge($this->clientOptions, parent::getClientOptions());
+    }
 }

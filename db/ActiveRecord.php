@@ -96,6 +96,9 @@ class ActiveRecord extends \yii\db\ActiveRecord
         return $scenarios;
     }
 
+    /**
+     * @return string
+     */
     public function __toString()
     {
         /** @var \netis\crud\db\LabelsBehavior */
