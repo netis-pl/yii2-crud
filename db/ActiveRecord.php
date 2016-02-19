@@ -103,8 +103,19 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         /** @var \netis\crud\db\LabelsBehavior */
         if (($string = $this->getBehavior('labels')) !== null) {
-            $attributes = $this->getAttributes($string->attributes);
-            return implode($string->separator, $attributes);
+            $parts = [];
+            foreach ($string->attributes as $attribute) {
+                if (($format = $this->getAttributeFormat($attribute)) === null) {
+                    $parts[] = $this->$attribute;
+                    continue;
+                }
+
+                $parts [] = \Yii::$app->formatter->format(
+                    $this->getAttribute($attribute),
+                    $format
+                );
+            }
+            return implode($string->separator, $parts);
         }
         return implode('/', $this->getPrimaryKey(true));
     }
