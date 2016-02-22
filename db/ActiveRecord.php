@@ -105,7 +105,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
         if (($string = $this->getBehavior('labels')) !== null) {
             $parts = [];
             foreach ($string->attributes as $attribute) {
-                if (($format = $this->getAttributeFormat($attribute)) === null) {
+                if (($format = $this->getAttributeFormat($attribute)) === null || !$this->hasAttribute($attribute)) {
                     $parts[] = $this->$attribute;
                     continue;
                 }
