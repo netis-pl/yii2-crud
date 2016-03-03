@@ -6,6 +6,7 @@
 
 namespace netis\crud\web;
 
+use PHPExcel_Worksheet;
 use yii\base\Component;
 use yii\web\ResponseFormatterInterface;
 
@@ -14,6 +15,8 @@ use yii\web\ResponseFormatterInterface;
  */
 class XlsResponseFormatter extends Component implements ResponseFormatterInterface
 {
+    public $createSumRow = true;
+
     /**
      * Formats the specified response.
      * @param \yii\web\Response $response the response to be formatted.
@@ -62,13 +65,7 @@ class XlsResponseFormatter extends Component implements ResponseFormatterInterfa
             foreach ($data['items'] as $item) {
                 $this->addLine($sheet, $offset++, $item);
             }
-            $column = 'A';
-            foreach ($item as $value) {
-                $rangeCoordinates = $column . $startOffset . ':' . $column . ($offset - 1);
-                $cellCoordinates = $column++ . $offset;
-                $formula = "=SUM($rangeCoordinates)";
-                $sheet->setCellValue($cellCoordinates, $formula, true);//->duplicateStyle($styles['summaryFloat']);
-            }
+            $this->addSummaryRow($sheet, $startOffset, $offset, $item);
         }
 
         $filename = tempnam(\Yii::getAlias('@runtime'), 'xls');
@@ -148,5 +145,25 @@ class XlsResponseFormatter extends Component implements ResponseFormatterInterfa
             $result[$name] = $style;
         }
         return $result;
+    }
+
+    /**
+     * @param PHPExcel_Worksheet $sheet
+     * @param int $startOffset
+     * @param int $offset
+     * @param array $item
+     */
+    private function addSummaryRow($sheet, $startOffset, $offset, $item)
+    {
+        if (!$this->createSumRow) {
+            return;
+        }
+        $column = 'A';
+        foreach ($item as $value) {
+            $rangeCoordinates = $column . $startOffset . ':' . $column . ($offset - 1);
+            $cellCoordinates = $column++ . $offset;
+            $formula = "=SUM($rangeCoordinates)";
+            $sheet->setCellValue($cellCoordinates, $formula, true);//->duplicateStyle($styles['summaryFloat']);
+        }
     }
 }

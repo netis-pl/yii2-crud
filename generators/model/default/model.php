@@ -107,7 +107,7 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
         return array_merge(parent::behaviors(), [
 <?php foreach ($behaviors as $name => $behavior): ?>
             '<?= $name ?>' => [
-                'class' => '<?= $behavior['class'] ?>',
+                'class' => \<?= $behavior['class'] ?>::className(),
 <?php foreach ($behavior['options'] as $option => $optionValue): ?>
                 <?= "'$option' => " . (is_array($optionValue)
                     ? "[" . implode(', ', array_map(
