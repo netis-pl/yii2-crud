@@ -380,6 +380,7 @@ JavaScript;
         //we get prefix from $relation because it could be in format [3]relation and we need to have [3]foreign_key here
         $relationName = Html::getAttributeName($relation);
         $prefixedFk = str_replace($relationName, $foreignKey, $relation);
+        $value = Html::getAttributeValue($model, $isMany ? $relation : $prefixedFk);
         return [
             'class' => \maddoger\widgets\Select2::className(),
             'model' => $model,
@@ -394,6 +395,7 @@ JavaScript;
                 'class' => 'select2',
                 'prompt' => '',
                 'placeholder' => self::getPrompt(),
+                'value' => Action::implodeEscaped(Action::KEYS_SEPARATOR, (array)$value),
             ], $multiple ? ['multiple' => 'multiple'] : []),
         ];
     }

@@ -18,6 +18,12 @@ use yii\helpers\Html;
 class GridView extends \yii\grid\GridView
 {
     public $buttons = [];
+    public $lengthPickerOptions = ['class' => 'pagination pull-right'];
+
+    public function init()
+    {
+        parent::init();
+    }
 
     private $clientOptions = [];
 
@@ -67,8 +73,7 @@ class GridView extends \yii\grid\GridView
             $url = $pagination->createUrl($pagination->getPage(), $value);
             $choices[] = '<li class="'.$cssClass.'"><a href="' . $url . '">' . $value . '</a></li>';
         }
-        return Html::tag('ul', implode("\n", $choices), ['class' => 'pagination pull-right'])
-        . '<div class="pagination page-length-label pull-right">' . Yii::t('app', 'Items per page') . '</div>';
+        return Html::tag('ul', implode("\n", $choices), $this->lengthPickerOptions);
     }
 
     /**
@@ -87,14 +92,14 @@ class GridView extends \yii\grid\GridView
         <div class="form-group">
             <div class="input-group grid-quick-search">
                 <div class="input-group-btn">
-                    <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+                    <button class="btn btn-default" type="submit"><i class="mdi mdi-magnify"></i></button>
                 </div>
                 <input class="form-control"
                         id="{$id}-quickSearch" name="search" placeholder="$placeholder" value="$value" type="text"/>
                          <!--onkeyup="jQuery('#{$id}').yiiGridView('applyFilter')"-->
                 <div class="input-group-btn">
                     <button class="btn btn-default" onclick="$('#{$id}-quickSearch').val('').change();return false;">
-                        <i class="glyphicon glyphicon-remove"></i>
+                        <i class="mdi mdi-close"></i>
                     </button>
                 </div>
             </div>

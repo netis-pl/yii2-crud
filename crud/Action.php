@@ -654,7 +654,9 @@ class Action extends \yii\rest\Action
             }
             // if the field is from a relation (eg. client.firstname) treat it as an attribute
             $format = isset($formats[$field]) ? $formats[$field] : $model->getAttributeFormat($field);
-
+            if ($format === 'paragraphs') {
+                $format = 'shortText';
+            }
             if ($format !== null) {
                 if ((in_array($field, $keys)
                         && ($labelsBehavior === null || !in_array($field, $labelsBehavior->attributes)))
@@ -764,7 +766,7 @@ class Action extends \yii\rest\Action
     }
 
     /**
-     * @return ActiveSearchInterface
+     * @return ActiveSearchInterface|ActiveRecord
      */
     public function getSearchModel()
     {

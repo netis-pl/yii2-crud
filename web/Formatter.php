@@ -457,9 +457,10 @@ class Formatter extends \yii\i18n\Formatter
         if ($value === null) {
             return $this->nullDisplay;
         }
-        return '<p data-toggle="tooltip" title="' . Html::encode($value) . '">'
-            . Html::encode(mb_strimwidth($value, 0, 30, "…", 'UTF-8'))
-            . '</p>';
+        return Html::tag('span',
+            Html::encode(mb_strimwidth($value, 0, 30, "…", 'UTF-8')),
+            ['title' => Html::encode($value), 'data-toggle' => 'tooltip']
+        );
     }
 
     protected function isInfinity($value)

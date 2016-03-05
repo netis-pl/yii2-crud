@@ -70,7 +70,7 @@ class ActiveNavigation extends Behavior
         }
 
         if ($action->id == 'index') {
-            $breadcrumbs[] = $model->getCrudLabel();
+            $breadcrumbs[] = $model->getCrudLabel('index');
         }
         if ($action->id == 'update') {
             $breadcrumbs[] = [
