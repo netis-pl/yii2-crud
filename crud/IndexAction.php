@@ -56,7 +56,7 @@ class IndexAction extends Action
         if ($this->checkAccess) {
             // additional authorization conditions are added in getQuery() method
             // using the "authorized" query
-            call_user_func($this->checkAccess, 'read', $this->modelClass);
+            call_user_func($this->checkAccess, 'read');
         }
         $model = new $this->modelClass();
         $searchModel = $this->getSearchModel();
