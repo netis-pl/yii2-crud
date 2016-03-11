@@ -70,7 +70,7 @@ if ($searchModes & IndexAction::SEARCH_QUICK_SEARCH) {
     </div>
 </div>
 HTML;
-} else {
+} else if (trim($buttonsTemplate) !== '') {
     $buttonsTemplate = $buttonsTemplate . '<br/><br/>';
 }
 

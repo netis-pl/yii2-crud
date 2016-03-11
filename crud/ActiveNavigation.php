@@ -33,6 +33,18 @@ class ActiveNavigation extends Behavior
 
     public $createActionId = 'update';
 
+    public $buttons = [
+        'index',
+        'view',
+        'print',
+        'update',
+        'delete',
+        'toggle',
+        'history',
+        'help',
+        'state',
+    ];
+
     /**
      * @param \yii\base\Action $action
      * @return array
@@ -111,17 +123,15 @@ class ActiveNavigation extends Behavior
         $menu = [];
         $askBeforeLeave = in_array($action->id, [$this->createActionId, 'update']);
 
-        if ($privs['read'] && $defaultActions['index']) {
-            if ($horizontal || $action->id != 'index') {
-                // drawn in horizontal menu or in update and view actions
-                $menu['index'] = [
-                    'label'       => Yii::t('app', 'List'),
-                    'icon'        => 'list-alt',
-                    'url'         => $this->getIndexRoute($action),
-                    'linkOptions' => $askBeforeLeave ? ['data-confirm' => $confirms['leave']] : [],
-                    'active'      => $action->id === 'index',
-                ];
-            }
+        if ($privs['read'] && $defaultActions['index'] && ($horizontal || $action->id != 'index')) {
+            // drawn in horizontal menu or in update and view actions
+            $menu['index'] = [
+                'label'       => Yii::t('app', 'List'),
+                'icon'        => 'list-alt',
+                'url'         => $this->getIndexRoute($action),
+                'linkOptions' => $askBeforeLeave ? ['data-confirm' => $confirms['leave']] : [],
+                'active'      => $action->id === 'index',
+            ];
         }
         if ($privs['create']) {
             // drawn in all actions, that is: index, update, view
@@ -133,19 +143,17 @@ class ActiveNavigation extends Behavior
                 'active'      => $action->id === $this->createActionId && $model->isNewRecord,
             ];
         }
-        if ($privs['read'] && $defaultActions['help']) {
-            if ($horizontal || $action->id !== 'help') {
-                $menu['help'] = [
-                    'label'  => Yii::t('app', 'Help'),
-                    'icon'   => 'question-sign',
-                    'url'    => ['help'],
-                    'active' => $action->id === 'help',
-                ];
-            }
+        if ($privs['read'] && $defaultActions['help'] && ($horizontal || $action->id !== 'help')) {
+            $menu['help'] = [
+                'label'  => Yii::t('app', 'Help'),
+                'icon'   => 'question-sign',
+                'url'    => ['help'],
+                'active' => $action->id === 'help',
+            ];
         }
         // draw the history button at the end of common section,
         //because it will be replaced in current depending on action
-        if ($privs['read'] && $defaultActions['history'] && ($action->id === 'index')
+        if ($privs['read'] && $defaultActions['history'] && in_array('index', $this->buttons)
             && $model->getBehavior('trackable') !== null
         ) {
             // drawn only in index action
@@ -284,10 +292,22 @@ class ActiveNavigation extends Behavior
 
         $defaultActions = $owner->actions();
         // set default indexes to avoid many isset() calls later
-        return array_merge([
-            'index'  => false, 'view' => false, 'print' => false, 'update' => false, 'delete' => false,
-            'toggle' => false, 'history' => false, 'help' => false, 'state' => false,
-        ], $defaultActions);
+        $actions = [
+            'index' => false,
+            'view' => false,
+            'print' => false,
+            'update' => false,
+            'delete' => false,
+            'toggle' => false,
+            'history' => false,
+            'help' => false,
+            'state' => false,
+        ];
+        $availableActions = array_merge($actions, $defaultActions);
+        foreach ($availableActions as $action => $enabled) {
+            $availableActions[$action] = $enabled && in_array($action, $this->buttons);
+        }
+        return $availableActions;
     }
 
     /**

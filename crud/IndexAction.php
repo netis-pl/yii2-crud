@@ -11,6 +11,7 @@ use netis\crud\db\LabelsBehavior;
 use netis\crud\web\Response;
 use netis\crud\widgets\FormBuilder;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\grid\ActionColumn;
@@ -47,6 +48,15 @@ class IndexAction extends Action
      */
     public $useCheckboxColumn = false;
 
+    /**
+     * @var null|callable|array $gridButtons Buttons which will be added to grid widget. Callable signature:
+     * ```php
+     * function ($action, $dataProvider) {
+     *
+     * }
+     * ```
+     */
+    public $gridButtons = null;
 
     /**
      * @return ActiveDataProvider
@@ -219,23 +229,36 @@ class IndexAction extends Action
      */
     protected function getDefaultGridButtons($dataProvider)
     {
+        if (is_callable($this->gridButtons)) {
+            return call_user_func($this->gridButtons, $this, $dataProvider);
+        }
+
+        if (is_array($this->gridButtons)) {
+            return $this->gridButtons;
+        }
+
+        if ($this->gridButtons !== null) {
+            throw new InvalidConfigException('gridButtons property should be either null, array or callable.');
+        }
+
         /** @var \yii\filters\ContentNegotiator $negotiator */
         $negotiator = $this->controller->getBehavior('contentNegotiator');
+
         return [
             [
-                'icon' => 'glyphicon glyphicon-file',
-                'label' => 'XLS',
-                'url' => Url::current([
-                    $negotiator->formatParam => Response::FORMAT_XLS,
+                'icon'    => 'glyphicon glyphicon-file',
+                'label'   => 'XLS',
+                'url'     => Url::current([
+                    $negotiator->formatParam                 => Response::FORMAT_XLS,
                     $dataProvider->pagination->pageSizeParam => -1,
                 ]),
                 'options' => ['class' => 'btn btn-default', 'data-pjax' => 0],
             ],
             [
-                'icon' => 'glyphicon glyphicon-file',
-                'label' => 'CSV',
-                'url' => Url::current([
-                    $negotiator->formatParam => Response::FORMAT_CSV,
+                'icon'    => 'glyphicon glyphicon-file',
+                'label'   => 'CSV',
+                'url'     => Url::current([
+                    $negotiator->formatParam                 => Response::FORMAT_CSV,
                     $dataProvider->pagination->pageSizeParam => -1,
                 ]),
                 'options' => ['class' => 'btn btn-default', 'data-pjax' => 0],
