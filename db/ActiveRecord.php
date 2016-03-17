@@ -110,10 +110,12 @@ class ActiveRecord extends \yii\db\ActiveRecord
                     continue;
                 }
 
-                $parts [] = \Yii::$app->formatter->format(
-                    $this->getAttribute($attribute),
-                    $format
-                );
+                if (!in_array($format, ['text', 'shortText'])) {
+                    $parts [] = \Yii::$app->formatter->format($this->getAttribute($attribute), $format );
+                    continue;
+                }
+
+                $parts [] = $this->getAttribute($attribute);
             }
             return implode($string->separator, $parts);
         }
