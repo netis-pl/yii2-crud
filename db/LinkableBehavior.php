@@ -250,7 +250,8 @@ class LinkableBehavior extends Behavior
                 continue;
             }
             if (!is_array($keys) || isset($keys[0])) {
-                $addKeys = Action::importKey($owner::primaryKey(), Action::explodeKeys($keys));
+                $keys = is_array($keys) ? $keys : Action::explodeKeys($keys);
+                $addKeys = Action::importKey($owner::primaryKey(), $keys);
                 $removeKeys = null;
             } elseif (is_array($keys) && isset($keys['add']) && isset($keys['remove'])) {
                 $addKeys = Action::importKey($owner::primaryKey(), Action::explodeKeys($keys['add']));
