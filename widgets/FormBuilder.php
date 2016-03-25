@@ -6,19 +6,29 @@
 
 namespace netis\crud\widgets;
 
+use kartik\datetime\DateTimePicker;
+use maddoger\widgets\Select2;
+use maddoger\widgets\Select2BootstrapAsset;
+use netis\crud\assets\RelationsAsset;
 use netis\crud\crud\Action;
 use netis\crud\db\ActiveQuery;
 use netis\crud\db\ActiveRecord;
 use netis\crud\web\Formatter;
+use omnilight\widgets\DatePicker;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\base\Object;
+use yii\base\Widget;
+use yii\bootstrap\Modal;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
+use yii\helpers\Json;
 use yii\helpers\Url;
 use yii\web\JsExpression;
+use yii\web\View;
 use yii\widgets\ActiveForm;
+use netis\crud\widgets\ActiveField;
 
 class FormBuilder extends Object
 {
@@ -29,205 +39,394 @@ class FormBuilder extends Object
      * @var null|ActiveForm Form used to create active fields
      */
     public $form = null;
+
     /**
      * @var ActiveField[] Form fields
      */
     private $fields = [];
+
     /**
      * @var ActiveRecord Model for which fields will be created
      */
     public $model = null;
+
     /**
      * @var array Attributes for which fields will be created. Attributes can be config arrays, ActiveField objects or closures.
      */
     public $attributes = [];
+
     /**
      * @var string[] Attributes that should be hidden
      */
     public $hiddenAttributes = [];
+
     /**
      * @var string Active field class used for creating fields.
      */
     public $activeFieldClass = ActiveField::class;
 
+    /**
+     * @var array Default field options
+     */
+    public $fieldOptions = [];
+
     public function init()
     {
         if ($this->form === null) {
-            $this->form         = new \stdClass();
+            $this->form = new \stdClass();
             $this->form->layout = 'default';
         }
+    }
+
+    /**
+     * @param string $attribute
+     * @return ActiveField
+     * @throws InvalidConfigException
+     */
+    private function getActiveField($attribute)
+    {
+        $config = [
+            'class'     => $this->activeFieldClass,
+            'model'     => $this->model,
+            'attribute' => $attribute,
+            'form'      => $this->form,
+        ];
+
+        return Yii::createObject(ArrayHelper::merge($this->fieldOptions, $config));
+    }
+
+    /**
+     * Configures $field as boolean
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function booleanField($field, $options = [])
+    {
+        if (!ArrayHelper::remove($options, 'multiple', false)) {
+            return $field->checkbox($options);
+        }
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
+
+        $field->inline()->radioList([
+            '0' => $formatter->booleanFormat[0],
+            '1' => $formatter->booleanFormat[1],
+            ''  => Yii::t('app', 'Any'),
+        ], $options);
+        return $field;
+    }
+
+    /**
+     * Configures $field as shortLength
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function shortLengthField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
+        $value = Html::getAttributeValue($this->model, $field->attribute);
+        if (!isset($options['value'])) {
+            $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
+        }
+        $field->textInput($options);
+        $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">m</span></div>';
+        return $field;
+    }
+
+    /**
+     * Configures $field as shortWeight
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function shortWeightField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
+        $value = Html::getAttributeValue($this->model, $field->attribute);
+        if (!isset($options['value'])) {
+            $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
+        }
+        $field->textInput($options);
+        $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">kg</span></div>';
+        return $field;
+    }
+
+    /**
+     * Configures $field as multiplied
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function multipliedField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
+        $attributeName = Html::getAttributeName($field->attribute);
+        $attributeFormat = $this->model->getAttributeFormat($attributeName);
+
+        $value = Html::getAttributeValue($this->model, $field->attribute);
+        if (!isset($options['value'])) {
+            $options['value'] = $value === null ? null : $formatter->asMultiplied($value, $attributeFormat[1]);
+        }
+        $field->textInput($options);
+        return $field;
+    }
+
+    /**
+     * Configures $field as integer
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function integerField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        if (!isset($options['value'])) {
+            $options['value'] = Html::getAttributeValue($this->model, $field->attribute);
+        }
+        $field->textInput($options);
+        return $field;
+    }
+
+    /**
+     * Configures $field as time
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function timeField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        if (!isset($options['value'])) {
+            $options['value'] = Html::encode(Html::getAttributeValue($this->model, $field->attribute));
+        }
+        $field->textInput($options);
+        return $field;
+    }
+
+    /**
+     * Configures $field as datetime
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function datetimeField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        $field = $this->dateField($field, $options);
+        $field->parts['{input}'] = ArrayHelper::merge($field->parts['{input}'], [
+            'class'         => DateTimePicker::className(),
+            'convertFormat' => true,
+        ]);
+        return $field;
+    }
+
+    /**
+     * Configures $field as date
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function dateField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
+
+        if (!isset($options['value'])) {
+            $attributeName = Html::getAttributeName($field->attribute);
+            $attributeFormat = $this->model->getAttributeFormat($attributeName);
+            $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
+
+            $value = Html::getAttributeValue($this->model, $field->attribute);
+            if (!$this->model->hasErrors($field->attribute) && $value !== null) {
+                $value = $formatter->format($value, $format);
+            }
+            $options['value'] = $value;
+        }
+
+        if (!isset($options['class'])) {
+            $options['class'] = 'form-control';
+        }
+
+        $field->parts['{input}'] = [
+            'class'     => DatePicker::className(),
+            'model'     => $this->model,
+            'attribute' => $field->attribute,
+            'options'   => $options,
+        ];
+
+        return $field;
+    }
+
+    /**
+     * Configures $field as enum
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function enumField($field, $options = [])
+    {
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
+        $attributeName = Html::getAttributeName($field->attribute);
+        $attributeFormat = $this->model->getAttributeFormat($attributeName);
+
+        $items = $formatter->getEnums()->get($attributeFormat[1]);
+        if (!ArrayHelper::remove($options, 'multiple', false)) {
+            $column = $this->model->getTableSchema()->getColumn($attributeName);
+            if ($column !== null && $column->allowNull) {
+                $options['prompt'] = self::getPrompt();
+            }
+            $field->dropDownList($items, $options);
+            return $field;
+        }
+
+        $options = ArrayHelper::merge([
+            'class'       => 'select2',
+            'placeholder' => self::getPrompt(),
+            'multiple'    => 'multiple',
+        ], $options);
+
+        $field->parts['{input}'] = [
+            'class'         => Select2::className(),
+            'model'         => $this->model,
+            'attribute'     => $field->attribute,
+            'items'         => $items,
+            'clientOptions' => [
+                'allowClear'    => true,
+                'closeOnSelect' => true,
+            ],
+            'options'       => $options,
+        ];
+        return $field;
+    }
+
+    /**
+     * Configures $field as flags
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     * @throws InvalidConfigException
+     */
+    protected function flagsField($field, $options = [])
+    {
+        throw new InvalidConfigException('Flags format is not supported by ' . get_called_class());
+    }
+
+    /**
+     * Configures $field as paragraphs
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function paragraphsField($field, $options = [])
+    {
+        if (!isset($options['value'])) {
+            $options['value'] = Html::encode(Html::getAttributeValue($this->model, $field->attribute));
+        }
+
+        if (ArrayHelper::remove($options, 'multiple', false)) {
+            return $field->textInput($options);
+        }
+
+        return $field->textarea(array_merge(['cols' => '80', 'rows' => '10'], $options));
+    }
+
+    /**
+     * Configures $field as file
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function fileField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        if (!isset($options['value'])) {
+            $options['value'] = Html::getAttributeValue($this->model, $field->attribute);
+        }
+
+        return $field->fileInput($options);
+    }
+
+    /**
+     * Configures $field as text
+     *
+     * @param \yii\bootstrap\ActiveField $field
+     * @param array $options
+     * @return $this|\yii\bootstrap\ActiveField
+     */
+    protected function textField($field, $options = [])
+    {
+        ArrayHelper::remove($options, 'multiple', false);
+        if (!isset($options['value'])) {
+            $options['value'] = Html::getAttributeValue($this->model, $field->attribute);
+        }
+
+        $attributeName = Html::getAttributeName($field->attribute);
+        $column = $this->model->getTableSchema()->getColumn($attributeName);
+        if ($column && $column->type === 'string' && $column->size !== null) {
+            $options['maxlength'] = $column->size;
+        }
+        return $field->textInput($options);
     }
 
     /**
      * Creates ActiveField for attribute.
      *
      * @param string $attribute
-     * @param array  $options
-     * @param bool   $multiple
+     * @param array $options
+     * @param bool $multiple
      *
      * @return \yii\bootstrap\ActiveField
      * @throws InvalidConfigException
      */
-    public function createField($attribute, $options = [], $multiple = false)
+    public function field($attribute, $options = [])
     {
-        /** @var Formatter $formatter */
-        $formatter = Yii::$app->formatter;
-
-        /** @var ActiveField $field */
-        $field = Yii::createObject([
-            'class' => $this->activeFieldClass,
-            'model' => $this->model,
-            'attribute' => $attribute,
-            // a workaround, because it's used in the ActiveField constructor (horizontal/vertical layout)
-            'form' => $this->form,
-        ]);
-
         $attributeName = Html::getAttributeName($attribute);
         $attributeFormat = $this->model->getAttributeFormat($attributeName);
         $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
 
-        $column = $this->model->getTableSchema()->getColumn($attributeName);
-        switch ($format) {
-            case 'boolean':
-                if ($multiple) {
-                    $field->inline()->radioList([
-                        '0' => $formatter->booleanFormat[0],
-                        '1' => $formatter->booleanFormat[1],
-                        '' => Yii::t('app', 'Any'),
-                    ], $options);
-                } else {
-                    $field->checkbox($options);
-                }
-                break;
-            case 'shortLength':
-                $value = Html::getAttributeValue($this->model, $attribute);
-                if (!isset($options['value'])) {
-                    $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
-                }
-                $field->textInput($options);
-                $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">m</span></div>';
-                break;
-            case 'shortWeight':
-                $value = Html::getAttributeValue($this->model, $attribute);
-                if (!isset($options['value'])) {
-                    $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
-                }
-                $field->textInput($options);
-                $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">kg</span></div>';
-                break;
-            case 'multiplied':
-                $value = Html::getAttributeValue($this->model, $attribute);
-                if (!isset($options['value'])) {
-                    $options['value'] = $value === null ? null : $formatter->asMultiplied($value, $attributeFormat[1]);
-                }
-                $field->textInput($options);
-                break;
-            case 'integer':
-                if (!isset($options['value'])) {
-                    $options['value'] = Html::getAttributeValue($this->model, $attribute);
-                }
-                $field->textInput($options);
-                break;
-            case 'time':
-                if (!isset($options['value'])) {
-                    $options['value'] = Html::encode(Html::getAttributeValue($this->model, $attribute));
-                }
-                $field->textInput($options);
-                break;
-            case 'datetime':
-            case 'date':
-                if (!isset($options['value'])) {
-                    $value = Html::getAttributeValue($this->model, $attribute);
-                    if (!$this->model->hasErrors($attribute) && $value !== null) {
-                        $value = $formatter->format($value, $format);
-                    }
-                    $options['value'] = $value;
-                }
-                if (!isset($options['class'])) {
-                    $options['class'] = 'form-control';
-                }
-                $field->parts['{input}'] = array_merge([
-                    'class' => \omnilight\widgets\DatePicker::className(),
-                    'model' => $this->model,
-                    'attribute' => $attributeName,
-                    'options'   => $options,
-                ], $format !== 'datetime' ? [] : [
-                    'class' => \kartik\datetime\DateTimePicker::className(),
-                    'convertFormat' => true,
-                ]);
-                break;
-            case 'enum':
-                $items = $formatter->getEnums()->get($attributeFormat[1]);
-                if ($multiple) {
-                    $options = array_merge([
-                        'class' => 'select2',
-                        'placeholder' => self::getPrompt(),
-                        'multiple' => 'multiple',
-                    ], $options);
-                    $field->parts['{input}'] = [
-                        'class' => \maddoger\widgets\Select2::className(),
-                        'model' => $this->model,
-                        'attribute' => $attribute,
-                        'items' => $items,
-                        'clientOptions' => [
-                            'allowClear' => true,
-                            'closeOnSelect' => true,
-                        ],
-                        'options' => $options,
-                    ];
-                } else {
-                    if ($column !== null && $column->allowNull) {
-                        $options['prompt'] = self::getPrompt();
-                    }
-                    $field->dropDownList($items, $options);
-                }
-                break;
-            case 'flags':
-                throw new InvalidConfigException('Flags format is not supported by '.get_called_class());
-            case 'paragraphs':
-                if (!isset($options['value'])) {
-                    $options['value'] = Html::encode(Html::getAttributeValue($this->model, $attribute));
-                }
-
-                if ($multiple) {
-                    $field->textInput($options);
-                } else {
-                    $field->textarea(array_merge(['cols'  => '80', 'rows'  => '10'], $options));
-                }
-                break;
-            case 'file':
-                if (!isset($options['value'])) {
-                    $options['value'] = Html::getAttributeValue($this->model, $attribute);
-                }
-                $field->fileInput($options);
-                break;
-            default:
-            case 'text':
-                if (!isset($options['value'])) {
-                    $options['value'] = Html::getAttributeValue($this->model, $attribute);
-                }
-                if ($column && $column->type === 'string' && $column->size !== null) {
-                    $options['maxlength'] = $column->size;
-                }
-                $field->textInput($options);
-                break;
+        if ($format === null) {
+            return $this->textField($this->getActiveField($attribute), $options);
         }
 
-        return $field;
+        return call_user_func([$this, $format . 'Field'], $this->getActiveField($attribute), $options);
     }
 
     /**
      * Creates related field
      *
      * @param string $relation
-     * @param array  $options
-     * @param bool   $multiple true for multiple values inputs, usually used for search forms
+     * @param array $options
+     * @param bool $multiple true for multiple values inputs, usually used for search forms
      *
      * @return ActiveField|null
      * @throws InvalidConfigException
      */
-    public function createRelatedField($relation, $options = [], $multiple = false)
+    public function relatedField($relation, $options = [])
     {
+        $multiple = ArrayHelper::remove($options, 'multiple', false);
+
         $activeRelation = $this->model->getRelation(Html::getAttributeName($relation));
 
         if (!$activeRelation->multiple) {
@@ -237,26 +436,20 @@ class FormBuilder extends Object
                     return null;
                 }
 
-                if (isset($hiddenAttributes[$right])) {
-                    /** @var ActiveField $field */
-                    $field = Yii::createObject([
-                        'class' => $this->activeFieldClass,
-                        'model' => $this->model,
-                        'attribute' => $right,
-                        // a workaround, because it's used in the ActiveField constructor (horizontal/vertical layout)
-                        'form' => $this->form,
-                    ]);
-                    return $field->label(false)->hiddenInput();
+                if (!isset($hiddenAttributes[$right])) {
+                    continue;
                 }
+
+                return $this->getActiveField($right)->label(false)->hiddenInput();
             }
         }
 
-        if (!Yii::$app->user->can($activeRelation->modelClass.'.read')) {
+        if (!Yii::$app->user->can($activeRelation->modelClass . '.read')) {
             return null;
         }
 
         if (count($activeRelation->link) > 1) {
-            throw new InvalidConfigException('Composite key relations are not supported by '.get_called_class());
+            throw new InvalidConfigException('Composite key relations are not supported by ' . get_called_class());
         }
 
         if ($activeRelation->multiple) {
@@ -266,7 +459,7 @@ class FormBuilder extends Object
         }
 
         $label = null;
-        if ($this->model instanceof \netis\crud\db\ActiveRecord) {
+        if ($this->model instanceof ActiveRecord) {
             $label = $this->model->getRelationLabel($activeRelation, Html::getAttributeName($relation));
         }
 
@@ -274,16 +467,8 @@ class FormBuilder extends Object
         $foreignKeys = array_values($activeRelation->link);
         $foreignKey = reset($foreignKeys);
 
-        /** @var ActiveField $field */
-        $field = Yii::createObject([
-            'class' => $this->activeFieldClass,
-            'model' => $this->model,
-            'form' => $this->form,
-            'attribute' => $isMany ? $relation : $foreignKey,
-            'parts' => [
-                '{input}' => ArrayHelper::merge($widgetOptions, $options),
-            ],
-        ]);
+        $field = $this->getActiveField($isMany ? $relation : $foreignKey);
+        $field->parts['{input}'] = ArrayHelper::merge($widgetOptions, $options);
         return $field->label($label);
     }
 
@@ -295,6 +480,32 @@ class FormBuilder extends Object
     public function getFields()
     {
         return $this->fields;
+    }
+
+    public function createField($attribute, $options)
+    {
+        $keys = Action::getModelKeys($this->model);
+        $hiddenAttributes = array_flip($this->hiddenAttributes);
+
+        list($behaviorAttributes, $blameableAttributes) = Action::getModelBehaviorAttributes($this->model);
+        $relations = $this->model->relations();
+
+        $attributeName = Html::getAttributeName($attribute);
+        if (in_array($attributeName, $relations)) {
+            return $this->relatedField($attributeName, $options);
+        }
+
+        if (!$this->model->isAttributeSafe($attributeName) || in_array($attributeName,
+                $keys) || (in_array($attributeName, $behaviorAttributes))
+        ) {
+            return null;
+        }
+
+        if (isset($hiddenAttributes[$attributeName])) {
+            return Html::activeHiddenInput($this->model, $attributeName, $options);
+        }
+
+        return $this->field($attributeName, $options);
     }
 
     /**
@@ -312,38 +523,19 @@ class FormBuilder extends Object
             return $this;
         }
 
-        $keys = Action::getModelKeys($this->model);
-        $hiddenAttributes = array_flip($this->hiddenAttributes);
-
-        list($behaviorAttributes, $blameableAttributes) = Action::getModelBehaviorAttributes($this->model);
-        $relations = $this->model->relations();
         if (($versionAttribute = $this->model->optimisticLock()) !== null) {
             $hiddenAttributes[$versionAttribute] = true;
         }
 
         $this->fields = [];
         foreach ($this->attributes as $key => $field) {
-            //if field is string then we assume that it is attribute name
+            //if field is string then we assume it's attribute name
             if (is_string($field)) {
-                $attribute = Html::getAttributeName($field);
-                if (in_array($attribute, $relations)) {
-                    $field = $this->createRelatedField($attribute, [], $multiple);
-                    if ($field !== null) {
-                        $this->fields[$attribute] = $field;
-                    }
-                    continue;
-                }
+                $key = $field;
+                $field = $this->createField($field, ['multiple' => $multiple]);
+            }
 
-                if (!$this->model->isAttributeSafe($attribute) || in_array($attribute, $keys) || (in_array($attribute, $behaviorAttributes))) {
-                    continue;
-                }
-
-                if (isset($hiddenAttributes[$attribute])) {
-                    $formFields[$attribute] = Html::activeHiddenInput($this->model, $attribute);
-                    continue;
-                }
-
-                $this->fields[$attribute] = $this->createField($attribute, [], $multiple);
+            if ($field === null) {
                 continue;
             }
 
@@ -480,7 +672,7 @@ JavaScript;
     /**
      * Registers JS code to help initialize Select2 widgets
      * with access to netis\crud\crud\ActiveController API.
-     * @param \yii\web\View $view
+     * @param View $view
      */
     public static function registerSelect($view)
     {
@@ -534,32 +726,32 @@ JavaScript;
     };
 }( window.s2helper = window.s2helper || {}, jQuery ));
 JavaScript;
-        $view->registerJs($script, \yii\web\View::POS_END, 'netis.s2helper');
-        \maddoger\widgets\Select2BootstrapAsset::register($view);
+        $view->registerJs($script, View::POS_END, 'netis.s2helper');
+        Select2BootstrapAsset::register($view);
     }
 
     /**
      * Registers JS code for handling relations.
-     * @param \yii\web\View $view
+     * @param View $view
      * @return string modal widget to be embedded in a view
      */
     public static function registerRelations($view)
     {
-        \netis\crud\assets\RelationsAsset::register($view);
-        $options = \yii\helpers\Json::htmlEncode([
+        RelationsAsset::register($view);
+        $options = Json::htmlEncode([
             'i18n'                  => [
                 'loadingText' => Yii::t('app', 'Loading, please wait.'),
             ],
-            'keysSeparator'         => \netis\crud\crud\Action::KEYS_SEPARATOR,
-            'compositeKeySeparator' => \netis\crud\crud\Action::COMPOSITE_KEY_SEPARATOR,
+            'keysSeparator'         => Action::KEYS_SEPARATOR,
+            'compositeKeySeparator' => Action::COMPOSITE_KEY_SEPARATOR,
         ]);
-        $view->registerJs("netis.init($options)", \yii\web\View::POS_READY, 'netis.init');
+        $view->registerJs("netis.init($options)", View::POS_READY, 'netis.init');
 
         // init relation tools used in _relations subview
         // relations modal may contain a form and must be rendered outside ActiveForm
-        return \yii\bootstrap\Modal::widget([
+        return Modal::widget([
             'id'     => 'relationModal',
-            'size'   => \yii\bootstrap\Modal::SIZE_LARGE,
+            'size'   => Modal::SIZE_LARGE,
             'header' => '<span class="modal-title"></span>',
             'footer' => implode('', [
                 Html::button(Yii::t('app', 'Save'), [
@@ -587,7 +779,7 @@ JavaScript;
             return [null, null, null];
         }
 
-        $allowCreate = Yii::$app->user->can($relatedModel::className().'.create');
+        $allowCreate = Yii::$app->user->can($relatedModel::className() . '.create');
         if ($allowCreate && $model->isNewRecord && $relation->multiple) {
             foreach ($relation->link as $left => $right) {
                 if (!$relatedModel->getTableSchema()->getColumn($left)->allowNull) {
@@ -603,7 +795,7 @@ JavaScript;
             $createRoute = [$route . '/update'];
             if ($relation->multiple) {
                 $createRoute['hide'] = implode(',', array_keys($relation->link));
-                $scope      = $relatedModel->formName();
+                $scope = $relatedModel->formName();
                 $primaryKey = $model->getPrimaryKey(true);
                 foreach ($relation->link as $left => $right) {
                     if (!isset($primaryKey[$right])) {
@@ -625,9 +817,7 @@ JavaScript;
             'multiple' => $relation->multiple ? 'true' : 'false',
         ];
 
-        $indexRoute = [
-            $route . '/index',
-        ];
+        $indexRoute = [$route . '/index'];
 
         return [$createRoute, $searchRoute, $indexRoute];
     }
@@ -659,11 +849,11 @@ JavaScript;
         return ArrayHelper::map(
             $query->from($model::tableName() . ' t')->all(),
             function ($item) use ($fields, $flippedPrimaryKey) {
-                /** @var \netis\crud\db\ActiveRecord $item */
+                /** @var ActiveRecord $item */
                 return Action::exportKey(array_intersect_key($item->toArray($fields, []), $flippedPrimaryKey));
             },
             function ($item) use ($fields) {
-                /** @var \netis\crud\db\ActiveRecord $item */
+                /** @var ActiveRecord $item */
                 $data = $item->toArray($fields, []);
                 return $data['_label'];
             }
@@ -674,24 +864,30 @@ JavaScript;
      * Returns {@link \maddoger\widgets\Select2} widget options without ajax configuration.     *
      *
      * @param \yii\db\ActiveRecord $model
-     * @param string               $relation
-     * @param \yii\db\ActiveQuery  $activeRelation
-     * @param bool|false           $multiple
-     * @param null|array           $items
+     * @param string $relation
+     * @param \yii\db\ActiveQuery $activeRelation
+     * @param bool|false $multiple
+     * @param null|array $items
      *
      * @return array
      * @throws Exception
      * @throws InvalidConfigException
      */
-    public static function getRelationWidgetStaticOptions($model, $relation, $activeRelation, $multiple = false, $items = null)
-    {
+    public static function getRelationWidgetStaticOptions(
+        $model,
+        $relation,
+        $activeRelation,
+        $multiple = false,
+        $items = null
+    ) {
         $isMany = $activeRelation->multiple;
         $foreignKey = array_values($activeRelation->link)[0];
-        /** @var \netis\crud\db\ActiveRecord $relModel */
+        /** @var ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
 
         if ($items === null) {
-            $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id, $activeRelation->modelClass . '.read');
+            $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id,
+                $activeRelation->modelClass . '.read');
             $query = $relModel::find()->authorized($relModel, $checkedRelations, Yii::$app->user->getIdentity());
             $items = self::getDropDownItems($query);
         }
@@ -720,20 +916,20 @@ JavaScript;
         $prefixedFk = str_replace($relationName, $foreignKey, $relation);
         $value = Html::getAttributeValue($model, $isMany ? $relation : $prefixedFk);
         return [
-            'class' => \maddoger\widgets\Select2::className(),
-            'model' => $model,
-            'attribute' => $isMany ? $relation : $prefixedFk,
-            'items' => $items,
+            'class'         => Select2::className(),
+            'model'         => $model,
+            'attribute'     => $isMany ? $relation : $prefixedFk,
+            'items'         => $items,
             'clientOptions' => [
-                'width' => '100%',
-                'allowClear' => $allowClear,
+                'width'         => '100%',
+                'allowClear'    => $allowClear,
                 'closeOnSelect' => true,
             ],
-            'options' => array_merge([
-                'class' => 'select2',
-                'prompt' => '',
+            'options'       => array_merge([
+                'class'       => 'select2',
+                'prompt'      => '',
                 'placeholder' => self::getPrompt(),
-                'value' => Action::implodeEscaped(Action::KEYS_SEPARATOR, (array)$value),
+                'value'       => Action::implodeEscaped(Action::KEYS_SEPARATOR, (array)$value),
             ], $multiple ? ['multiple' => 'multiple'] : []),
         ];
     }
@@ -750,7 +946,7 @@ JavaScript;
      */
     public static function getRelationWidgetOptions($model, $relation, $activeRelation, $multiple = false)
     {
-        /** @var \netis\crud\db\ActiveRecord $relModel */
+        /** @var ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
         list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
             $model,
@@ -779,7 +975,7 @@ JavaScript;
             && (!isset($dbColumns[$foreignKey]) || $dbColumns[$foreignKey]->allowNull);
 
         $jsPrimaryKey = json_encode($primaryKey);
-        $jsSeparator = \netis\crud\crud\Action::COMPOSITE_KEY_SEPARATOR;
+        $jsSeparator = Action::COMPOSITE_KEY_SEPARATOR;
         $jsId = <<<JavaScript
 function(object){
     var keys = $jsPrimaryKey, values = [];
@@ -792,7 +988,8 @@ JavaScript;
 
         // check if only one option is available and if yes - set it as selected value
         if (!$allowClear && trim($value) === '') {
-            $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id, $activeRelation->modelClass . '.read');
+            $checkedRelations = $relModel->getCheckedRelations(Yii::$app->user->id,
+                $activeRelation->modelClass . '.read');
             $relQuery = $relModel::find()
                 ->select($primaryKey)
                 ->from($relModel::tableName() . ' t')
@@ -805,7 +1002,7 @@ JavaScript;
         }
 
         $label = null;
-        if ($model instanceof \netis\crud\db\ActiveRecord) {
+        if ($model instanceof ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, Html::getAttributeName($relation));
         }
         $ajaxResults = new JsExpression('s2helper.results');
@@ -824,36 +1021,36 @@ JavaScript;
         $relationName = Html::getAttributeName($relation);
         $prefixedFk = str_replace($relation, $foreignKey, $relationName);
         return [
-            'class' => \maddoger\widgets\Select2::class,
-            'model' => $model,
-            'attribute' => $isMany ? $relation : $prefixedFk,
+            'class'         => Select2::class,
+            'model'         => $model,
+            'attribute'     => $isMany ? $relation : $prefixedFk,
             'clientOptions' => array_merge(
                 [
-                    'formatResult' => new JsExpression('s2helper.formatResult'),
+                    'formatResult'    => new JsExpression('s2helper.formatResult'),
                     'formatSelection' => new JsExpression('s2helper.formatSelection'),
-                    'id' => new JsExpression($jsId),
-                    'width' => '100%',
-                    'allowClear' => $allowClear,
-                    'closeOnSelect' => true,
-                    'initSelection' => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
-                    'ajax' => [
-                        'url' => Url::toRoute(array_merge($indexRoute, [
+                    'id'              => new JsExpression($jsId),
+                    'width'           => '100%',
+                    'allowClear'      => $allowClear,
+                    'closeOnSelect'   => true,
+                    'initSelection'   => new JsExpression($multiple ? 's2helper.initMulti' : 's2helper.initSingle'),
+                    'ajax'            => [
+                        'url'         => Url::toRoute(array_merge($indexRoute, [
                             '_format' => 'json',
-                            'fields' => implode(',', $fields),
+                            'fields'  => implode(',', $fields),
                         ])),
-                        'dataFormat' => 'json',
+                        'dataFormat'  => 'json',
                         'quietMillis' => 300,
-                        'data' => new JsExpression('s2helper.data'),
-                        'results' => $ajaxResults,
+                        'data'        => new JsExpression('s2helper.data'),
+                        'results'     => $ajaxResults,
                     ],
                 ],
                 $multiple ? ['multiple' => true] : []
             ),
-            'clientEvents' => $clientEvents,
-            'options' => [
-                'class' => 'select2',
-                'value' => $value,
-                'placeholder' => self::getPrompt(),
+            'clientEvents'  => $clientEvents,
+            'options'       => [
+                'class'            => 'select2',
+                'value'            => $value,
+                'placeholder'      => self::getPrompt(),
                 //for now handle relations with single column primary keys
                 'data-relation-pk' => count($primaryKey) === 1 ? reset($primaryKey) : null,
             ],
@@ -870,7 +1067,7 @@ JavaScript;
     public static function getRelationWidget($model, $relation, $activeRelation, $widgetOptions)
     {
         $label = null;
-        if ($model instanceof \netis\crud\db\ActiveRecord) {
+        if ($model instanceof ActiveRecord) {
             $label = $model->getRelationLabel($activeRelation, Html::getAttributeName($relation));
         }
 
@@ -883,11 +1080,11 @@ JavaScript;
 
         /** @var ActiveField $field */
         $field = Yii::createObject([
-            'class' => ActiveField::class,
-            'model' => $model,
-            'form' => $stubForm,
+            'class'     => ActiveField::class,
+            'model'     => $model,
+            'form'      => $stubForm,
             'attribute' => $isMany ? $relation : $foreignKey,
-            'parts' => [
+            'parts'     => [
                 '{input}' => $widgetOptions,
             ],
         ]);
@@ -896,7 +1093,7 @@ JavaScript;
 
     /**
      * @param \yii\base\Model $model
-     * @param array[]         $fields
+     * @param array[] $fields
      *
      * @return bool
      */
@@ -922,7 +1119,6 @@ JavaScript;
                     return true;
                 }
             }
-
         }
         return false;
     }
@@ -937,7 +1133,7 @@ JavaScript;
     {
         $prompt = null;
         $formatter = Yii::$app->formatter;
-        if ($formatter instanceof \netis\crud\web\Formatter) {
+        if ($formatter instanceof Formatter) {
             $prompt = $formatter->dropDownPrompt;
         } else {
             $prompt = strip_tags($formatter->nullDisplay);
@@ -955,10 +1151,10 @@ JavaScript;
     /**
      * Creates ActiveField for attribute.
      *
-     * @param \netis\crud\db\ActiveRecord $model
-     * @param string                      $attribute
-     * @param array                       $options
-     * @param bool                        $multiple
+     * @param ActiveRecord $model
+     * @param string $attribute
+     * @param array $options
+     * @param bool $multiple
      *
      * @return \yii\bootstrap\ActiveField
      * @throws InvalidConfigException
@@ -966,16 +1162,17 @@ JavaScript;
      */
     public static function createActiveField($model, $attribute, $options = [], $multiple = false)
     {
-        return (new static(['model' => $model]))->createField($attribute, $options, $multiple);
+        $options['multiple'] = $multiple;
+        return (new static(['model' => $model]))->field($attribute, $options);
     }
 
     /**
      * Retrieves form fields configuration. Fields can be config arrays, ActiveField objects or closures.
      *
-     * @param \yii\base\Model|\netis\crud\db\ActiveRecord $model
-     * @param array           $fields
-     * @param bool            $multiple         true for multiple values inputs, usually used for search forms
-     * @param array           $hiddenAttributes list of attribute names to render as hidden fields
+     * @param \yii\base\Model|ActiveRecord $model
+     * @param array $fields
+     * @param bool $multiple true for multiple values inputs, usually used for search forms
+     * @param array $hiddenAttributes list of attribute names to render as hidden fields
      *
      * @return array form fields
      * @throws InvalidConfigException
@@ -1003,6 +1200,7 @@ JavaScript;
         $field->form = $form;
 
         if (isset($field->parts['{input}']) && is_array($field->parts['{input}'])) {
+            /** @var Widget $class */
             $class                   = $field->parts['{input}']['class'];
             $field->parts['{input}'] = $class::widget($field->parts['{input}']);
         }
