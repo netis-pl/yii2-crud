@@ -895,61 +895,6 @@ JavaScript;
     }
 
     /**
-     * @param \yii\widgets\ActiveForm $form
-     * @param string|\yii\widgets\ActiveField $field
-     * @return string
-     */
-    public static function renderField($form, $field)
-    {
-        if (!$field instanceof \yii\widgets\ActiveField) {
-            return (string)$field;
-        }
-
-        $field->form = $form;
-
-        if (isset($field->parts['{input}']) && is_array($field->parts['{input}'])) {
-            $class                   = $field->parts['{input}']['class'];
-            $field->parts['{input}'] = $class::widget($field->parts['{input}']);
-        }
-        return (string)$field;
-    }
-
-    /**
-     * @param \yii\widgets\ActiveForm $form
-     * @param array $fields
-     * @param int $topColumnWidth
-     * @return string
-     */
-    public static function renderRow($form, $fields, $topColumnWidth = 12)
-    {
-        if (empty($fields)) {
-            return '';
-        }
-        $result = [];
-        $oneColumn = false; // optionally: count($fields) == 1;
-        $result[] = $oneColumn ? '' : '<div class="row">';
-        $columnWidth = ceil($topColumnWidth / count($fields));
-        foreach ($fields as $column) {
-            $result[] = $oneColumn ? '' : '<div class="col-sm-' . $columnWidth . '">';
-            if (!is_array($column)) {
-                $result[] = static::renderField($form, $column);
-            } else {
-                foreach ($column as $row) {
-                    if (!is_array($row)) {
-                        $result[] = static::renderField($form, $row);
-                    } else {
-                        $result[] = static::renderRow($form, $row);
-                    }
-                }
-            }
-            $result[] = $oneColumn ? '' : '</div>';
-        }
-        $result[] = $oneColumn ? '' : '</div>';
-
-        return implode('', $result);
-    }
-
-    /**
      * @param \yii\base\Model $model
      * @param array[]         $fields
      *
@@ -982,6 +927,12 @@ JavaScript;
         return false;
     }
 
+    /**
+     * Returns propmt text for dropdown inputs
+     *
+     * @return mixed
+     * @throws InvalidConfigException
+     */
     public static function getPrompt()
     {
         $prompt = null;
@@ -1035,5 +986,62 @@ JavaScript;
         return (new static(['model' => $model, 'attributes' => $fields, 'hiddenAttributes' => $hiddenAttributes]))
             ->createFields($multiple)
             ->getFields();
+    }
+
+    /**
+     * @param \yii\widgets\ActiveForm $form
+     * @param string|\yii\widgets\ActiveField $field
+     * @return string
+     * @deprecated Should not be used at all. Use {@link ActiveField} to handle '{input}' as array.
+     */
+    public static function renderField($form, $field)
+    {
+        if (!$field instanceof \yii\widgets\ActiveField) {
+            return (string)$field;
+        }
+
+        $field->form = $form;
+
+        if (isset($field->parts['{input}']) && is_array($field->parts['{input}'])) {
+            $class                   = $field->parts['{input}']['class'];
+            $field->parts['{input}'] = $class::widget($field->parts['{input}']);
+        }
+        return (string)$field;
+    }
+
+    /**
+     * @param \yii\widgets\ActiveForm $form
+     * @param array $fields
+     * @param int $topColumnWidth
+     * @return string
+     * @deprecated Should not be used at all.
+     */
+    public static function renderRow($form, $fields, $topColumnWidth = 12)
+    {
+        if (empty($fields)) {
+            return '';
+        }
+        $result = [];
+        $oneColumn = false; // optionally: count($fields) == 1;
+        $result[] = $oneColumn ? '' : '<div class="row">';
+        $columnWidth = ceil($topColumnWidth / count($fields));
+        foreach ($fields as $column) {
+            $result[] = $oneColumn ? '' : '<div class="col-sm-' . $columnWidth . '">';
+            if (!is_array($column)) {
+                $result[] = static::renderField($form, $column);
+            } else {
+                foreach ($column as $row) {
+                    if (!is_array($row)) {
+                        $result[] = static::renderField($form, $row);
+                    } else {
+                        $result[] = static::renderRow($form, $row);
+                    }
+                }
+            }
+            $result[] = $oneColumn ? '' : '</div>';
+        }
+        $result[] = $oneColumn ? '' : '</div>';
+
+        return implode('', $result);
     }
 }
