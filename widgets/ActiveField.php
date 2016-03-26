@@ -25,4 +25,15 @@ class ActiveField extends \yii\bootstrap\ActiveField
 
         return parent::render($content);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function staticControl($options = [])
+    {
+        if (!isset($options['value'])) {
+            $options['value'] = (new FormBuilder(['model' => $this->model]))->fieldValue($this->attribute);
+        }
+        return parent::staticControl($options);
+    }
 }

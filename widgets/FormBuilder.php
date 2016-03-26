@@ -18,6 +18,7 @@ use omnilight\widgets\DatePicker;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
+use yii\base\InvalidParamException;
 use yii\base\Object;
 use yii\base\Widget;
 use yii\bootstrap\Modal;
@@ -110,12 +111,11 @@ class FormBuilder extends Object
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
 
-        $field->inline()->radioList([
+        return $field->inline()->radioList([
             '0' => $formatter->booleanFormat[0],
             '1' => $formatter->booleanFormat[1],
             ''  => Yii::t('app', 'Any'),
         ], $options);
-        return $field;
     }
 
     /**
@@ -128,15 +128,8 @@ class FormBuilder extends Object
     protected function shortLengthField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        /** @var Formatter $formatter */
-        $formatter = Yii::$app->formatter;
-        $value = Html::getAttributeValue($this->model, $field->attribute);
-        if (!isset($options['value'])) {
-            $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
-        }
-        $field->textInput($options);
         $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">m</span></div>';
-        return $field;
+        return $field->textInput($options);
     }
 
     /**
@@ -149,15 +142,8 @@ class FormBuilder extends Object
     protected function shortWeightField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        /** @var Formatter $formatter */
-        $formatter = Yii::$app->formatter;
-        $value = Html::getAttributeValue($this->model, $field->attribute);
-        if (!isset($options['value'])) {
-            $options['value'] = $value === null ? null : $formatter->asMultiplied($value, 1000);
-        }
-        $field->textInput($options);
         $field->inputTemplate = '<div class="input-group">{input}<span class="input-group-addon">kg</span></div>';
-        return $field;
+        return $field->textInput($options);
     }
 
     /**
@@ -170,17 +156,7 @@ class FormBuilder extends Object
     protected function multipliedField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        /** @var Formatter $formatter */
-        $formatter = Yii::$app->formatter;
-        $attributeName = Html::getAttributeName($field->attribute);
-        $attributeFormat = $this->model->getAttributeFormat($attributeName);
-
-        $value = Html::getAttributeValue($this->model, $field->attribute);
-        if (!isset($options['value'])) {
-            $options['value'] = $value === null ? null : $formatter->asMultiplied($value, $attributeFormat[1]);
-        }
-        $field->textInput($options);
-        return $field;
+        return $field->textInput($options);
     }
 
     /**
@@ -193,11 +169,7 @@ class FormBuilder extends Object
     protected function integerField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        if (!isset($options['value'])) {
-            $options['value'] = Html::getAttributeValue($this->model, $field->attribute);
-        }
-        $field->textInput($options);
-        return $field;
+        return $field->textInput($options);
     }
 
     /**
@@ -210,11 +182,7 @@ class FormBuilder extends Object
     protected function timeField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        if (!isset($options['value'])) {
-            $options['value'] = Html::encode(Html::getAttributeValue($this->model, $field->attribute));
-        }
-        $field->textInput($options);
-        return $field;
+        return $field->textInput($options);
     }
 
     /**
@@ -245,20 +213,6 @@ class FormBuilder extends Object
     protected function dateField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        /** @var Formatter $formatter */
-        $formatter = Yii::$app->formatter;
-
-        if (!isset($options['value'])) {
-            $attributeName = Html::getAttributeName($field->attribute);
-            $attributeFormat = $this->model->getAttributeFormat($attributeName);
-            $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
-
-            $value = Html::getAttributeValue($this->model, $field->attribute);
-            if (!$this->model->hasErrors($field->attribute) && $value !== null) {
-                $value = $formatter->format($value, $format);
-            }
-            $options['value'] = $value;
-        }
 
         if (!isset($options['class'])) {
             $options['class'] = 'form-control';
@@ -340,10 +294,6 @@ class FormBuilder extends Object
      */
     protected function paragraphsField($field, $options = [])
     {
-        if (!isset($options['value'])) {
-            $options['value'] = Html::encode(Html::getAttributeValue($this->model, $field->attribute));
-        }
-
         if (ArrayHelper::remove($options, 'multiple', false)) {
             return $field->textInput($options);
         }
@@ -361,10 +311,6 @@ class FormBuilder extends Object
     protected function fileField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        if (!isset($options['value'])) {
-            $options['value'] = Html::getAttributeValue($this->model, $field->attribute);
-        }
-
         return $field->fileInput($options);
     }
 
@@ -378,10 +324,6 @@ class FormBuilder extends Object
     protected function textField($field, $options = [])
     {
         ArrayHelper::remove($options, 'multiple', false);
-        if (!isset($options['value'])) {
-            $options['value'] = Html::getAttributeValue($this->model, $field->attribute);
-        }
-
         $attributeName = Html::getAttributeName($field->attribute);
         $column = $this->model->getTableSchema()->getColumn($attributeName);
         if ($column && $column->type === 'string' && $column->size !== null) {
@@ -395,22 +337,53 @@ class FormBuilder extends Object
      *
      * @param string $attribute
      * @param array $options
-     * @param bool $multiple
-     *
      * @return \yii\bootstrap\ActiveField
-     * @throws InvalidConfigException
      */
     public function field($attribute, $options = [])
     {
         $attributeName = Html::getAttributeName($attribute);
+        if ($this->model->optimisticLock() === $attributeName) {
+            return $this->getActiveField($attribute)->hiddenInput()->label(false);
+        }
+
         $attributeFormat = $this->model->getAttributeFormat($attributeName);
         $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
 
-        if ($format === null) {
+        if (!isset($options['value'])) {
+            $options['value'] = $this->fieldValue($attribute);
+        }
+
+        if ($format === null || !$this->hasMethod($format . 'Field')) {
             return $this->textField($this->getActiveField($attribute), $options);
         }
 
         return call_user_func([$this, $format . 'Field'], $this->getActiveField($attribute), $options);
+    }
+
+    public function fieldValue($attribute)
+    {
+        $value = Html::getAttributeValue($this->model, $attribute);
+        if ($this->model->hasErrors($attribute) || trim($value) === '') {
+            return $value;
+        }
+
+        /** @var Formatter $formatter */
+        $formatter = Yii::$app->formatter;
+
+        $attributeName = Html::getAttributeName($attribute);
+        $attributeFormat = $this->model->getAttributeFormat($attributeName);
+        $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
+
+        $skipFormatting = ['paragraphs', 'file'];
+        if (in_array($format, $skipFormatting)) {
+            return Html::encode($value);
+        }
+
+        try {
+            return $formatter->format($value, $attributeFormat);
+        } catch (InvalidParamException $e) {
+            return $value;
+        }
     }
 
     /**
@@ -418,7 +391,6 @@ class FormBuilder extends Object
      *
      * @param string $relation
      * @param array $options
-     * @param bool $multiple true for multiple values inputs, usually used for search forms
      *
      * @return ActiveField|null
      * @throws InvalidConfigException
@@ -495,8 +467,8 @@ class FormBuilder extends Object
             return $this->relatedField($attributeName, $options);
         }
 
-        if (!$this->model->isAttributeSafe($attributeName) || in_array($attributeName,
-                $keys) || (in_array($attributeName, $behaviorAttributes))
+        if (!$this->model->isAttributeSafe($attributeName) || in_array($attributeName, $keys)
+            || (in_array($attributeName, $behaviorAttributes))
         ) {
             return null;
         }
