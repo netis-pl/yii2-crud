@@ -220,6 +220,7 @@ class Formatter extends \yii\i18n\Formatter
             return $this->nullDisplay;
         }
         $values = is_array($value) ? $value : [$value];
+        $separator = ArrayHelper::remove($options, 'separator', ', ');
 
         $route = false;
         $result = [];
@@ -248,7 +249,7 @@ class Formatter extends \yii\i18n\Formatter
                 'id' => Action::exportKey($value->getPrimaryKey()),
             ], $options);
         }
-        return implode(', ', $result);
+        return implode($separator, $result);
     }
 
     public function asCurrency($value, $currency = null, $options = [], $textOptions = [])
