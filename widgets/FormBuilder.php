@@ -363,7 +363,8 @@ class FormBuilder extends Object
     public function fieldValue($attribute)
     {
         $value = Html::getAttributeValue($this->model, $attribute);
-        if ($this->model->hasErrors($attribute) || trim($value) === '') {
+        $value = is_array($value) ? array_filter(array_map('trim', $value)) : trim($value);
+        if ($this->model->hasErrors($attribute) || empty($value)) {
             return $value;
         }
 
@@ -376,11 +377,14 @@ class FormBuilder extends Object
 
         $skipFormatting = ['paragraphs', 'file'];
         if (in_array($format, $skipFormatting)) {
-            return Html::encode($value);
+            return is_array($value) ? array_map([Html::class, 'encode'], $value) : Html::encode($value);
         }
 
         try {
-            return $formatter->format($value, $attributeFormat);
+            return !is_array($value) ? $formatter->format($value, $attributeFormat) :
+                array_map(function ($v) use ($formatter, $attributeFormat) {
+                    return $formatter->format($v, $attributeFormat);
+                }, $value);
         } catch (InvalidParamException $e) {
             return $value;
         }

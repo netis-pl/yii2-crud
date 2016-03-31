@@ -12,7 +12,7 @@ use yii\widgets\Pjax;
  * @var $dataProvider yii\data\ActiveDataProvider
  * @var $columns array
  * @var $buttons array each entry is an array with keys: icon, label, url, options
- * @var $searchModel \yii\base\Model
+ * @var $searchModel \netis\crud\db\ActiveRecord
  * @var $searchFields array
  * @var $controller netis\crud\crud\ActiveController
  * @var $showTitle boolean If set to false <h1> title won't be rendered.
@@ -20,6 +20,8 @@ use yii\widgets\Pjax;
  */
 
 $controller = $this->context;
+/** @var IndexAction $action */
+$action = $controller->action;
 if (!isset($gridOptions) || !is_array($gridOptions)) {
     $gridOptions = [];
 }
@@ -104,7 +106,7 @@ echo GridView::widget(array_merge([
     'id'             => $gridId,
     'dataProvider'   => $dataProvider,
     // this actually renders some widgets and must be called after Pjax::begin()
-    'columns'        => $controller->action->addColumnFilters($columns, $searchFields),
+    'columns'        => $action->addColumnFilters($columns, $searchFields),
     'layout'         => $layout,
 ], $gridOptions));
 Pjax::end();
