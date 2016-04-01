@@ -363,8 +363,7 @@ class FormBuilder extends Object
     public function fieldValue($attribute)
     {
         $value = Html::getAttributeValue($this->model, $attribute);
-        $value = is_array($value) ? array_filter(array_map('trim', $value)) : trim($value);
-        if ($this->model->hasErrors($attribute) || empty($value)) {
+        if ($this->model->hasErrors($attribute)) {
             return $value;
         }
 
@@ -374,6 +373,22 @@ class FormBuilder extends Object
         $attributeName = Html::getAttributeName($attribute);
         $attributeFormat = $this->model->getAttributeFormat($attributeName);
         $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
+
+        if (is_array($value)) {
+            $value = array_filter(array_map('trim', $value));
+            if ($value === []) {
+                return $value;
+            }
+        }
+
+        if ($format === 'boolean' || is_bool($value)) {
+            return 1;
+        }
+
+        if (trim($value) === '') {
+            return $value;
+        }
+
 
         $skipFormatting = ['paragraphs', 'file'];
         if (in_array($format, $skipFormatting)) {
