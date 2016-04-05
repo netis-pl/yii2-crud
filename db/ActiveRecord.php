@@ -103,21 +103,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         /** @var \netis\crud\db\LabelsBehavior */
         if (($string = $this->getBehavior('labels')) !== null) {
-            $parts = [];
-            foreach ($string->attributes as $attribute) {
-                if (($format = $this->getAttributeFormat($attribute)) === null || !$this->hasAttribute($attribute)) {
-                    $parts[] = $this->$attribute;
-                    continue;
-                }
-
-                if (!in_array($format, ['text', 'shortText'])) {
-                    $parts [] = \Yii::$app->formatter->format($this->getAttribute($attribute), $format );
-                    continue;
-                }
-
-                $parts [] = $this->getAttribute($attribute);
-            }
-            return implode($string->separator, $parts);
+            return $string->getLabel();
         }
         return implode('/', $this->getPrimaryKey(true));
     }
@@ -329,7 +315,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     public function toArray(array $fields = [], array $expand = [], $recursive = true)
     {
         $data = parent::toArray($fields, $expand, $recursive);
-
+        
         if (method_exists($this, '__toString')) {
             $data['_label'] = $this->__toString();
         }
