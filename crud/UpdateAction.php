@@ -228,17 +228,11 @@ class UpdateAction extends Action
             } else {
                 list($viaName, $viaRelation) = $query->via;
             }
+            $viaRelation->select('(' . implode(', ', array_values($query->link)) . ')');
             $fkCondition = [
                 'in',
                 array_keys($query->link),
-                (new Query)
-                    ->select('(' . implode(', ', array_values($query->link)) . ')')
-                    ->from($viaRelation->from)
-                    ->where([
-                        'in',
-                        array_keys($viaRelation->link),
-                        array_combine(array_values($viaRelation->link), $query->primaryModel->getPrimaryKey(true)),
-                    ])
+                $viaRelation
             ];
         } else {
             $fkCondition = [
