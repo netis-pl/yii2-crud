@@ -15,10 +15,7 @@ class Html extends \yii\bootstrap\Html
         return <<<HTML
 <div class="timeline-badge $badgeClass"><i class="$badgeIcon"></i></div>
 <div class="timeline-panel">
-    <div class="timeline-heading">
-        <h4 class="timeline-title">$title</h4>
-        <p><small class="text-muted"><i class="$timeIcon"></i>&nbsp;$time</small></p>
-    </div>
+    <div class="timeline-heading"><h4 class="timeline-title">$title <small>&middot; $time</small></h4></div>
     <div class="timeline-body">$body</div>
 </div>
 HTML;

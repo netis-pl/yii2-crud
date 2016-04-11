@@ -101,14 +101,16 @@ class LinkableBehavior extends Behavior
         /** @var \yii\db\ActiveRecord $relationClass */
         $relationClass = $relation->modelClass;
 
-        /** @var ActiveRecord $relatedModel */
-        $relatedModel = new $relationClass;
-        $relatedModel->loadDefaultValues();
-        $event = new ModelEvent;
-        //simulate inserting record so all behaviors will init attributes with default values
-        $relatedModel->trigger(BaseActiveRecord::EVENT_BEFORE_INSERT, $event);
-        $dirtyAttributes = array_filter($relatedModel->getDirtyAttributes());
-
+        $dirtyAttributes = [];
+        if (!is_array($relation->via)) {
+            /** @var ActiveRecord $relatedModel */
+            $relatedModel = new $relationClass;
+            $relatedModel->loadDefaultValues();
+            $event = new ModelEvent;
+            //simulate inserting record so all behaviors will init attributes with default values
+            $relatedModel->trigger(BaseActiveRecord::EVENT_BEFORE_INSERT, $event);
+            $dirtyAttributes = array_filter($relatedModel->getDirtyAttributes());
+        }
         $quotedViaTable = $schema->quoteTableName($viaTable);
         $quotedColumns = implode(', ', array_map(
             [$schema, 'quoteColumnName'],

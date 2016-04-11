@@ -18,11 +18,8 @@ $firstAction = reset($actions);
 
 $formatter = Yii::$app->formatter;
 
-$addr = ($firstAction->request_addr !== null ? Yii::t('app', 'from') . ' ' . $firstAction->request_addr : '');
-$title = $firstAction->user . ' ' . Html::tag('small', $addr . ' @ ' . $firstAction->request_url);
-
 $body = '';
 foreach ($actions as $action) {
     $body .= $this->render('_history_entry_action', ['action' => $action, 'diff' => $diff]);
 }
-echo Html::historyEntry($title, $formatter->asDatetime($firstAction->request_date), $body, []);
+echo Html::historyEntry($firstAction->user , $formatter->asDatetime($firstAction->request_date), $body, []);
