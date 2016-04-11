@@ -302,8 +302,8 @@ class ActiveRecord extends \yii\db\ActiveRecord
         } elseif (isset($data[$scope])) {
             $attributes = array_keys($data[$scope]);
         }
-        //filter only those attributes that was set
-        $this->filterAttributes($attributes);
+        //filter only those attributes that was set (only safe attributes can be set)
+        $this->filterAttributes(array_intersect($attributes, $this->safeAttributes()));
         return true;
     }
 
