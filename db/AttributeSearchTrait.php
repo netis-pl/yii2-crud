@@ -98,7 +98,7 @@ trait AttributeSearchTrait
                         $result[] = [$likeOp, $columnName, $token];
                     }
 
-                    return $result;
+                    return count($result) > 2 ? $result : $result[1];
                 }
                 return [$likeOp, $columnName, $value];
             case 'json':

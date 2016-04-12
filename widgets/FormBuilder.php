@@ -483,7 +483,7 @@ class FormBuilder extends Object
 
         $attributeName = Html::getAttributeName($attribute);
         if (in_array($attributeName, $relations)) {
-            return $this->relatedField($attributeName, $options);
+            return $this->relatedField($attribute, $options);
         }
 
         if (!$this->model->isAttributeSafe($attributeName) || in_array($attributeName, $keys)
@@ -493,10 +493,10 @@ class FormBuilder extends Object
         }
 
         if (isset($hiddenAttributes[$attributeName])) {
-            return Html::activeHiddenInput($this->model, $attributeName, $options);
+            return Html::activeHiddenInput($this->model, $attribute, $options);
         }
 
-        return $this->field($attributeName, $options);
+        return $this->field($attribute, $options);
     }
 
     /**
