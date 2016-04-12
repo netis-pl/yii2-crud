@@ -42,12 +42,12 @@
 
 .timeline > li > .timeline-panel {
     width: 92%;
-    border: 1px solid #d4d4d4;
+    border: 1px solid rgba(0, 0, 0, .1);
     border-radius: 2px;
     padding: 20px;
     position: relative;
-    -webkit-box-shadow: 0 1px 6px rgba(0, 0, 0, 0.175);
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.175);
+    -webkit-box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
     margin-left: 70px;
 }
 
