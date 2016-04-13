@@ -4,6 +4,9 @@
     var MODE_NEW_RECORD = 1;
     /** @const */
     var MODE_EXISTING_RECORD = 2;
+    /** @const */
+    var MODE_ADVANCED_SEARCH = 3;
+
     var defaults = {
             modalId: '#relationModal',
             saveButtonId: '#relationSave',
@@ -134,17 +137,6 @@
                     $(this).prop('disabled', false).prop('checked', false);
                 }
             });
-            //$(document).off('pjax:success', settings.modalId);
-            /* the following should not be necessary after changing renderPartial to renderAjax in ActiveController.afterAction
-             grid.yiiGridView({
-             'filterUrl': url,
-             'filterSelector': '#relationGrid-quickSearch'
-             });
-             grid.yiiGridView('setSelectionColumn', {
-             'name': 'selection[]',
-             'multiple': true,
-             'checkAll': 'selection_all'
-             });*/
         } else {
             if (xhr.getResponseHeader('X-Primary-Key')) {
                 saveButton.data('primaryKey', xhr.getResponseHeader('X-Primary-Key'));
@@ -177,11 +169,20 @@
                     add.push(key);
                 }
             });
+        } else if (saveButton.data('primaryKey') === undefined && _mode === MODE_NEW_RECORD) {
+            $(_settings.modalId + ' form').submit();
+            return;
+        } else if (grid.length) {
+            grid.find("input[name='selection[]']:checked").not(':disabled').each(function () {
+                var key = $(this).parent().closest('tr').data('key').toString(),
+                    idx = $.inArray(key, remove);
+                if (idx !== -1) {
+                    remove.splice(idx, 1);
+                } else {
+                    add.push(key);
+                }
+            });
         } else {
-            if (saveButton.data('primaryKey') === undefined) {
-                $(_settings.modalId + ' form').submit();
-                return;
-            }
             add.push(saveButton.data('primaryKey'));
         }
 
@@ -193,6 +194,7 @@
             _container.select2('val', add);
         }
 
+        $(_container).trigger('netis:saveRelation', [add, remove]);
         $(_settings.modalId).modal('hide');
     };
 

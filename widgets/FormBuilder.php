@@ -644,6 +644,7 @@ function (event) {
     }
 
     $(event.target).select2('close');
+    $('#relationModal').data('mode', 3);
     $('#relationModal').data('target', $(event.target).attr('id'));
     $('#relationModal').data('title', '$label');
     $('#relationModal').data('relation', '$relation');
