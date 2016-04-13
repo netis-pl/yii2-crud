@@ -169,7 +169,7 @@
                     add.push(key);
                 }
             });
-        } else if (saveButton.data('primaryKey') === undefined && _mode === MODE_NEW_RECORD) {
+        } else if (saveButton.data('primaryKey') === undefined && _mode !== MODE_ADVANCED_SEARCH) {
             $(_settings.modalId + ' form').submit();
             return;
         } else if (grid.length) {
