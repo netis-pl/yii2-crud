@@ -12,6 +12,7 @@ use Yii;
 use yii\base\Model;
 use yii\db\ActiveQuery;
 use yii\db\Query;
+use yii\db\StaleObjectException;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\Request;
@@ -63,12 +64,16 @@ class UpdateAction extends Action
         }
         if ($loaded && $this->beforeSave($model)) {
             $trx = $model->getDb()->beginTransaction();
-            if (!$this->save($model)) {
-                throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
+            try {
+                if (!$this->save($model)) {
+                    throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
+                }
+                $trx->commit();
+                $this->afterSave($model, $wasNew);
+            } catch (StaleObjectException $ex) {
+                $this->setFlash('error', Yii::t('app', 'Could not save because record was edited by another user. Please try again.'));
+                $trx->rollBack();
             }
-            $trx->commit();
-
-            $this->afterSave($model, $wasNew);
         }
 
         return $this->getResponse($model);

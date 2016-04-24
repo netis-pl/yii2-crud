@@ -473,7 +473,7 @@ class FormBuilder extends Object
         return $this->fields;
     }
 
-    public function createField($attribute, $options)
+    public function createField($attribute, $options = [])
     {
         $keys = Action::getModelKeys($this->model);
         $hiddenAttributes = array_flip($this->hiddenAttributes);
