@@ -76,9 +76,11 @@ class IndexAction extends Action
             $dataProvider = $this->prepareDataProvider($searchModel);
         }
 
+        $fields = $this->getFields($searchModel, 'searchForm');
+        $extraFields = $this->getExtraFields($searchModel, 'searchForm');
         $formBuilder = new FormBuilder([
             'model' => $searchModel,
-            'attributes' => array_merge($this->getFields($searchModel, 'searchForm'), $this->getExtraFields($searchModel, 'searchForm'))
+            'attributes' => array_merge($fields, $extraFields)
         ]);
         $columns = $this->getIndexGridColumns($model, $this->getFields($model, 'grid'));
 

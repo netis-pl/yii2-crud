@@ -350,7 +350,7 @@ class FormBuilder extends Object
         $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
 
         if (!isset($options['value'])) {
-            $options['value'] = $this->fieldValue($attribute);
+            $options['value'] = $this->fieldValue($attributeName);
         }
 
         if ($format === null || !$this->hasMethod($format . 'Field')) {
@@ -520,6 +520,11 @@ class FormBuilder extends Object
 
         $this->fields = [];
         foreach ($this->attributes as $key => $field) {
+            //we should skip relation attributes which could be defined in search model in format relation.attribute
+            if (is_string($field) && strpos($field, '.') !== false) {
+                continue;
+            }
+
             //if field is string then we assume it's attribute name
             if (is_string($field)) {
                 $key = $field;
@@ -760,21 +765,22 @@ JavaScript;
     }
 
     /**
-     * @param \yii\db\ActiveRecord $model
-     * @param \yii\db\ActiveRecord $relatedModel
-     * @param \yii\db\ActiveQuery $relation
-     * @return array array with three arrays: create, search and index routes
+     * @param ActiveQuery $relation
+     * @return array
      */
-    public static function getRelationRoutes($model, $relatedModel, $relation)
+    public function getRoutes($relation)
     {
-        if (($route = Yii::$app->crudModelsMap[$relatedModel::className()]) === null) {
+        /** @var ActiveRecord $relatedModelClass */
+        $relatedModelClass = $relation->modelClass;
+
+        if (($route = Yii::$app->crudModelsMap[$relation->modelClass]) === null) {
             return [null, null, null];
         }
 
-        $allowCreate = Yii::$app->user->can($relatedModel::className() . '.create');
-        if ($allowCreate && $model->isNewRecord && $relation->multiple) {
+        $allowCreate = Yii::$app->user->can($relation->modelClass . '.create');
+        if ($allowCreate && $this->model->isNewRecord && $relation->multiple) {
             foreach ($relation->link as $left => $right) {
-                if (!$relatedModel->getTableSchema()->getColumn($left)->allowNull) {
+                if (!$relatedModelClass::getTableSchema()->getColumn($left)->allowNull) {
                     $allowCreate = false;
                     break;
                 }
@@ -787,8 +793,8 @@ JavaScript;
             $createRoute = [$route . '/update'];
             if ($relation->multiple) {
                 $createRoute['hide'] = implode(',', array_keys($relation->link));
-                $scope = $relatedModel->formName();
-                $primaryKey = $model->getPrimaryKey(true);
+                $scope = (new $relatedModelClass)->formName();
+                $primaryKey = $this->model->getPrimaryKey(true);
                 foreach ($relation->link as $left => $right) {
                     if (!isset($primaryKey[$right])) {
                         continue;
@@ -798,20 +804,31 @@ JavaScript;
             }
         }
 
-        $parts = explode('\\', $relatedModel::className());
+        $parts = explode('\\', $relatedModelClass);
         $relatedModelClass = array_pop($parts);
         $relatedSearchModelClass = implode('\\', $parts) . '\\search\\' . $relatedModelClass;
         $searchRoute = !class_exists($relatedSearchModelClass) ? null : [
             $route . '/relation',
             'per-page' => 10,
             'relation' => $relation->inverseOf,
-            'id'       => Action::exportKey($model->getPrimaryKey()),
+            'id'       => Action::exportKey($this->model->getPrimaryKey()),
             'multiple' => $relation->multiple ? 'true' : 'false',
         ];
 
         $indexRoute = [$route . '/index'];
 
         return [$createRoute, $searchRoute, $indexRoute];
+    }
+
+    /**
+     * @param \yii\db\ActiveRecord $model
+     * @param \yii\db\ActiveRecord $relatedModel
+     * @param \yii\db\ActiveQuery $relation
+     * @return array array with three arrays: create, search and index routes
+     */
+    public static function getRelationRoutes($model, $relatedModel, $relation)
+    {
+        return (new FormBuilder(['model' => $model]))->getRoutes($relation);
     }
 
     /**
@@ -940,11 +957,8 @@ JavaScript;
     {
         /** @var ActiveRecord $relModel */
         $relModel = new $activeRelation->modelClass;
-        list($createRoute, $searchRoute, $indexRoute) = FormBuilder::getRelationRoutes(
-            $model,
-            $relModel,
-            $activeRelation
-        );
+        $formBuilder = new FormBuilder(['model' => $model]);
+        list($createRoute, $searchRoute, $indexRoute) = $formBuilder->getRoutes($activeRelation);
 
         if ($indexRoute === null) {
             return self::getRelationWidgetStaticOptions($model, $relation, $activeRelation, $multiple);
