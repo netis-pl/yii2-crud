@@ -35,6 +35,7 @@ class FormBuilder extends Object
 {
     const MODAL_MODE_NEW_RECORD = 1;
     const MODAL_MODE_EXISTING_RECORD = 2;
+    const MODAL_MODE_ADVANCED_SEARCH = 3;
 
     /**
      * @var null|ActiveForm Form used to create active fields
