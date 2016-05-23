@@ -12,6 +12,7 @@ use yii\base\Behavior;
 use yii\base\InvalidCallException;
 use yii\base\ModelEvent;
 use yii\behaviors\AttributeBehavior;
+use yii\db\ActiveQuery;
 use yii\db\BaseActiveRecord;
 use yii\db\Expression;
 use yii\db\Query;
@@ -102,7 +103,7 @@ class LinkableBehavior extends Behavior
         $relationClass = $relation->modelClass;
 
         $dirtyAttributes = [];
-        if (!is_array($relation->via)) {
+        if ($relation->via === null) {
             /** @var ActiveRecord $relatedModel */
             $relatedModel = new $relationClass;
             $relatedModel->loadDefaultValues();
