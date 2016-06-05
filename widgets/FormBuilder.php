@@ -444,7 +444,9 @@ class FormBuilder extends Object
             throw new InvalidConfigException('Composite key relations are not supported by ' . get_called_class());
         }
 
-        if ($activeRelation->multiple) {
+        if (isset($options['class']) && $options['class'] !== Select2::class) {
+            $widgetOptions = [];
+        } else if ($activeRelation->multiple) {
             $widgetOptions = self::getRelationWidgetOptions($this->model, $relation, $activeRelation, true);
         } else {
             $widgetOptions = self::getRelationWidgetOptions($this->model, $relation, $activeRelation, $multiple);
