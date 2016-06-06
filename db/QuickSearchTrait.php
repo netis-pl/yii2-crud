@@ -99,19 +99,6 @@ trait QuickSearchTrait
     {
         $allConditions = ['or'];
         foreach ($relationAttributes as $relationName => $relation) {
-            /**
-             * @todo optimize this (check first, don't want to loose another battle with PostgreSQL query planner):
-             * - for BELONGS_TO check fk against subquery
-             * - for HAS_MANY and HAS_ONE check pk against subquery
-             * - for MANY_MANY join only to pivot table and check its fk agains subquery
-             */
-            $query->joinWith([$relationName => function ($query) use ($relationName) {
-                /** @var \yii\db\ActiveQuery $query */
-                /** @var \yii\db\ActiveRecord $class */
-                $class = $query->modelClass;
-                return $query->select(false)->from([$relationName => $class::tableName()]);
-            }]);
-
             $conditions = ['and'];
             /** @var ActiveSearchInterface $searchModel */
             $searchModel = $relation['searchModel'];
@@ -124,9 +111,24 @@ trait QuickSearchTrait
                     $conditions[] = count($condition) === 2 ? $condition[1] : $condition;
                 }
             }
-            if ($conditions !== ['and']) {
-                $allConditions[] = count($conditions) === 2 ? $conditions[1] : $conditions;
+            if ($conditions === ['and']) {
+                continue;
             }
+
+            $allConditions[] = count($conditions) === 2 ? $conditions[1] : $conditions;
+
+            /**
+             * @todo optimize this (check first, don't want to loose another battle with PostgreSQL query planner):
+             * - for BELONGS_TO check fk against subquery
+             * - for HAS_MANY and HAS_ONE check pk against subquery
+             * - for MANY_MANY join only to pivot table and check its fk agains subquery
+             */
+            $query->joinWith([$relationName => function ($query) use ($relationName) {
+                /** @var \yii\db\ActiveQuery $query */
+                /** @var \yii\db\ActiveRecord $class */
+                $class = $query->modelClass;
+                return $query->select(false)->from([$relationName => $class::tableName()]);
+            }]);
         }
 
         return $allConditions !== ['or'] ? $allConditions : null;
