@@ -760,12 +760,12 @@ class Formatter extends \yii\i18n\Formatter
             }
         }
         if (empty($result)) {
-            return null;
+            return $value;
         }
         try {
             new \DateInterval('P' . $result);
         } catch (\Exception $e) {
-            return null;
+            return $value;
         }
 
         return 'P' . ($negative ? '-' : '') . $result;
