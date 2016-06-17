@@ -626,7 +626,7 @@ class Formatter extends \yii\i18n\Formatter
      * @param bool $adjustTimezone
      * @return string the formatted result.
      */
-    private function filterDateTimeValue($value, $format, $dbFormat, $adjustTimezone = true)
+    private function filterDateTimeValue($value, $dbFormat, $adjustTimezone = false)
     {
         if ($value === null) {
             return null;
@@ -634,14 +634,8 @@ class Formatter extends \yii\i18n\Formatter
 
         $timeZone = new \DateTimeZone($adjustTimezone ? $this->timeZone : $this->dbTimeZone);
 
-        if (strncmp($format, 'php:', 4) === 0) {
-            $format = substr($format, 4);
-        } else {
-            $format = FormatConverter::convertDateIcuToPhp($format, 'datetime', $this->locale);
-        }
-
         try {
-            $date = \DateTime::createFromFormat($format, $value, $timeZone);
+            $date = new \DateTime($value, $timeZone);
         } catch (\Exception $e) {
             return $value;
         }
@@ -663,7 +657,7 @@ class Formatter extends \yii\i18n\Formatter
      */
     public function filterDate($value)
     {
-        return $this->filterDateTimeValue($value, $this->dateFormat, $this->dbDateFormat);
+        return $this->filterDateTimeValue($value, $this->dbDateFormat);
     }
 
     /**
@@ -677,9 +671,8 @@ class Formatter extends \yii\i18n\Formatter
         $hasTime = $parsed !== false && $parsed['hour'] !== false;
         return $this->filterDateTimeValue(
             $value,
-            $hasTime ? $this->datetimeFormat : $this->dateFormat,
             $this->dbDatetimeFormat,
-            !$hasTime
+            $hasTime
         );
     }
 
