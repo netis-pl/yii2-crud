@@ -28,15 +28,10 @@ if (empty($action->changed_fields)) {
     return;
 }
 ?>
-<div>
-    <?= $action->actionTypeLabel . ' ' . $model->getCrudLabel() . ': ' . $model->__toString() ?>,
-    <a role="button" data-toggle="collapse" href="#changeDetails_<?= $action->action_id ?>"
-       aria-expanded="false"
-       aria-controls="changeDetails<?= $action->id ?>">
-        <?= Yii::t('app', 'Details') ?>
-    </a>
-</div>
-<div class="collapse change-details" id="changeDetails_<?= $action->action_id ?>">
+<hr/>
+<h5><?= $action->actionTypeLabel . ' ' . $model->getCrudLabel() . ': ' . $model->__toString() ?></h5>
+
+<div class="change-details table-responsive" id="changeDetails_<?= $action->action_id ?>">
     <table class="table table-striped table-bordered diff-details">
         <thead>
         <tr>
@@ -57,7 +52,7 @@ if (empty($action->changed_fields)) {
                 <th><?= $model->getAttributeLabel($attribute); ?></th>
                 <td><?= $before; ?></td>
                 <td><?= $after; ?></td>
-                <td><?= $diff->render(strip_tags($before), strip_tags($after)); ?></td>
+                <td><?= $diff->render(strip_tags(htmlspecialchars_decode($before)), strip_tags(htmlspecialchars_decode($after))); ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
