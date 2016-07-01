@@ -285,7 +285,7 @@ class UpdateAction extends Action
 
         $result = [];
         if ($createRoute !== null) {
-            $result[self::CREATE_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
+            $result[self::CREATE_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-file"></span>&nbsp;'. Yii::t('app', 'Create new'), '#', [
                 'title'         => Yii::t('app', 'Create new'),
                 'aria-label'    => Yii::t('app', 'Create new'),
                 'data-pjax'     => '0',
@@ -310,7 +310,7 @@ class UpdateAction extends Action
         }
 
         if ($searchRoute !== null) {
-            $result[self::SEARCH_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+            $result[self::SEARCH_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-plus"></span>&nbsp;'.Yii::t('app', 'Add existing'), '#', [
                 'title'         => Yii::t('app', 'Add existing'),
                 'aria-label'    => Yii::t('app', 'Add existing'),
                 'data-pjax'     => '0',
