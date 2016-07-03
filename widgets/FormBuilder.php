@@ -76,7 +76,7 @@ class FormBuilder extends Object
     public function init()
     {
         if ($this->form === null) {
-            $this->form = new \stdClass();
+            $this->form = new DummyActiveForm();
             $this->form->layout = 'default';
         }
     }
@@ -103,7 +103,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function booleanField($field, $options = [])
     {
@@ -125,7 +125,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function shortLengthField($field, $options = [])
     {
@@ -139,7 +139,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function shortWeightField($field, $options = [])
     {
@@ -153,7 +153,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function multipliedField($field, $options = [])
     {
@@ -166,7 +166,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function integerField($field, $options = [])
     {
@@ -179,7 +179,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function timeField($field, $options = [])
     {
@@ -192,7 +192,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function datetimeField($field, $options = [])
     {
@@ -210,7 +210,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function dateField($field, $options = [])
     {
@@ -235,7 +235,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function enumField($field, $options = [])
     {
@@ -279,7 +279,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      * @throws InvalidConfigException
      */
     protected function flagsField($field, $options = [])
@@ -292,7 +292,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function paragraphsField($field, $options = [])
     {
@@ -308,7 +308,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function fileField($field, $options = [])
     {
@@ -321,7 +321,7 @@ class FormBuilder extends Object
      *
      * @param \yii\bootstrap\ActiveField $field
      * @param array $options
-     * @return $this|\yii\bootstrap\ActiveField
+     * @return \yii\bootstrap\ActiveField
      */
     protected function textField($field, $options = [])
     {
@@ -376,21 +376,15 @@ class FormBuilder extends Object
         $attributeFormat = $this->model->getAttributeFormat($attributeName);
         $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
 
-        if (is_array($value)) {
-            $value = array_filter(array_map('trim', $value));
-            if ($value === []) {
-                return $value;
-            }
-        }
-
         if ($format === 'boolean' || is_bool($value)) {
             return 1;
         }
 
-        if (trim($value) === '') {
+        $value = is_array($value) ? array_filter(array_map('trim', $value)) : trim($value);
+
+        if ($value === [] || $value === '') {
             return $value;
         }
-
 
         $skipFormatting = ['paragraphs', 'file'];
         if (in_array($format, $skipFormatting)) {
@@ -447,8 +441,6 @@ class FormBuilder extends Object
 
         if (isset($options['class']) && $options['class'] !== Select2::class) {
             $widgetOptions = [];
-        } else if ($activeRelation->multiple) {
-            $widgetOptions = self::getRelationWidgetOptions($this->model, $relation, $activeRelation, true);
         } else {
             $widgetOptions = self::getRelationWidgetOptions($this->model, $relation, $activeRelation, $multiple);
         }
@@ -1037,14 +1029,14 @@ JavaScript;
         $foreignKeys = array_values($activeRelation->link);
         $foreignKey = reset($foreignKeys);
 
-        $stubForm = new \stdClass();
-        $stubForm->layout = 'default';
+        $dummyActiveForm = new DummyActiveForm();
+        $dummyActiveForm->layout = 'default';
 
         /** @var ActiveField $field */
         $field = Yii::createObject([
             'class'     => ActiveField::class,
             'model'     => $model,
-            'form'      => $stubForm,
+            'form'      => $dummyActiveForm,
             'attribute' => $isMany ? $relation : $foreignKey,
             'parts'     => [
                 '{input}' => $widgetOptions,
