@@ -24,14 +24,6 @@
     netis.init = function(settings) {
         _settings = $.extend({}, defaults, settings);
 
-        $(document).off('pjax:timeout', _settings.modalId).on('pjax:timeout', _settings.modalId, function(event) {
-            event.preventDefault();
-        });
-        $(document).off('pjax:error', _settings.modalId)
-            .on('pjax:error', _settings.modalId, netis.pjaxError);
-        //$(document).on('pjax:send', settings.modalId, function() { })
-        //$(document).on('pjax:complete', settings.modalId, function() { })
-
         $(_settings.modalId).off('show.bs.modal').on('show.bs.modal', netis.showModal);
         $(_settings.modalId).off('hide.bs.modal').on('hide.bs.modal', netis.hideModal);
 
@@ -96,28 +88,47 @@
         $(document).off('click.pjax', container + ' a');
         $(document).off('submit', container + ' form');
 
-        $(document).pjax(container + ' a', container, options);
+        // $(document).pjax(container + ' a', container, options);
         $(document).on('submit', container + ' form', function(event) {
-            $.pjax.submit(event, container, options);
+            var url = this.action;
+            var separator = (url.indexOf('?') > -1) ? '&' : '?';
+            $.ajax({
+                url: url + separator + $.param({_pjax: container}),
+                type: this.method,
+                data: $(this).serialize(), // serializes the form's elements.
+                beforeSend: function (request) {
+                    request.setRequestHeader("X-PJAX", true);
+                    request.setRequestHeader("X-PJAX-Container", container);
+                },
+                success: function (data, status, xhr) {
+                    $(container).html(data);
+                    netis.ajaxSuccess(data, status, xhr);
+                }
+            });
+            event.preventDefault(); // avoid to execute the actual submit of the form.
         });
-        $(document).off('pjax:success', _settings.modalId);
-        $(document).on('pjax:success', _settings.modalId, netis.pjaxSuccess);
-        $.pjax.reload(container, {
-            'url': url,
-            'push': false,
-            'replace': false
+
+        var separator = (url.indexOf('?') > -1) ? '&' : '?';
+        $.ajax({
+            url: url + separator + $.param({_pjax: container}),
+            beforeSend: function (request) {
+                request.setRequestHeader("X-PJAX", true);
+                request.setRequestHeader("X-PJAX-Container", container);
+            },
+            success: function (data, status, xhr) {
+                $(container).html(data);
+                netis.ajaxSuccess(data, status, xhr);
+            },
+            error: netis.ajaxError
         });
     };
 
-    netis.pjaxError = function (event, textStatus, error, options) {
+    netis.ajaxError = function (xhr, textStatus, error) {
         $('.modal-title', this).text(textStatus.statusText);
         $('.modal-body', this).html(textStatus.responseText);
-
-        //prevent hard reload on error
-        event.preventDefault();
     };
 
-    netis.pjaxSuccess = function (event, data, status, xhr, options) {
+    netis.ajaxSuccess = function (data, status, xhr) {
         var saveButton = $(_settings.saveButtonId),
             added = [],
             removed = [],
@@ -140,7 +151,7 @@
         } else {
             if (xhr.getResponseHeader('X-Primary-Key')) {
                 saveButton.data('primaryKey', xhr.getResponseHeader('X-Primary-Key'));
-                netis.saveRelation(event);
+                netis.saveRelation();
                 return;
             }
             $(_settings.modalId + ' h1').remove();
@@ -148,7 +159,7 @@
         }
     };
 
-    netis.saveRelation = function(event) {
+    netis.saveRelation = function() {
         var saveButton = $(_settings.saveButtonId),
             grid = $(_settings.modalId + ' .grid-view'),
             add = [],
@@ -189,7 +200,7 @@
         if (_selectionFields !== undefined) {
             _selectionFields.add.val(netis.implodeKeys(add));
             _selectionFields.remove.val(netis.implodeKeys(remove));
-            $.pjax.reload(_container);
+            netis.reload(_container);
         } else {
             _container.select2('val', add);
         }
@@ -211,7 +222,7 @@
 
         $(container.data('selectionFields').add).val(netis.implodeKeys(add));
         $(container.data('selectionFields').remove).val(netis.implodeKeys(remove));
-        $.pjax.reload(container);
+        netis.reload(container);
     };
 
     netis.implodeEscaped = function(glue, pieces, escapeChar) {
@@ -282,5 +293,21 @@
 
     netis.escapeRegex = function(str) {
         return String(str).replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+    };
+
+    netis.reload = function(container) {
+        var url = window.location;
+        var separator = (url.indexOf('?') > -1) ? '&' : '?';
+        $.ajax({
+            url: url + separator + $.param({_pjax: container}),
+            beforeSend: function (request)
+            {
+                request.setRequestHeader("X-PJAX", true);
+                request.setRequestHeader("X-PJAX-Container", container);
+            },
+            success: function (data) {
+                $(container).html(data);
+            }
+        });
     };
 }(window.netis = window.netis || {}, jQuery));
