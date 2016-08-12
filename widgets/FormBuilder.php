@@ -643,13 +643,16 @@ function (event) {
     if (!isSearch && !isCreate) {
         return true;
     }
+    
+    var searchUrl = $(event.target).data('search-url') || '$searchUrl';
+    var createUrl = $(event.target).data('create-url') || '$createUrl';
 
     $(event.target).select2('close');
     $('#relationModal').data('mode', 3);
     $('#relationModal').data('target', $(event.target).attr('id'));
     $('#relationModal').data('title', '$label');
     $('#relationModal').data('relation', '$relation');
-    $('#relationModal').data('pjax-url', isSearch ? '$searchUrl' : '$createUrl');
+    $('#relationModal').data('pjax-url', isSearch ? searchUrl : createUrl);
     $('#relationModal').modal('show');
     event.preventDefault();
     return false;

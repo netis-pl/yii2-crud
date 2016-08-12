@@ -6,6 +6,11 @@
 
 namespace netis\crud\generators\model;
 
+use netis\crud\db\BlameableBehavior;
+use netis\crud\db\LabelsBehavior;
+use netis\crud\db\SortableBehavior;
+use netis\crud\db\TimestampBehavior;
+use netis\crud\db\ToggableBehavior;
 use Yii;
 use yii\base\NotSupportedException;
 use yii\db\Schema;
@@ -326,7 +331,7 @@ DESC;
             }
             $targetAttributes = implode(', ', $targetAttributes);
             $rules[] = "[['$attributes'], 'exist', 'skipOnError' => true, "
-                . "'targetClass' => $refClassName::className(), 'targetAttribute' => [$targetAttributes]],";
+                . "'targetClass' => $refClassName::class, 'targetAttribute' => [$targetAttributes]],";
         }
         return $rules;
     }
@@ -508,7 +513,7 @@ DESC;
             ],
             'explodeKey' => [
                 'validator' => 'filter',
-                'filter' => "'\\netis\\crud\\crud\\Action::explodeKeys'",
+                'filter' => "[\\netis\\crud\\crud\\Action::class, 'explodeKeys']",
                 'attributes' => [],
             ],
             'required' => [
@@ -563,7 +568,7 @@ DESC;
                 'filter' => "[Yii::\$app->formatter, 'filterInterval']",
             ],
             'interval' => [
-                'validator' => 'netis\crud\validators\IntervalValidator',
+                'validator' => '\netis\crud\validators\IntervalValidator::class',
             ],
             'safe' => [
                 'attributes' => [],
@@ -753,31 +758,31 @@ DESC;
             [
                 'name' => 'blameable',
                 'attributes' => ['author_id', 'created_by', 'created_id'],
-                'class' => \netis\crud\db\BlameableBehavior::className(),
+                'class' => BlameableBehavior::class,
                 'optionName' => 'createdByAttribute',
             ],
             [
                 'name' => 'blameable',
                 'attributes' => ['editor_id', 'edited_by', 'updated_by', 'updated_id', 'last_editor_id'],
-                'class' => \netis\crud\db\BlameableBehavior::className(),
+                'class' => BlameableBehavior::class,
                 'optionName' => 'updatedByAttribute',
             ],
             [
                 'name' => 'blameable',
                 'attributes' => ['update_reason'],
-                'class' => \netis\crud\db\BlameableBehavior::className(),
+                'class' => BlameableBehavior::class,
                 'optionName' => 'updateNotesAttribute',
             ],
             [
                 'name' => 'timestamp',
                 'attributes' => ['created_on', 'created_at', 'create_at', 'created_date', 'date_created'],
-                'class' => \netis\crud\db\TimestampBehavior::className(),
+                'class' => TimestampBehavior::class,
                 'optionName' => 'createdAtAttribute',
             ],
             [
                 'name' => 'timestamp',
                 'attributes' => ['updated_on', 'updated_at', 'update_at', 'updated_date', 'date_updated'],
-                'class' => \netis\crud\db\TimestampBehavior::className(),
+                'class' => TimestampBehavior::class,
                 'optionName' => 'updatedAtAttribute',
             ],
             [
@@ -785,19 +790,19 @@ DESC;
                 'attributes' => [
                     'is_disabled', 'disabled', 'is_deleted', 'deleted', 'is_removed', 'removed', 'is_hidden', 'hidden',
                 ],
-                'class' => \netis\crud\db\ToggableBehavior::className(),
+                'class' => ToggableBehavior::class,
                 'optionName' => 'disabledAttribute',
             ],
             [
                 'name' => 'toggable',
                 'attributes' => ['is_enabled', 'enabled', 'is_active', 'active', 'is_visible', 'visible'],
-                'class' => \netis\crud\db\ToggableBehavior::className(),
+                'class' => ToggableBehavior::class,
                 'optionName' => 'enabledAttribute',
             ],
             [
                 'name' => 'sortable',
                 'attributes' => ['display_order', 'sort_order'],
-                'class' => \netis\crud\db\SortableBehavior::className(),
+                'class' => SortableBehavior::class,
                 'optionName' => 'attribute',
             ],
             [
@@ -809,7 +814,7 @@ DESC;
         ];
         $behaviors = [
             'labels' => [
-                'class' => \netis\crud\db\LabelsBehavior::className(),
+                'class' => LabelsBehavior::class,
                 'options' => [
                     'attributes' => [$this->getLabelAttribute($table)],
                 ],
