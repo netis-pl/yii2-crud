@@ -17,7 +17,7 @@ use yii\widgets\Pjax;
 $controller = $this->context;
 
 if ($model instanceof \netis\crud\db\ActiveRecord) {
-    $this->title                 = $model->getCrudLabel('relation');
+    $this->title = $model->getCrudLabel('relation');
     if ($controller instanceof \yii\base\Controller) {
         $this->params['breadcrumbs'] = [
             [
@@ -54,7 +54,7 @@ $diff = new cogpowered\FineDiff\Diff(new cogpowered\FineDiff\Granularity\Word);
 
 <?php if (!isset($showTitle) || $showTitle): ?>
     <h1><span><?= Html::encode($this->title) ?></span></h1>
-<?php endif;?>
+<?php endif; ?>
 
 <?= netis\crud\web\Alerts::widget() ?>
 
@@ -98,9 +98,11 @@ $diff = new cogpowered\FineDiff\Diff(new cogpowered\FineDiff\Granularity\Word);
 
 <?php Pjax::begin(['id' => 'historyPjax']); ?>
 <?= \yii\widgets\ListView::widget([
-    'id'             => 'historyGrid',
-    'dataProvider'   => $dataProvider,
-    'itemView'       => '_history_entry',
-    'viewParams'     => ['diff' => $diff],
+    'id'           => 'historyGrid',
+    'dataProvider' => $dataProvider,
+    'itemView'     => '_history_entry',
+    'viewParams'   => ['diff' => $diff],
+    'itemOptions'  => ['tag' => 'li'],
+    'layout'       => "{summary}\n<ul class='timeline'>{items}</ul>\n{pager}",
 ]); ?>
 <?php Pjax::end(); ?>

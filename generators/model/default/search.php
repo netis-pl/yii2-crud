@@ -31,6 +31,7 @@ namespace <?= $generator->searchNs ?>;
 use netis\crud\db\ActiveSearchInterface;
 use Yii;
 use yii\base\Model;
+use \netis\crud\db\ActiveSearchTrait;
 use <?= ltrim($modelFullClassName, '\\') . (isset($modelAlias) ? " as $modelAlias" : "") ?>;
 use <?= ($queryClassName === 'ActiveQuery' ? 'yii\db' : $generator->queryNs) . '\\' . $queryClassName ?>;
 
@@ -39,7 +40,7 @@ use <?= ($queryClassName === 'ActiveQuery' ? 'yii\db' : $generator->queryNs) . '
  */
 class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelClass ?> implements ActiveSearchInterface
 {
-    use \netis\crud\db\ActiveSearchTrait;
+    use ActiveSearchTrait;
 
 <?php foreach ($relations as $name => $relation): if (true || !$relation[2]) continue; ?>
     /**
@@ -79,6 +80,6 @@ class <?= $className ?> extends <?= isset($modelAlias) ? $modelAlias : $modelCla
      */
     public static function find()
     {
-        return new <?= $queryClassName ?>('<?= ltrim($modelFullClassName, '\\') ?>');
+        return new <?= $queryClassName ?>(<?= $modelFullClassName ?>::class);
     }
 }

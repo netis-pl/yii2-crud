@@ -103,21 +103,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     {
         /** @var \netis\crud\db\LabelsBehavior */
         if (($string = $this->getBehavior('labels')) !== null) {
-            $parts = [];
-            foreach ($string->attributes as $attribute) {
-                if (($format = $this->getAttributeFormat($attribute)) === null || !$this->hasAttribute($attribute)) {
-                    $parts[] = $this->$attribute;
-                    continue;
-                }
-
-                if (!in_array($format, ['text', 'shortText'])) {
-                    $parts [] = \Yii::$app->formatter->format($this->getAttribute($attribute), $format );
-                    continue;
-                }
-
-                $parts [] = $this->getAttribute($attribute);
-            }
-            return implode($string->separator, $parts);
+            return $string->getLabel();
         }
         return implode('/', $this->getPrimaryKey(true));
     }
@@ -216,8 +202,8 @@ class ActiveRecord extends \yii\db\ActiveRecord
             Schema::TYPE_SMALLINT => 'integer',
             Schema::TYPE_INTEGER => 'integer',
             Schema::TYPE_BIGINT => 'integer',
-            Schema::TYPE_FLOAT => 'text',
-            Schema::TYPE_DOUBLE => 'text',
+            Schema::TYPE_FLOAT => 'decimal',
+            Schema::TYPE_DOUBLE => 'decimal',
             Schema::TYPE_DECIMAL => 'decimal',
             Schema::TYPE_DATETIME => 'datetime',
             Schema::TYPE_TIMESTAMP => 'datetime',
@@ -316,8 +302,8 @@ class ActiveRecord extends \yii\db\ActiveRecord
         } elseif (isset($data[$scope])) {
             $attributes = array_keys($data[$scope]);
         }
-        //filter only those attributes that was set
-        $this->filterAttributes($attributes);
+        //filter only those attributes that was set (only safe attributes can be set)
+        $this->filterAttributes(array_intersect($attributes, $this->safeAttributes()));
         return true;
     }
 
@@ -329,7 +315,7 @@ class ActiveRecord extends \yii\db\ActiveRecord
     public function toArray(array $fields = [], array $expand = [], $recursive = true)
     {
         $data = parent::toArray($fields, $expand, $recursive);
-
+        
         if (method_exists($this, '__toString')) {
             $data['_label'] = $this->__toString();
         }

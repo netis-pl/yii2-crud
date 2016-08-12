@@ -10,6 +10,9 @@ use netis\crud\crud\Action;
 use Yii;
 use yii\base\Behavior;
 use yii\base\InvalidCallException;
+use yii\base\ModelEvent;
+use yii\behaviors\AttributeBehavior;
+use yii\db\BaseActiveRecord;
 use yii\db\Expression;
 use yii\db\Query;
 use yii\web\ForbiddenHttpException;
@@ -97,11 +100,23 @@ class LinkableBehavior extends Behavior
 
         /** @var \yii\db\ActiveRecord $relationClass */
         $relationClass = $relation->modelClass;
+
+        $dirtyAttributes = [];
+        if ($relation->via === null) {
+            /** @var ActiveRecord $relatedModel */
+            $relatedModel = new $relationClass;
+            $relatedModel->loadDefaultValues();
+            $event = new ModelEvent;
+            //simulate inserting record so all behaviors will init attributes with default values
+            $relatedModel->trigger(BaseActiveRecord::EVENT_BEFORE_INSERT, $event);
+            $dirtyAttributes = array_filter($relatedModel->getDirtyAttributes());
+        }
         $quotedViaTable = $schema->quoteTableName($viaTable);
         $quotedColumns = implode(', ', array_map(
             [$schema, 'quoteColumnName'],
             array_merge(
                 array_keys($viaRelation->link),
+                array_keys($dirtyAttributes),
                 array_values($relation->link)
             )
         ));
@@ -121,6 +136,12 @@ class LinkableBehavior extends Behavior
                         return '('.$schema->quoteValue($c).')';
                     },
                     $owner->getAttributes(array_values($viaRelation->link))
+                ),
+                array_map(
+                    function ($c) use ($schema) {
+                        return '('.$schema->quoteValue($c).')';
+                    },
+                    $dirtyAttributes
                 ),
                 $prefixedPrimaryKeys
             ))

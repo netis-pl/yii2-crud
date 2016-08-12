@@ -157,4 +157,25 @@ class LabelsBehavior extends Behavior
             ? $owner->getAttribute($attribute)
             : $localLabels[$language][$owner->getPrimaryKey()][$attribute];
     }
+
+    public function getLabel()
+    {
+        $parts = [];
+        /** @var ActiveRecord $owner */
+        $owner = $this->owner;
+        foreach ($this->attributes as $attribute) {
+            if (($format = $owner->getAttributeFormat($attribute)) === null || !$owner->hasAttribute($attribute)) {
+                $parts[] = trim($owner->$attribute);
+                continue;
+            }
+
+            if (!in_array($format, ['text', 'shortText'])) {
+                $parts [] = trim(\Yii::$app->formatter->format($owner->getAttribute($attribute), $format ));
+                continue;
+            }
+
+            $parts [] = trim($owner->getAttribute($attribute));
+        }
+        return implode($this->separator, array_filter($parts));
+    }
 }

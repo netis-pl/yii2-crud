@@ -19,6 +19,7 @@ HTML;
 ?>
 
 <?php Pjax::begin([
+    'id' => 'relation-grid-pjax-container',
     'timeout' => 6000,
     'enablePushState' => false,
 ]); ?>

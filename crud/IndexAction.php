@@ -76,10 +76,12 @@ class IndexAction extends Action
             $dataProvider = $this->prepareDataProvider($searchModel);
         }
 
-        $searchFields = FormBuilder::getFormFields($searchModel, array_merge(
-            $this->getFields($searchModel, 'searchForm'),
-            $this->getExtraFields($searchModel, 'searchForm')
-        ), true);
+        $fields = $this->getFields($searchModel, 'searchForm');
+        $extraFields = $this->getExtraFields($searchModel, 'searchForm');
+        $formBuilder = new FormBuilder([
+            'model' => $searchModel,
+            'attributes' => array_merge($fields, $extraFields)
+        ]);
         $columns = $this->getIndexGridColumns($model, $this->getFields($model, 'grid'));
 
         return [
@@ -87,7 +89,7 @@ class IndexAction extends Action
             'columns' => $columns,
             'buttons' => $this->getDefaultGridButtons($dataProvider),
             'searchModel' => $searchModel,
-            'searchFields' => $searchFields,
+            'searchFields' => $formBuilder->createFields(true)->getFields(),
         ];
     }
 

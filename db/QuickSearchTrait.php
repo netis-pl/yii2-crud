@@ -99,6 +99,24 @@ trait QuickSearchTrait
     {
         $allConditions = ['or'];
         foreach ($relationAttributes as $relationName => $relation) {
+            $conditions = ['and'];
+            /** @var ActiveSearchInterface $searchModel */
+            $searchModel = $relation['searchModel'];
+            if (!$searchModel instanceof ActiveSearchInterface) {
+                continue;
+            }
+            foreach ($tokens as $token) {
+                $condition = $searchModel->processSearchToken($token, $relation['attributes'], $relationName);
+                if ($condition !== null) {
+                    $conditions[] = count($condition) === 2 ? $condition[1] : $condition;
+                }
+            }
+            if ($conditions === ['and']) {
+                continue;
+            }
+
+            $allConditions[] = count($conditions) === 2 ? $conditions[1] : $conditions;
+
             /**
              * @todo optimize this (check first, don't want to loose another battle with PostgreSQL query planner):
              * - for BELONGS_TO check fk against subquery
@@ -111,22 +129,6 @@ trait QuickSearchTrait
                 $class = $query->modelClass;
                 return $query->select(false)->from([$relationName => $class::tableName()]);
             }]);
-
-            $conditions = ['and'];
-            /** @var ActiveSearchInterface $searchModel */
-            $searchModel = $relation['searchModel'];
-            if (!$searchModel instanceof ActiveSearchInterface) {
-                continue;
-            }
-            foreach ($tokens as $token) {
-                $condition = $searchModel->processSearchToken($token, $relation['attributes'], $relationName);
-                if ($condition !== null) {
-                    $conditions[] = $condition;
-                }
-            }
-            if ($conditions !== ['and']) {
-                $allConditions[] = $conditions;
-            }
         }
 
         return $allConditions !== ['or'] ? $allConditions : null;
@@ -192,15 +194,14 @@ trait QuickSearchTrait
             if (!isset($relationAttributes[$relationName])) {
                 $relationAttributes[$relationName] = $this->getQuickSearchRelation($this->getRelation($relationName), $this->scenario);
             }
-            if ($attribute === null) {
-                /** @var \yii\db\ActiveRecord $relationModel */
-                $relationModel = $relationAttributes[$relationName]['model'];
-                /** @var LabelsBehavior $labelsBehavior */
-                $labelsBehavior = $relationModel->getBehavior('labels');
-                foreach ($labelsBehavior->attributes as $rcAttribute) {
-                    $relationAttributes[$relationName]['attributes'][] = $rcAttribute;
-                }
-            } else {
+            /** @var \yii\db\ActiveRecord $relationModel */
+            $relationModel = $relationAttributes[$relationName]['model'];
+            /** @var LabelsBehavior $labelsBehavior */
+            $labelsBehavior = $relationModel->getBehavior('labels');
+            foreach ($labelsBehavior->attributes as $rcAttribute) {
+                $relationAttributes[$relationName]['attributes'][] = $rcAttribute;
+            }
+            if ($attribute !== null && !in_array($attribute, $relationAttributes[$relationName]['attributes'])) {
                 $relationAttributes[$relationName]['attributes'][] = $attribute;
             }
         }
@@ -231,16 +232,28 @@ trait QuickSearchTrait
         list ($safeAttributes, $relationAttributes) = $this->getQuickSearchAttributes();
         $conditions = ['or'];
         foreach ($searchPhrase as $word) {
-            if (($condition = $this->processSearchToken($word, $safeAttributes)) !== null) {
-                $conditions[] = $condition;
+            if (($condition = $this->processSearchToken($word, $safeAttributes)) === null) {
+                continue;
             }
+            $conditions = $this->appendConditions($conditions, $condition);
         }
         if (($condition = $this->processSearchRelated($query, $searchPhrase, $relationAttributes)) !== null) {
-            $conditions[] = $condition;
+            $conditions = $this->appendConditions($conditions, $condition);
         }
         if ($conditions !== ['or']) {
             $query->andWhere($conditions);
         }
         return $query;
+    }
+
+    private function appendConditions($conditions, $condition)
+    {
+        $operator = reset($conditions);
+        if ($condition[0] === $operator) {
+            return array_merge($conditions, array_splice($condition, 1));
+        }
+
+        $conditions[] = count($condition) === 2 ? $condition[1] : $condition;
+        return $conditions;
     }
 }

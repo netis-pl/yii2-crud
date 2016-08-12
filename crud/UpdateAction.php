@@ -12,6 +12,7 @@ use Yii;
 use yii\base\Model;
 use yii\db\ActiveQuery;
 use yii\db\Query;
+use yii\db\StaleObjectException;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\web\Request;
@@ -63,12 +64,16 @@ class UpdateAction extends Action
         }
         if ($loaded && $this->beforeSave($model)) {
             $trx = $model->getDb()->beginTransaction();
-            if (!$this->save($model)) {
-                throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
+            try {
+                if (!$this->save($model)) {
+                    throw new ServerErrorHttpException('Failed to create the object for unknown reason.');
+                }
+                $trx->commit();
+                $this->afterSave($model, $wasNew);
+            } catch (StaleObjectException $ex) {
+                $this->setFlash('error', Yii::t('app', 'Could not save because record was edited by another user. Please try again.'));
+                $trx->rollBack();
             }
-            $trx->commit();
-
-            $this->afterSave($model, $wasNew);
         }
 
         return $this->getResponse($model);
@@ -228,17 +233,11 @@ class UpdateAction extends Action
             } else {
                 list($viaName, $viaRelation) = $query->via;
             }
+            $viaRelation->select('(' . implode(', ', array_values($query->link)) . ')');
             $fkCondition = [
                 'in',
                 array_keys($query->link),
-                (new Query)
-                    ->select('(' . implode(', ', array_values($query->link)) . ')')
-                    ->from($viaRelation->from)
-                    ->where([
-                        'in',
-                        array_keys($viaRelation->link),
-                        array_combine(array_values($viaRelation->link), $query->primaryModel->getPrimaryKey(true)),
-                    ])
+                $viaRelation
             ];
         } else {
             $fkCondition = [
@@ -286,7 +285,7 @@ class UpdateAction extends Action
 
         $result = [];
         if ($createRoute !== null) {
-            $result[self::CREATE_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-file"></span>', '#', [
+            $result[self::CREATE_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-file"></span>&nbsp;'. Yii::t('app', 'Create new'), '#', [
                 'title'         => Yii::t('app', 'Create new'),
                 'aria-label'    => Yii::t('app', 'Create new'),
                 'data-pjax'     => '0',
@@ -311,7 +310,7 @@ class UpdateAction extends Action
         }
 
         if ($searchRoute !== null) {
-            $result[self::SEARCH_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-plus"></span>', '#', [
+            $result[self::SEARCH_RELATED_BUTTON] = Html::a('<span class="glyphicon glyphicon-plus"></span>&nbsp;'.Yii::t('app', 'Add existing'), '#', [
                 'title'         => Yii::t('app', 'Add existing'),
                 'aria-label'    => Yii::t('app', 'Add existing'),
                 'data-pjax'     => '0',

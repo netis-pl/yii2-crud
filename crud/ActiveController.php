@@ -16,6 +16,8 @@ use yii\base\Model;
 use yii\data\DataProviderInterface;
 use yii\filters\AccessControl;
 use yii\filters\ContentNegotiator;
+use yii\rest\OptionsAction;
+use yii\rest\Serializer;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 
@@ -54,7 +56,7 @@ class ActiveController extends \yii\rest\ActiveController
      * @var string|array the configuration for creating the serializer that formats the response data.
      */
     public $serializer = [
-        'class' => 'yii\rest\Serializer',
+        'class' => Serializer::class,
         'collectionEnvelope' => 'items',
     ];
     /**
@@ -127,28 +129,18 @@ class ActiveController extends \yii\rest\ActiveController
     public function actions()
     {
         $actions = [
-            'index' => [
-                'class' => \netis\crud\crud\IndexAction::className(),
-            ],
-            'relation' => [
-                'class' => \netis\crud\crud\RelationAction::className(),
-            ],
-            'view' => [
-                'class' => \netis\crud\crud\ViewAction::className(),
-            ],
+            'index' => ['class' => IndexAction::class],
+            'relation' => ['class' => RelationAction::class],
+            'view' => ['class' => ViewAction::class],
             'update' => [
-                'class' => \netis\crud\crud\UpdateAction::className(),
+                'class' => UpdateAction::class,
                 'createScenario' => $this->createScenario,
                 'updateScenario' => $this->updateScenario,
             ],
-            'delete' => [
-                'class' => \netis\crud\crud\DeleteAction::className(),
-            ],
-            'options' => [
-                'class' => \yii\rest\OptionsAction::className(),
-            ],
+            'delete' => ['class' => DeleteAction::class],
+            'options' => ['class' => OptionsAction::class],
             'help' => [
-                'class' => HelpAction::className(),
+                'class' => HelpAction::class,
                 'viewPrefix' => 'help',
                 'defaultView' => 'index.md',
             ]
