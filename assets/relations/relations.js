@@ -296,7 +296,10 @@
     };
 
     netis.reload = function(container) {
-        var url = window.location;
+        if (typeof container === 'object') {
+            container = '#' + container.attr('id');
+        }
+        var url = window.location.toString();
         var separator = (url.indexOf('?') > -1) ? '&' : '?';
         $.ajax({
             url: url + separator + $.param({_pjax: container}),
