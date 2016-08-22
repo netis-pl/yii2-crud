@@ -307,6 +307,12 @@
             {
                 request.setRequestHeader("X-PJAX", true);
                 request.setRequestHeader("X-PJAX-Container", container);
+                var selectionAdd = $($(container).data('selectionFields').add);
+                var selectionRemove = $($(container).data('selectionFields').remove);
+                if (selectionAdd.length > 0 && selectionRemove.length > 0) {
+                    request.setRequestHeader('X-Selection-add', selectionAdd.val());
+                    request.setRequestHeader('X-Selection-remove', selectionRemove.val());
+                }
             },
             success: function (data) {
                 $(container).html(data);
