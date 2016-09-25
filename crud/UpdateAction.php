@@ -226,26 +226,13 @@ class UpdateAction extends Action
         $query = $relation['dataProvider']->query;
 
         $conditions = ['or'];
-        if ($query->via instanceof ActiveQuery || is_array($query->via)) {
-            /** @var ActiveQuery $viaRelation */
-            if ($query->via instanceof ActiveQuery) {
-                $viaRelation = $query->via;
-            } else {
-                list($viaName, $viaRelation) = $query->via;
-            }
-            $viaRelation->select('(' . implode(', ', array_values($query->link)) . ')');
-            $fkCondition = [
-                'in',
-                array_keys($query->link),
-                $viaRelation
-            ];
-        } else {
-            $fkCondition = [
-                'in',
-                array_keys($query->link),
-                array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
-            ];
-        }
+
+        $fkCondition = [
+            'in',
+            array_keys($query->link),
+            array_combine(array_values($query->link), $query->primaryModel->getPrimaryKey(true)),
+        ];
+
         if (!empty($selection['add'])) {
             $conditions[] = ['in', $relatedPk, self::importKey($relatedPk, $selection['add'])];
         }
@@ -341,8 +328,8 @@ class UpdateAction extends Action
         ) {
             $headers = Yii::$app->request->getHeaders();
             $selection = [
-                'add' => self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-add')),
-                'remove' => self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-remove')),
+                'add' => array_filter(self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-add'))),
+                'remove' => array_filter(self::explodeEscaped(self::KEYS_SEPARATOR, $headers->get('X-Selection-remove'))),
             ];
             $relations[$relationName] = $this->addRelationSelection(
                 $relations[$relationName],
