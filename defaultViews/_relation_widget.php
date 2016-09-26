@@ -55,5 +55,6 @@ echo GridView::widget([
     'columns'      => $relation['columns'],
     'layout'       => isset($relation['layout']) ? $relation['layout'] : $layout,
     'buttons'      => isset($relation['buttons']) ? $relation['buttons'] : [],
+    'options'      => isset($relation['options']) ? $relation['options'] : ['class' => 'grid-view'],
 ]);
 $pjax !== null && Pjax::end();
