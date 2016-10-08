@@ -4,6 +4,7 @@
  * @var nineinchnick\audit\models\Action $action
  * @var cogpowered\FineDiff\Diff         $diff a diff engine
  */
+use netis\crud\helpers\Html;
 
 /** @var \netis\crud\db\ActiveRecord $model */
 $model = $action->model;
@@ -44,12 +45,25 @@ if (empty($action->changed_fields)) {
         <tbody>
         <?php foreach ($action->changed_fields as $attribute => $value): ?>
             <?php
+            $relation = null;
             $format = $model->getAttributeFormat($attribute);
             $before = $formatter->format($model->getAttribute($attribute), $format);
             $after = $formatter->format($value, $format);
+            $label = $model->getAttributeLabel($attribute);
+            foreach ($model->relations() as $relationName) {
+                $relation = $model->getRelation($relationName);
+                if (reset($relation->link) !== $attribute) {
+                    continue;
+                }
+                /** @var \netis\crud\db\ActiveRecord $class */
+                $class = $relation->modelClass;
+                $label = $model->getRelationLabel($relation, Html::getAttributeName($relationName));
+                $before = (string) ($class::findOne($model->getAttribute($attribute)) ?: $model->getAttribute($attribute));
+                $after = (string) ($class::findOne($value) ?: $value);
+            }
             ?>
             <tr>
-                <th><?= $model->getAttributeLabel($attribute); ?></th>
+                <th><?= $label; ?></th>
                 <td><?= $before; ?></td>
                 <td><?= $after; ?></td>
                 <td><?= $diff->render(strip_tags(htmlspecialchars_decode($before)), strip_tags(htmlspecialchars_decode($after))); ?></td>
