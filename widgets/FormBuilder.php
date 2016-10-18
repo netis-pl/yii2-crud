@@ -88,10 +88,14 @@ class FormBuilder extends Object
      */
     private function getActiveField($attribute)
     {
+        $attributeName = $attribute;
+        if (preg_match('/(^|.*\])([\w]+)\.([\w]*)/', $attribute, $matches)) {
+            $attributeName = "[$matches[2]]$matches[1]$matches[3]";
+        }
         $config = [
             'class'     => $this->activeFieldClass,
-            'model'     => $this->model,
-            'attribute' => $attribute,
+            'model'     => $this->model($attribute),
+            'attribute' => $attributeName,
             'form'      => $this->form,
         ];
 
@@ -335,6 +339,38 @@ class FormBuilder extends Object
     }
 
     /**
+     * @param $attribute
+     *
+     * @return ActiveRecord
+     */
+    protected function model($attribute)
+    {
+        if (!preg_match('/(^|.*\])([\w]+)\.([\w]*)/', $attribute, $matches)) {
+            return $this->model;
+        }
+
+        if (($relation = $this->model->getRelation($matches[2], false)) === null) {
+            return $this->model;
+        }
+
+        if (($model = $this->model->{$matches[2]}) !== null) {
+            return $model;
+        }
+
+        return new $relation->modelClass;
+    }
+
+    protected function getAttributeName($attribute)
+    {
+        if (!preg_match('/(^|.*\])([\w]+)\.([\w]*)/', $attribute, $matches)) {
+            return Html::getAttributeName($attribute);
+        }
+
+        return $matches[3];
+    }
+
+
+    /**
      * Creates ActiveField for attribute.
      *
      * @param string $attribute
@@ -343,16 +379,16 @@ class FormBuilder extends Object
      */
     public function field($attribute, $options = [])
     {
-        $attributeName = Html::getAttributeName($attribute);
-        if ($this->model->optimisticLock() === $attributeName) {
+        $attributeName = $this->getAttributeName($attribute);
+        if ($this->model($attribute)->optimisticLock() === $attributeName) {
             return $this->getActiveField($attribute)->hiddenInput()->label(false);
         }
 
-        $attributeFormat = $this->model->getAttributeFormat($attributeName);
+        $attributeFormat = $this->model($attribute)->getAttributeFormat($attributeName);
         $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
 
         if (!isset($options['value'])) {
-            $options['value'] = $this->fieldValue($attributeName);
+            $options['value'] = $this->fieldValue($attribute);
         }
 
         if ($format === null || !$this->hasMethod($format . 'Field')) {
@@ -364,16 +400,16 @@ class FormBuilder extends Object
 
     public function fieldValue($attribute)
     {
-        $value = Html::getAttributeValue($this->model, $attribute);
-        if ($this->model->hasErrors($attribute)) {
+        $value = Html::getAttributeValue($this->model($attribute), $this->getAttributeName($attribute));
+        $attributeName = $this->getAttributeName($attribute);
+        if ($this->model($attribute)->hasErrors($attributeName)) {
             return $value;
         }
 
         /** @var Formatter $formatter */
         $formatter = Yii::$app->formatter;
 
-        $attributeName = Html::getAttributeName($attribute);
-        $attributeFormat = $this->model->getAttributeFormat($attributeName);
+        $attributeFormat = $this->model($attribute)->getAttributeFormat($attributeName);
         $format = is_array($attributeFormat) ? $attributeFormat[0] : $attributeFormat;
 
         if ($format === 'boolean' || is_bool($value)) {
