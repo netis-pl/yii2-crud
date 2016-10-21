@@ -323,9 +323,9 @@ class FormBuilder extends Object
     /**
      * Configures $field as text
      *
-     * @param \yii\bootstrap\ActiveField $field
+     * @param ActiveField $field
      * @param array $options
-     * @return \yii\bootstrap\ActiveField
+     * @return ActiveField
      */
     protected function textField($field, $options = [])
     {
@@ -375,7 +375,7 @@ class FormBuilder extends Object
      *
      * @param string $attribute
      * @param array $options
-     * @return \yii\bootstrap\ActiveField
+     * @return ActiveField
      */
     public function field($attribute, $options = [])
     {
