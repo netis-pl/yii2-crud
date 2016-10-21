@@ -13,6 +13,12 @@ use yii\helpers\ArrayHelper;
  */
 class ActiveField extends \yii\bootstrap\ActiveField
 {
+    public function fieldOptions($options)
+    {
+        $this->options = ArrayHelper::merge($this->options, $options);
+        return $this;
+    }
+
     /**
      * @inheritdoc
      */
