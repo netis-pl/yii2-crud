@@ -65,7 +65,17 @@ class ActiveField extends \yii\bootstrap\ActiveField
      */
     public function select2($items, $options = [], $clientOptions = [])
     {
-        $defaultOptions       = ['class' => 'select2', 'placeholder' => FormBuilder::getPrompt(), 'single' => true];
+        $defaultOptions       = [
+            'class' => 'select2',
+            'placeholder' => FormBuilder::getPrompt(),
+            'single' => true,
+        ];
+        if (isset($this->inputOptions['id'])) {
+            $defaultOptions['id'] = $this->inputOptions['id'];
+        }
+        if (isset($this->inputOptions['name'])) {
+            $defaultOptions['name'] = $this->inputOptions['name'];
+        }
         $defaultClientOptions = ['width' => '100%', 'allowClear' => false, 'closeOnSelect' => true];
 
         return $this->widget(Select2::class, [
