@@ -97,6 +97,10 @@ class FormBuilder extends Object
             'model'     => $this->model($attribute),
             'attribute' => $attributeName,
             'form'      => $this->form,
+            'inputOptions' => [
+                'name' => Html::getInputName($this->model, $attributeName),
+                'id' => Html::getInputId($this->model, $attributeName),
+            ]
         ];
 
         return Yii::createObject(ArrayHelper::merge($this->fieldOptions, $config));
