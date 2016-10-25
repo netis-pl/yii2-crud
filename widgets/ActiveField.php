@@ -5,6 +5,8 @@ namespace netis\crud\widgets;
 use maddoger\widgets\Select2;
 use yii\base\Widget;
 use yii\helpers\ArrayHelper;
+use yii\jui\AutoComplete;
+use yii\web\JsExpression;
 
 /**
  * Description here...
@@ -82,6 +84,24 @@ class ActiveField extends \yii\bootstrap\ActiveField
             'options'       => ArrayHelper::merge($defaultOptions, $options),
             'items'         => $items,
             'clientOptions' => ArrayHelper::merge($defaultClientOptions, $clientOptions),
+        ]);
+    }
+
+    /**
+     * Renders jQuery UI autocomplete.
+     *
+     * @param array|string|JsExpression $source {@link http://api.jqueryui.com/autocomplete/#option-source allowed values}
+     * @param array                     $options
+     *
+     * @param array                     $clientOptions
+     *
+     * @return $this
+     */
+    public function autocomplete($source, $options = [], $clientOptions = [])
+    {
+        return $this->widget(AutoComplete::class, [
+            'clientOptions' => ArrayHelper::merge($clientOptions, ['source' => $source]),
+            'options' => ArrayHelper::merge(['class' => 'form-control'], $options),
         ]);
     }
 }
