@@ -99,6 +99,13 @@ class ActiveField extends \yii\bootstrap\ActiveField
      */
     public function autocomplete($source, $options = [], $clientOptions = [])
     {
+        if (isset($this->inputOptions['id'])) {
+            $options['id'] = $this->inputOptions['id'];
+        }
+        if (isset($this->inputOptions['name'])) {
+            $options['name'] = $this->inputOptions['name'];
+        }
+
         return $this->widget(AutoComplete::class, [
             'clientOptions' => ArrayHelper::merge($clientOptions, ['source' => $source]),
             'options' => ArrayHelper::merge(['class' => 'form-control'], $options),
