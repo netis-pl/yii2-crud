@@ -25,7 +25,11 @@ $attributes = array_map(function ($attribute, $value) use ($model, $diff) {
         ),
     ];
 }, array_keys($action->changed_fields), $action->changed_fields);
-if (empty($action->changed_fields)) {
+$changedFields = $action->changed_fields;
+if ($action->action_type === 'INSERT') {
+    $changedFields = $action->row_data;
+}
+if (empty($changedFields)) {
     return;
 }
 ?>
@@ -43,11 +47,11 @@ if (empty($action->changed_fields)) {
         </tr>
         </thead>
         <tbody>
-        <?php foreach ($action->changed_fields as $attribute => $value): ?>
+        <?php foreach ($changedFields as $attribute => $value): ?>
             <?php
             $relation = null;
             $format = $model->getAttributeFormat($attribute);
-            $before = $formatter->format($model->getAttribute($attribute), $format);
+            $before = $action->action_type === 'INSERT' ? '' : $formatter->format($model->getAttribute($attribute), $format);
             $after = $formatter->format($value, $format);
             $label = $model->getAttributeLabel($attribute);
             foreach ($model->relations() as $relationName) {
@@ -58,8 +62,11 @@ if (empty($action->changed_fields)) {
                 /** @var \netis\crud\db\ActiveRecord $class */
                 $class = $relation->modelClass;
                 $label = $model->getRelationLabel($relation, Html::getAttributeName($relationName));
-                $before = (string) ($class::findOne($model->getAttribute($attribute)) ?: $model->getAttribute($attribute));
+                $before = $action->action_type === 'INSERT' ? '' : (string) ($class::findOne($model->getAttribute($attribute)) ?: $model->getAttribute($attribute));
                 $after = (string) ($class::findOne($value) ?: $value);
+            }
+            if ($before === $after) {
+                continue;
             }
             ?>
             <tr>
