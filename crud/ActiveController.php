@@ -415,7 +415,7 @@ class ActiveController extends \yii\rest\ActiveController
     public function checkAccess($action, $model = null, $params = [])
     {
         if (!$this->hasAccess($action, $model, $params)) {
-            throw new ForbiddenHttpException(Yii::t('app', 'Access denied.'));
+            throw new ForbiddenHttpException(Yii::t('app', 'Access denied.') . (YII_DEBUG ? $this->modelClass.'.'.$action : ''));
         }
     }
 

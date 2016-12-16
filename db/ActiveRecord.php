@@ -374,4 +374,38 @@ class ActiveRecord extends \yii\db\ActiveRecord
         }
         return $this;
     }
+
+    /**
+     * Returns related model class to specified foreign key.
+     *
+     * @param $foreignKey
+     *
+     * @return null|ActiveRecord
+     */
+    public function getRelatedModel($foreignKey)
+    {
+        $relatedTable = null;
+        foreach(self::getTableSchema()->foreignKeys as $foreignKeys) {
+            if (!isset($foreignKeys[$foreignKey])) {
+                continue;
+            }
+
+            $relatedTable = $foreignKeys[0];
+            break;
+        }
+
+        if ($relatedTable === null) {
+            return null;
+        }
+
+        $relatedModel = null;
+        foreach ($this->relations() as $relationName) {
+            $relation = $this->getRelation($relationName);
+            if (($relation->modelClass)::getTableSchema()->fullName === $relatedTable) {
+                return $relation->modelClass;
+            }
+        }
+
+        return null;
+    }
 }
