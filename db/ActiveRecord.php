@@ -401,7 +401,8 @@ class ActiveRecord extends \yii\db\ActiveRecord
         $relatedModel = null;
         foreach ($this->relations() as $relationName) {
             $relation = $this->getRelation($relationName);
-            if (($relation->modelClass)::getTableSchema()->fullName === $relatedTable) {
+            $modelClass = $relation->modelClass;
+            if ($modelClass::getTableSchema()->fullName === $relatedTable) {
                 return $relation->modelClass;
             }
         }
